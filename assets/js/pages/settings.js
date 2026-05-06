@@ -29,16 +29,17 @@
         </div>
       </div>
 
-      <div class="section-title">Status Mapping (5-status)</div>
-      <div class="card">
-        <div class="card-header">
+      <div class="section-title">Status Mapping</div>
+      <div class="card" style="background: var(--surface-2);">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div>
-            <div class="card-title">Stage → Status</div>
-            <div class="card-subtitle">แก้เพื่อ override default mapping (Won / Commit / Upside / Open / Lost)</div>
+            <strong>Stage → Status mapping</strong>
+            <div style="color: var(--text-muted); font-size:12px; margin-top:4px;">
+              กำหนด stage แต่ละชนิดให้เข้ากลุ่ม Won / Commit / Upside / Open / Lost
+            </div>
           </div>
-          <button class="btn btn-sm" id="resetStatusMap">Reset to default</button>
+          <button class="btn btn-primary" id="openStatusMapBtn">🏷️ Manage Status Mapping →</button>
         </div>
-        <div id="statusMapTable"></div>
       </div>
 
       <div class="section-title">Users &amp; Teams</div>
@@ -79,7 +80,6 @@
     `;
 
     renderStorageSize();
-    renderStatusMapTable();
 
     // Wire up actions
     document.getElementById('exportBtn').addEventListener('click', () => {
@@ -110,15 +110,11 @@
         App.UI.toast('Copy failed: ' + err.message, 'error');
       }
     });
-    document.getElementById('resetStatusMap').addEventListener('click', () => {
-      App.UI.confirm('Reset Status mapping to defaults?', () => {
-        App.Settings.set('statusMapping', {});
-        render(container, parsed);
-        App.UI.toast('Status mapping reset', 'success');
-      });
-    });
     document.getElementById('openTeamsBtn').addEventListener('click', () => {
       location.hash = '#/teams';
+    });
+    document.getElementById('openStatusMapBtn').addEventListener('click', () => {
+      location.hash = '#/statusmap';
     });
     document.getElementById('diffEnabled').addEventListener('change', (e) => {
       App.Settings.set('uiPreferences.diffViewEnabled', e.target.checked);

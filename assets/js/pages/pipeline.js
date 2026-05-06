@@ -9,6 +9,7 @@
     page: 1,
     pageSize: 50,
     search: '',
+    initialized: false,
   };
 
   function render(container, parsed) {
@@ -20,6 +21,13 @@
           <p>Upload Bitrix data to see all deals.</p>
         </div>`;
       return;
+    }
+
+    // Restore page size from settings on first render
+    if (!STATE.initialized) {
+      const saved = App.Settings.get('uiPreferences.pipelinePageSize');
+      if (saved !== undefined) STATE.pageSize = saved === 'all' ? 'all' : parseInt(saved);
+      STATE.initialized = true;
     }
 
     const settings = App.Settings.load();
@@ -40,12 +48,13 @@
         <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
           <input type="text" id="pipelineSearch" placeholder="🔍 Search across all columns..." class="select-input" style="flex:1; min-width:280px; padding:8px 12px;" value="${STATE.search}">
           <span style="font-size:12px; color: var(--text-muted);" id="resultCount"></span>
-          <select id="pageSize" class="select-input">
-            <option value="25">25</option>
-            <option value="50" selected>50</option>
-            <option value="100">100</option>
-            <option value="250">250</option>
-            <option value="all">All</option>
+          <select id="pageSize" class="select-input" title="Rows per page">
+            ${[25, 50, 100, 250, 500, 1000, 2000, 'all'].map(s => {
+              const cur = STATE.pageSize === 'all' ? 'all' : String(STATE.pageSize);
+              const v = String(s);
+              const lbl = s === 'all' ? 'All (slow on large data)' : (s >= 1000 ? s.toLocaleString() : s) + ' / page';
+              return `<option value="${v}" ${v === cur ? 'selected' : ''}>${lbl}</option>`;
+            }).join('')}
           </select>
         </div>
 
@@ -349,6 +358,7 @@
     document.getElementById('pageSize').addEventListener('change', (e) => {
       STATE.pageSize = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
       STATE.page = 1;
+      App.Settings.set('uiPreferences.pipelinePageSize', STATE.pageSize);
       renderTable();
     });
     document.getElementById('firstPage').addEventListener('click', () => { STATE.page = 1; renderTable(); });

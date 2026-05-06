@@ -60,7 +60,7 @@
             <div class="card-subtitle">Click any cell to edit · Auto-saves on change · Renew Target is auto-computed below</div>
           </div>
         </div>
-        <div style="overflow-x:auto;">
+        <div class="targets-wrap">
           <table class="targets-tbl" id="targetsTable"></table>
         </div>
       </div>
@@ -68,7 +68,7 @@
       ${parsed ? `
         <div class="section-title">Renew Target — auto from data (Subscription Renew + Auto Renew)</div>
         <div class="card">
-          <div style="overflow-x:auto;">
+          <div class="targets-wrap">
             <table class="targets-tbl" id="renewTable"></table>
           </div>
         </div>
@@ -131,7 +131,7 @@
             teamMonthTotals[m] += val;
             monthTotals[m] += val;
             const displayVal = val ? App.UI.fmt.comma2(val) : '';
-            cells += `<td><input type="text" class="target-cell" data-user="${escapeAttr(u.name)}" data-month="${m + 1}" data-raw="${val}" value="${displayVal}" placeholder="0" inputmode="decimal"></td>`;
+            cells += `<td class="input-cell"><input type="text" class="target-cell" data-user="${escapeAttr(u.name)}" data-month="${m + 1}" data-raw="${val}" value="${displayVal}" placeholder="0" inputmode="decimal"></td>`;
           }
           teamSum += userTotal;
           grandTotal += userTotal;
@@ -150,12 +150,18 @@
         </tr>`;
       });
 
-      // Header — fixed widths so subtotal row aligns with input row
+      // Colgroup ensures uniform column widths across thead/tbody/tfoot
+      const colgroupHtml = `<colgroup>
+        <col style="width:180px;">
+        ${MONTHS.map(() => '<col style="width:110px;">').join('')}
+        <col style="width:140px;">
+      </colgroup>`;
+
       const headHtml = `<thead>
         <tr>
-          <th style="width:180px; min-width:180px;">User</th>
-          ${MONTHS.map(m => `<th class="num" style="width:110px; min-width:110px;">${m}</th>`).join('')}
-          <th class="num" style="width:130px; min-width:130px; background: var(--primary-light);">Year Total</th>
+          <th>User</th>
+          ${MONTHS.map(m => `<th class="num">${m}</th>`).join('')}
+          <th class="num" style="background: var(--primary-light);">Year Total</th>
         </tr>
       </thead>`;
 
@@ -167,7 +173,7 @@
         </tr>
       </tfoot>`;
 
-      document.getElementById('targetsTable').innerHTML = headHtml + '<tbody>' + bodyHtml + '</tbody>' + footHtml;
+      document.getElementById('targetsTable').innerHTML = colgroupHtml + headHtml + '<tbody>' + bodyHtml + '</tbody>' + footHtml;
       document.getElementById('targetTableTitle').textContent = `Year ${year} · New Sell only · Total ${App.UI.fmt.THBFull(grandTotal)}`;
 
       // Wire up cell handlers
@@ -260,11 +266,16 @@
         </tr>`;
       });
 
+      const colgroupHtml = `<colgroup>
+        <col style="width:180px;">
+        ${MONTHS.map(() => '<col style="width:110px;">').join('')}
+        <col style="width:140px;">
+      </colgroup>`;
       const headHtml = `<thead>
         <tr>
-          <th style="width:180px; min-width:180px;">User</th>
-          ${MONTHS.map(m => `<th class="num" style="width:110px; min-width:110px;">${m}</th>`).join('')}
-          <th class="num" style="width:130px; min-width:130px; background: var(--primary-light);">Year Total</th>
+          <th>User</th>
+          ${MONTHS.map(m => `<th class="num">${m}</th>`).join('')}
+          <th class="num" style="background: var(--primary-light);">Year Total</th>
         </tr>
       </thead>`;
       const footHtml = `<tfoot>
@@ -274,7 +285,7 @@
           <td class="num" style="background: var(--primary-light); color: var(--primary-dark);">${App.UI.fmt.comma2(grandTotal)}</td>
         </tr>
       </tfoot>`;
-      document.getElementById('renewTable').innerHTML = headHtml + '<tbody>' + bodyHtml + '</tbody>' + footHtml;
+      document.getElementById('renewTable').innerHTML = colgroupHtml + headHtml + '<tbody>' + bodyHtml + '</tbody>' + footHtml;
     }
 
     function copyFromPrev() {

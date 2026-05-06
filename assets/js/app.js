@@ -3,15 +3,16 @@
    ======================================================================== */
 (function () {
   const PAGES = [
-    { id: 'overview',  label: '📊 Overview',        ready: true },
-    { id: 'renew',     label: '🔄 Renew',           ready: false, phase: 'Phase 4' },
-    { id: 'newsell',   label: '✨ New Sell',         ready: false, phase: 'Phase 4' },
-    { id: 'combined',  label: '📈 Combined',        ready: false, phase: 'Phase 4' },
-    { id: 'forecast',  label: '🎯 Forecast',         ready: false, phase: 'Phase 3', star: true },
-    { id: 'pipeline',  label: '📄 Pipeline Detail', ready: true },
-    { id: 'targets',   label: '🎯 Targets',         ready: true },
-    { id: 'teams',     label: '👥 Teams',           ready: true, hideFromNav: true },
-    { id: 'settings',  label: '⚙️ Settings',        ready: true },
+    { id: 'overview',  label: '📊 Overview',        ready: true,  needsFilter: true },
+    { id: 'renew',     label: '🔄 Renew',           ready: false, phase: 'Phase 4', needsFilter: true },
+    { id: 'newsell',   label: '✨ New Sell',         ready: false, phase: 'Phase 4', needsFilter: true },
+    { id: 'combined',  label: '📈 Combined',        ready: false, phase: 'Phase 4', needsFilter: true },
+    { id: 'forecast',  label: '🎯 Forecast',         ready: false, phase: 'Phase 3', star: true, needsFilter: true },
+    { id: 'pipeline',  label: '📄 Pipeline Detail', ready: true,  needsFilter: true },
+    { id: 'targets',   label: '🎯 Targets',         ready: true,  needsFilter: false },
+    { id: 'teams',     label: '👥 Teams',           ready: true,  hideFromNav: true, needsFilter: false },
+    { id: 'statusmap', label: '🏷️ Status Mapping',  ready: true,  hideFromNav: true, needsFilter: false },
+    { id: 'settings',  label: '⚙️ Settings',        ready: true,  needsFilter: false },
   ];
 
   const APP_STATE = {
@@ -46,6 +47,14 @@
     document.querySelectorAll('.tab').forEach(t => {
       t.classList.toggle('active', t.dataset.page === page.id);
     });
+
+    // Show/hide global filter bar based on page
+    const filterBar = document.getElementById('filterBar');
+    if (page.needsFilter && APP_STATE.parsed) {
+      filterBar.classList.remove('hidden');
+    } else {
+      filterBar.classList.add('hidden');
+    }
 
     const main = document.getElementById('main');
     if (!page.ready) {
