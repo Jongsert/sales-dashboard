@@ -115,10 +115,12 @@
         let teamSum = 0;
 
         bodyHtml += `<tr class="team-row">
-          <td colspan="14" style="background: var(--surface-2); padding:6px 12px;">
-            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${teamColor}; margin-right:8px;"></span>
-            <strong>${escapeHtml(teamName)}</strong>
-            <span style="color: var(--text-muted); font-size:11px; margin-left:8px;">${teamUsers.length} users</span>
+          <td colspan="14">
+            <span class="team-banner-inner">
+              <span class="team-color-dot-bn" style="background:${teamColor};"></span>
+              <strong>${escapeHtml(teamName)}</strong>
+              <span class="team-user-count">${teamUsers.length} users</span>
+            </span>
           </td>
         </tr>`;
 
@@ -241,9 +243,11 @@
         let teamSum = 0;
 
         bodyHtml += `<tr class="team-row">
-          <td colspan="14" style="background: var(--surface-2); padding:6px 12px;">
-            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${teamColor}; margin-right:8px;"></span>
-            <strong>${escapeHtml(teamName)}</strong>
+          <td colspan="14">
+            <span class="team-banner-inner">
+              <span class="team-color-dot-bn" style="background:${teamColor};"></span>
+              <strong>${escapeHtml(teamName)}</strong>
+            </span>
           </td>
         </tr>`;
 

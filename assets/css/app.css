@@ -564,18 +564,44 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   font-weight: 500;
   border-right: 1px solid var(--border);
 }
-/* Sticky team-row banner — stays below thead so user always sees current team */
+/* Sticky team-row banner — sticky on top (under thead) AND left (during horizontal scroll).
+   Outer td: sticky-top only (handles vertical scroll).
+   Inner span: sticky-left only (handles horizontal scroll). Browsers handle nested sticky
+   reliably; sticky on a colspanned td has Safari quirks for the left axis. */
 .targets-tbl tbody tr.team-row td {
   position: sticky;
-  top: 32px;   /* aligned with thead height above */
-  left: 0;
+  top: 32px;
   z-index: 6;
   background: var(--surface-2);
-  padding: 8px 12px;
+  padding: 0;
   text-align: left;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border-strong);
   box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+  height: 34px;
+}
+.team-banner-inner {
+  position: sticky;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  z-index: 1;
+  white-space: nowrap;
+}
+.team-banner-inner .team-color-dot-bn {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.team-banner-inner .team-user-count {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+  font-weight: 400;
 }
 .targets-tbl tbody tr.team-total td:first-child,
 .targets-tbl tfoot tr.grand-total td:first-child { background: var(--surface-2); }
