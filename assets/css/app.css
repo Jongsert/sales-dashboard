@@ -506,6 +506,43 @@ a:hover { text-decoration: underline; }
 .tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ========================================================================
+   Targets table
+   ======================================================================== */
+.targets-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.targets-tbl th, .targets-tbl td { padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.targets-tbl thead { position: sticky; top: 0; background: var(--surface); z-index: 5; }
+.targets-tbl th { font-weight: 600; color: var(--text-muted); text-align: right; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid var(--border-strong); }
+.targets-tbl th:first-child { text-align: left; }
+.targets-tbl tbody td { font-variant-numeric: tabular-nums; text-align: right; }
+.targets-tbl tbody td:first-child { text-align: left; font-weight: 500; }
+.targets-tbl input.target-cell {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+}
+.targets-tbl input.target-cell:hover { background: var(--surface-2); border-color: var(--border); }
+.targets-tbl input.target-cell:focus { outline: none; background: var(--primary-50); border-color: var(--primary); }
+.targets-tbl tr.team-total { background: var(--surface-2); }
+.targets-tbl tr.grand-total td { border-top: 2px solid var(--text); padding-top: 10px; padding-bottom: 10px; font-size: 13px; }
+
+/* ========================================================================
+   Pipeline detail table
+   ======================================================================== */
+.pipeline-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 100%; }
+.pipeline-tbl th { font-weight: 600; color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 10px; border-bottom: 2px solid var(--border-strong); white-space: nowrap; text-align: left; user-select: none; position: sticky; top: 0; background: var(--surface-2); z-index: 5; }
+.pipeline-tbl th:hover { background: var(--surface-3); }
+.pipeline-tbl td { padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.pipeline-tbl tr.pipeline-row { cursor: pointer; }
+.pipeline-tbl tr.pipeline-row:hover { background: var(--primary-50); }
+.pipeline-tbl td.num { text-align: right; }
+
+/* ========================================================================
    Empty state / Drop zone
    ======================================================================== */
 .dropzone {

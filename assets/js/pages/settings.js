@@ -42,15 +42,16 @@
       </div>
 
       <div class="section-title">Users &amp; Teams</div>
-      <div class="card">
-        <div class="card-header">
+      <div class="card" style="background: var(--surface-2);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div class="card-title">Sales people</div>
-            <div class="card-subtitle">${(settings.users || []).length} users · auto-synced from uploaded data</div>
+            <strong>${(settings.users || []).length} users · ${(settings.teams || []).length} teams</strong>
+            <div style="color: var(--text-muted); font-size:12px; margin-top:4px;">
+              จัดการ user / team ใน <strong>Teams</strong> tab
+            </div>
           </div>
-          <button class="btn btn-sm" id="addUserBtn">+ Add user</button>
+          <a href="#/teams" class="btn">Open Teams →</a>
         </div>
-        <div id="usersTable"></div>
       </div>
 
       <div class="section-title">UI Preferences</div>
@@ -79,7 +80,6 @@
 
     renderStorageSize();
     renderStatusMapTable();
-    renderUsersTable();
 
     // Wire up actions
     document.getElementById('exportBtn').addEventListener('click', () => {
@@ -117,7 +117,6 @@
         App.UI.toast('Status mapping reset', 'success');
       });
     });
-    document.getElementById('addUserBtn').addEventListener('click', () => addUser(container, parsed));
     document.getElementById('diffEnabled').addEventListener('change', (e) => {
       App.Settings.set('uiPreferences.diffViewEnabled', e.target.checked);
     });

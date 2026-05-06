@@ -17,6 +17,9 @@
       // Sales people (auto-populated from data + user-added)
       users: [],   // [{ name: 'Sutasinee', team: 'Inside', active: true }]
 
+      // Teams (with colors + display order)
+      teams: [],   // [{ name: 'Inside', color: '#3b82f6', order: 1 }]
+
       // Manual New Sell targets per year per user per month
       // newSellTargets[year][userName] = [12 monthly values]
       newSellTargets: {},
@@ -197,11 +200,9 @@
   function syncUsersFromDeals(deals) {
     const s = load();
     const seen = new Set(s.users.map(u => u.name));
-    const teamLookup = {};
     deals.forEach(d => {
       if (d.responsible && !seen.has(d.responsible)) {
         seen.add(d.responsible);
-        teamLookup[d.responsible] = d.team || 'Unassigned';
         s.users.push({
           name: d.responsible,
           team: d.team || 'Unassigned',
@@ -209,7 +210,67 @@
         });
       }
     });
+    // Also sync teams: any team referenced by a user that isn't yet in teams[] gets added
+    const knownTeams = new Set(s.teams.map(t => t.name));
+    const presentTeams = new Set(s.users.map(u => u.team).filter(Boolean));
+    presentTeams.forEach(name => {
+      if (!knownTeams.has(name)) {
+        s.teams.push({
+          name,
+          color: defaultTeamColor(s.teams.length),
+          order: s.teams.length + 1,
+        });
+        knownTeams.add(name);
+      }
+    });
     save();
+  }
+
+  function defaultTeamColor(idx) {
+    const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16'];
+    return palette[idx % palette.length];
+  }
+
+  /* ----- Team management ----- */
+  function addTeam(name, color) {
+    const s = load();
+    if (s.teams.find(t => t.name === name)) return false;
+    s.teams.push({ name, color: color || defaultTeamColor(s.teams.length), order: s.teams.length + 1 });
+    save();
+    return true;
+  }
+  function updateTeam(oldName, updates) {
+    const s = load();
+    const t = s.teams.find(t => t.name === oldName);
+    if (!t) return false;
+    if (updates.name && updates.name !== oldName) {
+      // Cascade name change to users
+      s.users.forEach(u => { if (u.team === oldName) u.team = updates.name; });
+      t.name = updates.name;
+    }
+    if (updates.color) t.color = updates.color;
+    if (typeof updates.order === 'number') t.order = updates.order;
+    save();
+    return true;
+  }
+  function deleteTeam(name) {
+    const s = load();
+    s.teams = s.teams.filter(t => t.name !== name);
+    // Move members to Unassigned
+    s.users.forEach(u => { if (u.team === name) u.team = 'Unassigned'; });
+    save();
+  }
+  function moveUserToTeam(userName, teamName) {
+    const s = load();
+    const u = s.users.find(u => u.name === userName);
+    if (u) {
+      u.team = teamName;
+      // Auto-create team if not in teams[]
+      if (teamName && !s.teams.find(t => t.name === teamName) && teamName !== 'Unassigned') {
+        s.teams.push({ name: teamName, color: defaultTeamColor(s.teams.length), order: s.teams.length + 1 });
+      }
+      save();
+    }
   }
 
   /* ----- Targets API ----- */
@@ -276,6 +337,7 @@
     exportToFile, importFromObject,
     recordSnapshot,
     addUser, syncUsersFromDeals,
+    addTeam, updateTeam, deleteTeam, moveUserToTeam, defaultTeamColor,
     getNewSellTarget, setNewSellTarget,
     getSalesForecast, setSalesForecast,
     getRenewalEstimate, setRenewalEstimateMultiplier, setRenewalEstimateMonthOverride,

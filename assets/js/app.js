@@ -8,8 +8,9 @@
     { id: 'newsell',   label: '✨ New Sell',         ready: false, phase: 'Phase 4' },
     { id: 'combined',  label: '📈 Combined',        ready: false, phase: 'Phase 4' },
     { id: 'forecast',  label: '🎯 Forecast',         ready: false, phase: 'Phase 3', star: true },
-    { id: 'pipeline',  label: '📄 Pipeline Detail', ready: false, phase: 'Phase 2' },
-    { id: 'targets',   label: '⚙️ Targets',         ready: false, phase: 'Phase 2' },
+    { id: 'pipeline',  label: '📄 Pipeline Detail', ready: true },
+    { id: 'targets',   label: '🎯 Targets',         ready: true },
+    { id: 'teams',     label: '👥 Teams',           ready: true },
     { id: 'settings',  label: '⚙️ Settings',        ready: true },
   ];
 
