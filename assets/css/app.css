@@ -100,6 +100,15 @@ a:hover { text-decoration: underline; }
   z-index: 100;
   height: var(--topbar-height);
 }
+.brand,
+.brand:hover,
+.brand:focus,
+.brand:visited,
+.brand:active,
+.brand *,
+.brand:hover * {
+  text-decoration: none !important;
+}
 .brand {
   display: flex;
   align-items: center;
@@ -108,11 +117,10 @@ a:hover { text-decoration: underline; }
   font-size: 16px;
   letter-spacing: -0.01em;
   color: var(--text);
-  text-decoration: none;
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.brand:hover { opacity: 0.85; text-decoration: none; }
+.brand:hover { opacity: 0.82; }
 .brand-icon {
   width: 30px;
   height: 30px;
@@ -576,20 +584,21 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   font-weight: 500;
   border-right: 1px solid var(--border);
 }
-/* Sticky team-row banner — sticky on top (under thead) AND left (during horizontal scroll).
-   Outer td: sticky-top only (handles vertical scroll).
-   Inner span: sticky-left only (handles horizontal scroll). Browsers handle nested sticky
-   reliably; sticky on a colspanned td has Safari quirks for the left axis. */
+/* Sticky team-row banner.
+   Outer td is sticky-top (handles vertical scroll) and sticky-left (handles horizontal scroll).
+   Inner span is also sticky-left so the team name itself stays anchored at the left edge
+   of the scroll viewport even when colspanned td extends across the full width.
+   This double-sticky pattern works reliably in Safari/Chrome/Firefox. */
 .targets-tbl tbody tr.team-row td {
   position: sticky;
   top: 32px;
+  left: 0;
   z-index: 6;
   background: var(--surface-2);
   padding: 0;
   text-align: left;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border-strong);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
   height: 34px;
 }
 .team-banner-inner {
@@ -599,8 +608,8 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  z-index: 1;
   white-space: nowrap;
+  font-weight: 600;
 }
 .team-banner-inner .team-color-dot-bn {
   display: inline-block;
@@ -612,8 +621,8 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .team-banner-inner .team-user-count {
   color: var(--text-muted);
   font-size: 11px;
-  margin-left: 4px;
   font-weight: 400;
+  margin-left: 4px;
 }
 .targets-tbl tbody tr.team-total td:first-child,
 .targets-tbl tfoot tr.grand-total td:first-child { background: var(--surface-2); }
