@@ -132,30 +132,101 @@
     return total;
   }
 
+  /* Sum manual New Sell targets (from Targets page) for current filter (period + team + user) */
+  function computeNewSellTargetSum() {
+    const settings = App.Settings.load();
+    const targets = settings.newSellTargets || {};
+    const usersList = settings.users || [];
+    const F = App.Filters.STATE;
+    const from = F.period.from, to = F.period.to;
+
+    const userTeamMap = {};
+    usersList.forEach(u => userTeamMap[u.name] = u.team || 'Unassigned');
+
+    function userPasses(userName) {
+      if (F.user.size > 0 && !F.user.has(userName)) return false;
+      if (F.team.size > 0 && !F.team.has(userTeamMap[userName] || 'Unassigned')) return false;
+      return true;
+    }
+
+    let total = 0;
+    Object.keys(targets).forEach(yearStr => {
+      const year = parseInt(yearStr);
+      if (from && year < from.getFullYear()) return;
+      if (to && year > to.getFullYear()) return;
+      Object.entries(targets[yearStr]).forEach(([userName, arr]) => {
+        if (!userPasses(userName)) return;
+        if (!Array.isArray(arr)) return;
+        arr.forEach((v, idx) => {
+          const monthStart = new Date(year, idx, 1);
+          const monthEnd = new Date(year, idx + 1, 0, 23, 59, 59);
+          if (from && monthEnd < from) return;
+          if (to && monthStart > to) return;
+          total += v || 0;
+        });
+      });
+    });
+    return total;
+  }
+
   function renderKPIs(deals) {
     const M = F().Matchers;
     const renewTargetSum = aggregate(deals, M.isRenew, d => d.renewTarget || 0);
+    const newSellTargetSum = computeNewSellTargetSum();
+    const totalTargetSum = renewTargetSum + newSellTargetSum;
+
     const wonRenewSum = aggregate(deals, d => M.isRenew(d) && M.won(d), d => d.income);
     const wonNewSum = aggregate(deals, d => F().NEW_TYPES.has(d.dealType) && M.won(d), d => d.income);
-    const wonAllSum = aggregate(deals, M.won, d => d.income);
+    const wonAllSum = wonRenewSum + wonNewSum;
     const openRenewSum = aggregate(deals, d => M.isRenew(d) && M.open(d), d => d.income);
     const wonCount = deals.filter(M.won).length;
     const closedCount = deals.filter(M.closed).length;
     const winRate = closedCount > 0 ? wonCount / closedCount : 0;
-    const achievement = renewTargetSum > 0 ? wonRenewSum / renewTargetSum : 0;
+    const totalAchievement = totalTargetSum > 0 ? wonAllSum / totalTargetSum : 0;
+    const renewAchievement = renewTargetSum > 0 ? wonRenewSum / renewTargetSum : 0;
+    const newAchievement = newSellTargetSum > 0 ? wonNewSum / newSellTargetSum : 0;
     const renewCoverage = renewTargetSum > 0 ? openRenewSum / renewTargetSum : 0;
 
+    const renewDeals = deals.filter(M.isRenew).length;
+    const newDeals = deals.filter(d => F().NEW_TYPES.has(d.dealType)).length;
+    const newSellTargetSet = newSellTargetSum > 0;
+
     const kpis = [
-      { cls: 'target',   icon: '🎯', label: 'Renew Target',   value: fmt().THBFull(renewTargetSum), sub: `${deals.filter(M.isRenew).length.toLocaleString()} deals` },
-      { cls: 'won',      icon: '🏆', label: 'Won — Total',    value: fmt().THBFull(wonAllSum),      sub: `${wonCount.toLocaleString()} deals` },
-      { cls: 'renew',    icon: '🔄', label: 'Won — Renew',    value: fmt().THBFull(wonRenewSum),    sub: `${deals.filter(d => M.isRenew(d) && M.won(d)).length.toLocaleString()} deals` },
-      { cls: 'new',      icon: '✨', label: 'Won — New',      value: fmt().THBFull(wonNewSum),      sub: `${deals.filter(d => F().NEW_TYPES.has(d.dealType) && M.won(d)).length.toLocaleString()} deals` },
-      { cls: 'pct',      icon: '📈', label: 'Achievement %',  value: fmt().pct(achievement),        sub: 'Won Renew ÷ Renew Target' },
-      { cls: 'rate',     icon: '⚡', label: 'Win Rate',        value: fmt().pct(winRate),            sub: `${wonCount} won / ${closedCount} closed` },
-      { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage', value: fmt().pct(renewCoverage),      sub: `Open Renew ${fmt().THB(openRenewSum)} ÷ Target` },
+      // Big picture (row 1)
+      { cls: 'target', primary: true, icon: '🎯', label: 'Total Target',
+        value: fmt().THBFull(totalTargetSum),
+        sub: `Renew ${fmt().THB(renewTargetSum)} + New ${fmt().THB(newSellTargetSum)}` },
+      { cls: 'won', primary: true, icon: '🏆', label: 'Won — Total',
+        value: fmt().THBFull(wonAllSum),
+        sub: `${wonCount.toLocaleString()} deals` },
+      { cls: 'pct', primary: true, icon: '📈', label: 'Total Achievement %',
+        value: fmt().pct(totalAchievement),
+        sub: `Won ${fmt().THB(wonAllSum)} ÷ Target ${fmt().THB(totalTargetSum)}` },
+
+      // Renew (row 2)
+      { cls: 'renew', icon: '🔄', label: 'Renew Target',
+        value: fmt().THBFull(renewTargetSum),
+        sub: `${renewDeals.toLocaleString()} deals` },
+      { cls: 'renew', icon: '🔄', label: 'Won — Renew',
+        value: fmt().THBFull(wonRenewSum),
+        sub: `${fmt().pct(renewAchievement)} of Renew Target` },
+      { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage',
+        value: fmt().pct(renewCoverage),
+        sub: `Open Renew ${fmt().THB(openRenewSum)}` },
+
+      // New (row 3)
+      { cls: 'new', icon: '✨', label: 'New Sell Target',
+        value: fmt().THBFull(newSellTargetSum),
+        sub: newSellTargetSet ? 'Manual (from Targets)' : '⚠️ Not set — open Targets page' },
+      { cls: 'new', icon: '✨', label: 'Won — New',
+        value: fmt().THBFull(wonNewSum),
+        sub: newSellTargetSet ? `${fmt().pct(newAchievement)} of New Target` : `${newDeals.toLocaleString()} deals in scope` },
+      { cls: 'rate', icon: '⚡', label: 'Win Rate',
+        value: fmt().pct(winRate),
+        sub: `${wonCount} won / ${closedCount} closed` },
     ];
     document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
-      <div class="kpi-card ${k.cls}">
+      <div class="kpi-card ${k.cls}${k.primary ? ' kpi-primary' : ''}">
         <div class="kpi-label"><span>${k.icon}</span>${k.label}</div>
         <div class="kpi-value">${k.value}</div>
         <div class="kpi-meta"><span>${k.sub}</span></div>

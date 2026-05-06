@@ -437,9 +437,16 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
    ======================================================================== */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
+.kpi-card.kpi-primary {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+  border-width: 1px;
+  box-shadow: var(--shadow-md);
+}
+.kpi-card.kpi-primary::before { height: 5px; }
+.kpi-card.kpi-primary .kpi-value { font-size: 26px; }
 .kpi-card {
   background: var(--surface);
   border: 1px solid var(--border);
