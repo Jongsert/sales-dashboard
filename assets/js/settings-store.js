@@ -241,8 +241,12 @@
   }
   function updateTeam(oldName, updates) {
     const s = load();
-    const t = s.teams.find(t => t.name === oldName);
-    if (!t) return false;
+    let t = s.teams.find(t => t.name === oldName);
+    // Auto-create team if not yet in teams[] (e.g., team came from data only)
+    if (!t) {
+      t = { name: oldName, color: defaultTeamColor(s.teams.length), order: s.teams.length + 1 };
+      s.teams.push(t);
+    }
     if (updates.name && updates.name !== oldName) {
       // Cascade name change to users
       s.users.forEach(u => { if (u.team === oldName) u.team = updates.name; });
@@ -252,6 +256,20 @@
     if (typeof updates.order === 'number') t.order = updates.order;
     save();
     return true;
+  }
+
+  /* ----- Reset team mappings: re-read user→team from current deal data ----- */
+  function resetUserTeams(deals) {
+    const s = load();
+    if (!deals || !deals.length) return;
+    const fromData = {};
+    deals.forEach(d => {
+      if (d.responsible) fromData[d.responsible] = d.team || 'Unassigned';
+    });
+    s.users.forEach(u => {
+      if (fromData[u.name]) u.team = fromData[u.name];
+    });
+    save();
   }
   function deleteTeam(name) {
     const s = load();
@@ -337,7 +355,7 @@
     exportToFile, importFromObject,
     recordSnapshot,
     addUser, syncUsersFromDeals,
-    addTeam, updateTeam, deleteTeam, moveUserToTeam, defaultTeamColor,
+    addTeam, updateTeam, deleteTeam, moveUserToTeam, defaultTeamColor, resetUserTeams,
     getNewSellTarget, setNewSellTarget,
     getSalesForecast, setSalesForecast,
     getRenewalEstimate, setRenewalEstimateMultiplier, setRenewalEstimateMonthOverride,

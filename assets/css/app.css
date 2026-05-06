@@ -382,6 +382,11 @@ a:hover { text-decoration: underline; }
   margin: 0 auto;
 }
 .section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
@@ -390,7 +395,23 @@ a:hover { text-decoration: underline; }
   margin: 22px 4px 10px;
 }
 .section-title:first-child { margin-top: 0; }
-.section-title .actions { float: right; font-size: 12px; text-transform: none; letter-spacing: normal; }
+.section-title .actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Hide number-input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
 /* ========================================================================
    Cards
@@ -508,15 +529,16 @@ a:hover { text-decoration: underline; }
 /* ========================================================================
    Targets table
    ======================================================================== */
-.targets-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
-.targets-tbl th, .targets-tbl td { padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.targets-tbl { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.targets-tbl th, .targets-tbl td { padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .targets-tbl thead { position: sticky; top: 0; background: var(--surface); z-index: 5; }
 .targets-tbl th { font-weight: 600; color: var(--text-muted); text-align: right; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid var(--border-strong); }
 .targets-tbl th:first-child { text-align: left; }
 .targets-tbl tbody td { font-variant-numeric: tabular-nums; text-align: right; }
 .targets-tbl tbody td:first-child { text-align: left; font-weight: 500; }
+.targets-tbl tbody td.user-total { font-weight: 700; background: var(--primary-light); }
 .targets-tbl input.target-cell {
-  width: 70px;
+  width: 100%;
   padding: 4px 6px;
   border: 1px solid transparent;
   border-radius: 4px;
@@ -525,11 +547,12 @@ a:hover { text-decoration: underline; }
   text-align: right;
   font-variant-numeric: tabular-nums;
   background: transparent;
+  box-sizing: border-box;
 }
 .targets-tbl input.target-cell:hover { background: var(--surface-2); border-color: var(--border); }
 .targets-tbl input.target-cell:focus { outline: none; background: var(--primary-50); border-color: var(--primary); }
-.targets-tbl tr.team-total { background: var(--surface-2); }
-.targets-tbl tr.grand-total td { border-top: 2px solid var(--text); padding-top: 10px; padding-bottom: 10px; font-size: 13px; }
+.targets-tbl tr.team-total td { background: var(--surface-2); font-weight: 600; }
+.targets-tbl tfoot tr.grand-total td { border-top: 2px solid var(--text); padding-top: 10px; padding-bottom: 10px; font-size: 13px; font-weight: 800; }
 
 /* ========================================================================
    Pipeline detail table

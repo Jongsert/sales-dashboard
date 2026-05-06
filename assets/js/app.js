@@ -10,7 +10,7 @@
     { id: 'forecast',  label: '🎯 Forecast',         ready: false, phase: 'Phase 3', star: true },
     { id: 'pipeline',  label: '📄 Pipeline Detail', ready: true },
     { id: 'targets',   label: '🎯 Targets',         ready: true },
-    { id: 'teams',     label: '👥 Teams',           ready: true },
+    { id: 'teams',     label: '👥 Teams',           ready: true, hideFromNav: true },
     { id: 'settings',  label: '⚙️ Settings',        ready: true },
   ];
 
@@ -22,7 +22,7 @@
   /* ----- Render top tabs ----- */
   function renderTabs() {
     const nav = document.getElementById('tabnav');
-    nav.innerHTML = PAGES.map(p => `
+    nav.innerHTML = PAGES.filter(p => !p.hideFromNav).map(p => `
       <button class="tab" data-page="${p.id}">
         ${p.label}
         ${p.star ? '<span class="tab-badge">★</span>' : ''}

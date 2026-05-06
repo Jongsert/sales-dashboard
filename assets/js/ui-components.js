@@ -180,29 +180,37 @@
     return { close, el: backdrop };
   }
 
-  /* ----- Confirm dialog ----- */
+  /* ----- Confirm dialog (supports HTML message + cancel callback) ----- */
   function confirm(message, onConfirm, onCancel) {
     const m = modal({
       title: 'Confirm',
-      body: `<p style="font-size:14px; padding: 8px 0;">${message}</p>`,
+      body: `<div style="font-size:14px; padding: 8px 0;">${message}</div>`,
       footer: ' ',
     });
+    let cancelled = false;
     const footer = m.el.querySelector('.modal-footer');
     footer.innerHTML = '';
     const cancelBtn = document.createElement('button');
     cancelBtn.className = 'btn';
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.addEventListener('click', () => { m.close(); onCancel && onCancel(); });
+    cancelBtn.addEventListener('click', () => { cancelled = true; m.close(); onCancel && onCancel(); });
     const okBtn = document.createElement('button');
     okBtn.className = 'btn btn-primary';
-    okBtn.textContent = 'OK';
+    okBtn.textContent = 'Confirm';
     okBtn.addEventListener('click', () => { m.close(); onConfirm && onConfirm(); });
     footer.appendChild(cancelBtn);
     footer.appendChild(okBtn);
+    // If user clicks backdrop or X to close — treat as cancel
+    const origClose = m.close;
+    m.close = () => {
+      origClose();
+      if (!cancelled) { cancelled = true; /* don't double-fire — don't call onCancel here unless we know it was a backdrop close */ }
+    };
   }
 
   /* ----- Number formatting ----- */
   const formatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const formatter2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   function fmtTHB(n) {
     if (!isFinite(n)) return '—';
@@ -215,6 +223,14 @@
   function fmtTHBFull(n) {
     if (!isFinite(n)) return '—';
     return 'THB ' + formatter.format(Math.round(n));
+  }
+  function fmtComma(n) {
+    if (!isFinite(n)) return '—';
+    return formatter.format(Math.round(n));
+  }
+  function fmtComma2(n) {
+    if (!isFinite(n)) return '—';
+    return formatter2.format(n);
   }
   function fmtPct(n, digits = 1) {
     if (!isFinite(n)) return '—';
@@ -236,6 +252,6 @@
     buildMultiSelect,
     modal,
     confirm,
-    fmt: { THB: fmtTHB, THBFull: fmtTHBFull, pct: fmtPct, int: fmtInt, date: fmtDate },
+    fmt: { THB: fmtTHB, THBFull: fmtTHBFull, comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate },
   };
 })();

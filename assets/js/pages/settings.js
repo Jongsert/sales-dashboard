@@ -43,14 +43,14 @@
 
       <div class="section-title">Users &amp; Teams</div>
       <div class="card" style="background: var(--surface-2);">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div>
             <strong>${(settings.users || []).length} users · ${(settings.teams || []).length} teams</strong>
             <div style="color: var(--text-muted); font-size:12px; margin-top:4px;">
-              จัดการ user / team ใน <strong>Teams</strong> tab
+              ระบบ auto-detect user จาก Bitrix file ที่ import มา · กดเปิดเพื่อ map team
             </div>
           </div>
-          <a href="#/teams" class="btn">Open Teams →</a>
+          <button class="btn btn-primary" id="openTeamsBtn">👥 Manage Teams &amp; Users →</button>
         </div>
       </div>
 
@@ -116,6 +116,9 @@
         render(container, parsed);
         App.UI.toast('Status mapping reset', 'success');
       });
+    });
+    document.getElementById('openTeamsBtn').addEventListener('click', () => {
+      location.hash = '#/teams';
     });
     document.getElementById('diffEnabled').addEventListener('change', (e) => {
       App.Settings.set('uiPreferences.diffViewEnabled', e.target.checked);
