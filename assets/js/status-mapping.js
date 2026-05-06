@@ -43,11 +43,11 @@
   const STATUS_LIST = ['Won', 'Commit', 'Upside', 'Open', 'Lost'];
 
   const STATUS_COLORS = {
-    Won:    { fill: '#10b981', light: '#d1fae5' },
-    Commit: { fill: '#4f46e5', light: '#e0e7ff' },
-    Upside: { fill: '#06b6d4', light: '#cffafe' },
-    Open:   { fill: '#94a3b8', light: '#f1f5f9' },
-    Lost:   { fill: '#ef4444', light: '#fee2e2' },
+    Won:    { fill: '#259b24', light: '#c5e1a5' },   // dark green — final positive
+    Commit: { fill: '#9ccc65', light: '#dcedc8' },   // light green — near-win
+    Upside: { fill: '#f97316', light: '#ffedd5' },   // orange — potential
+    Open:   { fill: '#3b82f6', light: '#dbeafe' },   // blue — neutral / in pipeline
+    Lost:   { fill: '#ef4444', light: '#fee2e2' },   // red — final negative
   };
 
   // Resolve a stage to status, with substring fallback for unknown stages

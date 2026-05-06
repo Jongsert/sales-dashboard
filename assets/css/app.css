@@ -25,15 +25,15 @@
   --primary-dark: #1d4ed8;
   --primary-50: #eff6ff;
 
-  /* Status (5-status palette) */
-  --won: #10b981;
-  --won-light: #d1fae5;
-  --commit: #4f46e5;
-  --commit-light: #e0e7ff;
-  --upside: #06b6d4;
-  --upside-light: #cffafe;
-  --open: #94a3b8;
-  --open-light: #f1f5f9;
+  /* Status (5-status palette) — Won=dark green, Commit=light green, Upside=orange, Open=blue, Lost=red */
+  --won: #259b24;
+  --won-light: #c5e1a5;
+  --commit: #9ccc65;
+  --commit-light: #dcedc8;
+  --upside: #f97316;
+  --upside-light: #ffedd5;
+  --open: #3b82f6;
+  --open-light: #dbeafe;
   --lost: #ef4444;
   --lost-light: #fee2e2;
 
@@ -341,6 +341,21 @@ a:hover { text-decoration: underline; }
 }
 .ms-option:hover { background: var(--surface-2); }
 .ms-option input { margin: 0; cursor: pointer; }
+.ms-group-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 12px 4px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  margin-top: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.ms-group-header:first-child { margin-top: 0; }
 .ms-actions {
   border-top: 1px solid var(--border);
   padding: 6px 8px;

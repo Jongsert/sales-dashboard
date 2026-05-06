@@ -126,6 +126,12 @@
 
     container.querySelector('#resetFiltersBtn').addEventListener('click', () => {
       ['team', 'user', 'pipeline', 'dealType', 'productType', 'status'].forEach(k => STATE[k].clear());
+      // Restore User dropdown to show ALL users (since team cleared)
+      if (STATE.msHandles.user && STATE.allDeals) {
+        const allUsers = Array.from(new Set(STATE.allDeals.map(d => d.responsible).filter(Boolean)))
+          .sort((a, b) => String(a).localeCompare(String(b)));
+        STATE.msHandles.user.setOptions(allUsers);
+      }
       Object.values(STATE.msHandles).forEach(h => h && h.rerender());
       container.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === 'year'));
       applyPreset('year');
@@ -139,24 +145,71 @@
 
   /* ----- Re-build multi-select option lists from current data ----- */
   function refreshMultiSelects(deals, onChange) {
-    function uniques(key) {
+    STATE.allDeals = deals;
+    function uniques(rows, key) {
       const set = new Set();
-      deals.forEach(d => { if (d[key]) set.add(d[key]); });
+      rows.forEach(d => { if (d[key]) set.add(d[key]); });
       return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
     }
-    const keys = {
-      team: uniques('team'),
-      user: uniques('responsible'),
-      pipeline: uniques('pipeline'),
-      dealType: uniques('dealType'),
-      productType: uniques('productType'),
-      status: ['Won', 'Commit', 'Upside', 'Open', 'Lost'],
-    };
-    Object.entries(keys).forEach(([key, options]) => {
+
+    // User options depend on Team selection (cascade)
+    function getUserOptions() {
+      if (STATE.team.size === 0) return uniques(deals, 'responsible');
+      const inTeam = deals.filter(d => STATE.team.has(d.team));
+      return uniques(inTeam, 'responsible');
+    }
+
+    // Team filter — special: also refresh User options on change
+    const teamEl = document.querySelector('[data-filter="team"]');
+    STATE.msHandles.team = App.UI.buildMultiSelect(
+      teamEl,
+      uniques(deals, 'team'),
+      STATE.team,
+      () => {
+        // Recompute User options based on selected teams
+        const newUserOpts = getUserOptions();
+        if (STATE.msHandles.user) {
+          STATE.msHandles.user.setOptions(newUserOpts);
+          // Drop any selected users that are no longer valid
+          Array.from(STATE.user).forEach(u => {
+            if (!newUserOpts.includes(u)) STATE.user.delete(u);
+          });
+          STATE.msHandles.user.rerender();
+        }
+        onChange && onChange();
+      }
+    );
+
+    // User
+    const userEl = document.querySelector('[data-filter="user"]');
+    STATE.msHandles.user = App.UI.buildMultiSelect(
+      userEl, getUserOptions(), STATE.user, () => onChange && onChange()
+    );
+
+    // Pipeline / Product Type — flat, alphabetical
+    [['pipeline', 'pipeline'], ['productType', 'productType']].forEach(([key, field]) => {
       const el = document.querySelector(`[data-filter="${key}"]`);
       if (!el) return;
-      STATE.msHandles[key] = App.UI.buildMultiSelect(el, options, STATE[key], () => onChange && onChange());
+      STATE.msHandles[key] = App.UI.buildMultiSelect(
+        el, uniques(deals, field), STATE[key], () => onChange && onChange()
+      );
     });
+
+    // Deal Type — grouped: New (New Sell, Up sell, Cross sell) / Renew (Re-New Same, MACD, Up sell, Decrease) / Other
+    const dealTypeEl = document.querySelector('[data-filter="dealType"]');
+    if (dealTypeEl) {
+      STATE.msHandles.dealType = App.UI.buildMultiSelect(
+        dealTypeEl, buildDealTypeOptions(deals), STATE.dealType, () => onChange && onChange()
+      );
+    }
+
+    // Status (fixed list)
+    const statusEl = document.querySelector('[data-filter="status"]');
+    if (statusEl) {
+      STATE.msHandles.status = App.UI.buildMultiSelect(
+        statusEl, ['Won', 'Commit', 'Upside', 'Open', 'Lost'], STATE.status, () => onChange && onChange()
+      );
+    }
   }
 
   /* ----- Apply current filter state to a deal array ----- */
@@ -268,8 +321,35 @@
 
   /* ----- Common matchers ----- */
   const RENEW_PIPES = new Set(['Subscription Renew', 'Auto Renew']);
-  const RENEW_TYPES = new Set(['Re-New Same', 'Re-New MACD', 'Re-New Up sell', 'Re-New Decrease']);
-  const NEW_TYPES = new Set(['New Sell', 'Up sell', 'Cross sell']);
+  const NEW_TYPES_ORDER = ['New Sell', 'Up sell', 'Cross sell'];
+  const RENEW_TYPES_ORDER = ['Re-New Same', 'Re-New MACD', 'Re-New Up sell', 'Re-New Decrease'];
+  const RENEW_TYPES = new Set(RENEW_TYPES_ORDER);
+  const NEW_TYPES = new Set(NEW_TYPES_ORDER);
+
+  /* ----- Build grouped Deal Type options (preserves intentional order) ----- */
+  function buildDealTypeOptions(deals) {
+    const present = new Set();
+    deals.forEach(d => { if (d.dealType) present.add(d.dealType); });
+    const newItems = NEW_TYPES_ORDER.filter(t => present.has(t));
+    const renewItems = RENEW_TYPES_ORDER.filter(t => present.has(t));
+    const otherItems = Array.from(present)
+      .filter(t => !NEW_TYPES.has(t) && !RENEW_TYPES.has(t))
+      .sort((a, b) => String(a).localeCompare(String(b)));
+    const result = [];
+    if (newItems.length) {
+      result.push({ _group: 'New' });
+      result.push(...newItems);
+    }
+    if (renewItems.length) {
+      result.push({ _group: 'Renew' });
+      result.push(...renewItems);
+    }
+    if (otherItems.length) {
+      result.push({ _group: 'Other' });
+      result.push(...otherItems);
+    }
+    return result;
+  }
 
   const Matchers = {
     isRenew: (d) => RENEW_PIPES.has(d.pipeline) && RENEW_TYPES.has(d.dealType),

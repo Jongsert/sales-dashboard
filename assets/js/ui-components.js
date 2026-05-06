@@ -45,26 +45,45 @@
     function renderOptions(filterText = '') {
       const ft = filterText.toLowerCase();
       optsEl.innerHTML = '';
-      options
-        .filter(o => !ft || String(o).toLowerCase().includes(ft))
-        .forEach(opt => {
-          const lbl = document.createElement('label');
-          lbl.className = 'ms-option';
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = selectedSet.has(opt);
-          cb.addEventListener('change', () => {
-            if (cb.checked) selectedSet.add(opt);
-            else selectedSet.delete(opt);
-            updateTrigger();
-            onChange && onChange(selectedSet);
-          });
-          const span = document.createElement('span');
-          span.textContent = opt;
-          lbl.appendChild(cb);
-          lbl.appendChild(span);
-          optsEl.appendChild(lbl);
+      // Walk through options; only emit a group header if it has visible items.
+      const filtered = [];
+      let pendingGroup = null;
+      for (const opt of options) {
+        if (typeof opt === 'object' && opt && opt._group) {
+          pendingGroup = opt;
+        } else {
+          const matches = !ft || String(opt).toLowerCase().includes(ft);
+          if (matches) {
+            if (pendingGroup) { filtered.push(pendingGroup); pendingGroup = null; }
+            filtered.push(opt);
+          }
+        }
+      }
+      filtered.forEach(opt => {
+        if (typeof opt === 'object' && opt && opt._group) {
+          const hdr = document.createElement('div');
+          hdr.className = 'ms-group-header';
+          hdr.textContent = opt._group;
+          optsEl.appendChild(hdr);
+          return;
+        }
+        const lbl = document.createElement('label');
+        lbl.className = 'ms-option';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = selectedSet.has(opt);
+        cb.addEventListener('change', () => {
+          if (cb.checked) selectedSet.add(opt);
+          else selectedSet.delete(opt);
+          updateTrigger();
+          onChange && onChange(selectedSet);
         });
+        const span = document.createElement('span');
+        span.textContent = opt;
+        lbl.appendChild(cb);
+        lbl.appendChild(span);
+        optsEl.appendChild(lbl);
+      });
     }
 
     function updateTrigger() {
@@ -93,8 +112,15 @@
     search.addEventListener('input', () => renderOptions(search.value));
     panel.querySelectorAll('[data-act]').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (btn.dataset.act === 'all') options.forEach(o => selectedSet.add(o));
-        else selectedSet.clear();
+        if (btn.dataset.act === 'all') {
+          // Skip group markers when bulk-adding
+          options.forEach(o => {
+            if (typeof o === 'object' && o && o._group) return;
+            selectedSet.add(o);
+          });
+        } else {
+          selectedSet.clear();
+        }
         renderOptions(search.value);
         updateTrigger();
         onChange && onChange(selectedSet);

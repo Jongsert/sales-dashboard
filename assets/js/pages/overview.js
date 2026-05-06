@@ -56,10 +56,10 @@
             <div class="card-subtitle">Expected close date · ค่าใน chart รวมทุก deal</div>
           </div>
           <div class="legend-row">
-            <span class="legend-item"><span class="legend-swatch" style="background:#10b981"></span>Won</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:#4f46e5"></span>Commit</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:#06b6d4"></span>Upside</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:#94a3b8"></span>Open</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#259b24"></span>Won</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#9ccc65"></span>Commit</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#f97316"></span>Upside</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#3b82f6"></span>Open</span>
             <span class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>Lost</span>
           </div>
         </div>
