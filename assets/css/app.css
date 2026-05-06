@@ -584,45 +584,51 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   font-weight: 500;
   border-right: 1px solid var(--border);
 }
-/* Sticky team-row banner.
-   Outer td is sticky-top (handles vertical scroll) and sticky-left (handles horizontal scroll).
-   Inner span is also sticky-left so the team name itself stays anchored at the left edge
-   of the scroll viewport even when colspanned td extends across the full width.
-   This double-sticky pattern works reliably in Safari/Chrome/Firefox. */
-.targets-tbl tbody tr.team-row td {
+/* Sticky team-row banner — proven approach.
+   Banner is split into TWO tds with NO inner sticky spans:
+   - team-banner-name (colspan=2, ~290px): sticky-top + sticky-left.
+     Holds team color dot + name + user count. Mirrors how regular user-name cells
+     stick to the left, which we know works.
+   - team-banner-spacer (colspan=12): sticky-top only. Just continues bg color when
+     scrolling horizontally.
+   Single-axis sticky on plain (non-content-overflowing) td works reliably across browsers,
+   including Safari, where 2-axis sticky on a colspan=14 td has bugs. */
+.targets-tbl tbody tr.team-row td.team-banner-name {
   position: sticky;
   top: 32px;
   left: 0;
-  z-index: 6;
+  z-index: 7;
   background: var(--surface-2);
-  padding: 0;
+  padding: 8px 12px;
   text-align: left;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border-strong);
-  height: 34px;
-}
-.team-banner-inner {
-  position: sticky;
-  left: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  white-space: nowrap;
   font-weight: 600;
+  white-space: nowrap;
+  border-right: 1px solid var(--border);
 }
-.team-banner-inner .team-color-dot-bn {
+.targets-tbl tbody tr.team-row td.team-banner-spacer {
+  position: sticky;
+  top: 32px;
+  z-index: 5;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
+  padding: 0;
+}
+.team-banner-name .team-color-dot-bn {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  flex: 0 0 auto;
+  margin-right: 8px;
+  vertical-align: middle;
 }
-.team-banner-inner .team-user-count {
+.team-banner-name .team-user-count {
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 400;
-  margin-left: 4px;
+  margin-left: 8px;
 }
 .targets-tbl tbody tr.team-total td:first-child,
 .targets-tbl tfoot tr.grand-total td:first-child { background: var(--surface-2); }

@@ -115,13 +115,12 @@
         let teamSum = 0;
 
         bodyHtml += `<tr class="team-row">
-          <td colspan="14">
-            <span class="team-banner-inner">
-              <span class="team-color-dot-bn" style="background:${teamColor};"></span>
-              <strong>${escapeHtml(teamName)}</strong>
-              <span class="team-user-count">${teamUsers.length} users</span>
-            </span>
+          <td class="team-banner-name" colspan="2">
+            <span class="team-color-dot-bn" style="background:${teamColor};"></span>
+            <strong>${escapeHtml(teamName)}</strong>
+            <span class="team-user-count">${teamUsers.length} users</span>
           </td>
+          <td class="team-banner-spacer" colspan="12"></td>
         </tr>`;
 
         teamUsers.forEach(u => {
@@ -243,12 +242,11 @@
         let teamSum = 0;
 
         bodyHtml += `<tr class="team-row">
-          <td colspan="14">
-            <span class="team-banner-inner">
-              <span class="team-color-dot-bn" style="background:${teamColor};"></span>
-              <strong>${escapeHtml(teamName)}</strong>
-            </span>
+          <td class="team-banner-name" colspan="2">
+            <span class="team-color-dot-bn" style="background:${teamColor};"></span>
+            <strong>${escapeHtml(teamName)}</strong>
           </td>
+          <td class="team-banner-spacer" colspan="12"></td>
         </tr>`;
 
         teamUsers.forEach(({ name, arr }) => {
