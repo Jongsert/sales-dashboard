@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Never commit raw deal data — should be uploaded by user at runtime
+*.xlsx
+*.xls
+*.csv
+DEAL_*
+
+# Personal exported settings (timestamps in filename)
+sales-dashboard-settings_*.json
+sales-dashboard-snapshot_*.json
+sales-dashboard-detail_*.csv
+sales-dashboard-detail_*.xlsx
+
+# Logs / temp
+*.log
+tmp/
+temp/
