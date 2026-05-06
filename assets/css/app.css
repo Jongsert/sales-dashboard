@@ -543,6 +543,8 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   position: sticky;
   top: 0;
   z-index: 5;
+  height: 32px;
+  box-sizing: border-box;
   background: var(--surface-2);
   font-weight: 600;
   color: var(--text-muted);
@@ -562,7 +564,19 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   font-weight: 500;
   border-right: 1px solid var(--border);
 }
-.targets-tbl tbody tr.team-row td { background: var(--surface-2); padding: 6px 12px; text-align: left; }
+/* Sticky team-row banner — stays below thead so user always sees current team */
+.targets-tbl tbody tr.team-row td {
+  position: sticky;
+  top: 32px;   /* aligned with thead height above */
+  left: 0;
+  z-index: 6;
+  background: var(--surface-2);
+  padding: 8px 12px;
+  text-align: left;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
 .targets-tbl tbody tr.team-total td:first-child,
 .targets-tbl tfoot tr.grand-total td:first-child { background: var(--surface-2); }
 .targets-tbl tbody tr.team-total td { background: var(--surface-2); font-weight: 600; }
