@@ -2,11 +2,12 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.4.1';
+  const VERSION = '1.4.2';
   const VERSION_DATE = '2026-05-07';
 
   const PAGES = [
     { id: 'overview',  label: '📊 Overview',        ready: true,  needsFilter: true },
+    { id: 'actions',   label: '🎯 Action Center',   ready: true,  needsFilter: true },
     { id: 'renew',     label: '🔄 Renew',           ready: true,  needsFilter: true },
     { id: 'newsell',   label: '✨ New Sell',         ready: true,  needsFilter: true },
     { id: 'combined',  label: '📈 Combined',        ready: true,  needsFilter: true },
@@ -55,8 +56,10 @@
     const filterBar = document.getElementById('filterBar');
     if (page.needsFilter && APP_STATE.parsed) {
       filterBar.classList.remove('hidden');
+      document.body.classList.add('has-filter');
     } else {
       filterBar.classList.add('hidden');
+      document.body.classList.remove('has-filter');
     }
 
     const main = document.getElementById('main');

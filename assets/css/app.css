@@ -66,9 +66,9 @@
           "Inter", "Noto Sans Thai", "Helvetica Neue", "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
-  --topbar-height: 53px;
+  --topbar-height: 56px;
   --tabnav-height: 44px;
-  --filter-height: 60px;
+  --filter-height: 64px;
 }
 
 /* ----- Dark theme overrides ----- */
@@ -157,9 +157,9 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-
+html { min-height: 100%; }
 body {
+  min-height: 100%;
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
@@ -167,7 +167,11 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Reserve space for fixed top bars (topbar + tabnav). Filter-bar
+     adds extra when visible (toggled via .has-filter on body). */
+  padding-top: calc(var(--topbar-height) + var(--tabnav-height));
 }
+body.has-filter { padding-top: calc(var(--topbar-height) + var(--tabnav-height) + var(--filter-height)); }
 
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; }
@@ -185,8 +189,10 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   height: var(--topbar-height);
 }
@@ -302,8 +308,10 @@ a:hover { text-decoration: underline; }
   display: flex;
   gap: 0;
   overflow-x: auto;
-  position: sticky;
+  position: fixed;
   top: var(--topbar-height);
+  left: 0;
+  right: 0;
   z-index: 95;
   height: var(--tabnav-height);
   scrollbar-width: thin;
@@ -355,9 +363,12 @@ a:hover { text-decoration: underline; }
   flex-wrap: wrap;
   gap: 10px;
   align-items: flex-end;
-  position: sticky;
+  position: fixed;
   top: calc(var(--topbar-height) + var(--tabnav-height));
+  left: 0;
+  right: 0;
   z-index: 90;
+  min-height: var(--filter-height);
 }
 .f-group { display: flex; flex-direction: column; gap: 4px; }
 .f-label {
@@ -649,6 +660,83 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   border-radius: 50%;
   margin-right: 6px;
   vertical-align: middle;
+}
+
+/* Donut center hover overlay — invisible div over the hole capturing
+   mouse hover; native browser tooltip shows exact value. */
+.donut-center-tooltip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 38%;
+  height: 38%;
+  max-width: 140px;
+  max-height: 140px;
+  border-radius: 50%;
+  cursor: help;
+  z-index: 2;
+  background: transparent;
+}
+
+/* Action Center — actionable items grid */
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-faint);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.action-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+  border-left-color: var(--primary);
+}
+.action-card.danger { border-left-color: var(--lost); }
+.action-card.danger:hover { box-shadow: 0 0 0 1px var(--lost-light); }
+.action-card.warning { border-left-color: var(--upside); }
+.action-card.success { border-left-color: var(--won); }
+.action-ico {
+  font-size: 26px;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-body { flex: 1; min-width: 0; }
+.action-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.action-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.action-cta {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.action-card.danger .action-cta {
+  background: var(--lost);
+  color: white;
+  border-color: var(--lost);
+}
+.action-card.danger .action-cta:hover {
+  background: var(--danger);
+  border-color: var(--danger);
 }
 
 /* Auto-insights strip — shown above secondary KPIs on Overview */

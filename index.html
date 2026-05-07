@@ -55,6 +55,7 @@
 <script src="assets/js/snapshot.js"></script>
 <script src="assets/js/filters.js"></script>
 <script src="assets/js/pages/overview.js"></script>
+<script src="assets/js/pages/actions.js"></script>
 <script src="assets/js/pages/renew.js"></script>
 <script src="assets/js/pages/newsell.js"></script>
 <script src="assets/js/pages/combined.js"></script>
@@ -121,12 +122,31 @@ const DonutCenterPlugin = {
       ctx.font = "600 10px 'Sukhumvit Set', 'Inter', sans-serif";
       ctx.fillStyle = '#94a3b8';
       ctx.fillText(labelText.toUpperCase(), cx, cy - 14);
+      // Use theme-aware text color
+      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#0f172a';
       ctx.font = "800 18px 'Sukhumvit Set', 'Inter', sans-serif";
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = textColor;
       ctx.fillText(valueText, cx, cy + 6);
       ctx.restore();
+
+      // Attach an HTML overlay div on the donut hole for hover-tooltip showing exact value.
+      // This gives users the full-precision number on hover.
+      const wrap = chart.canvas && chart.canvas.parentElement;
+      if (wrap) {
+        const cs = getComputedStyle(wrap);
+        if (cs.position === 'static') wrap.style.position = 'relative';
+        let overlay = wrap.querySelector('.donut-center-tooltip');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.className = 'donut-center-tooltip';
+          wrap.appendChild(overlay);
+        }
+        const exact = (window.App && App.UI && App.UI.fmt && App.UI.fmt.THBExact)
+          ? App.UI.fmt.THBExact(total)
+          : String(total);
+        overlay.title = `${labelText}: ${exact}`;
+      }
     } catch (e) {
-      // Never let the plugin break chart rendering
       console.warn('DonutCenterPlugin error:', e);
     }
   },

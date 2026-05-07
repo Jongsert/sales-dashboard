@@ -505,7 +505,7 @@
 
     const body = document.createElement('div');
     body.innerHTML = buildBodyHtml();
-    const m = modal({ title, body, footer: ' ', width: '1100px' });
+    const m = modal({ title, body, footer: ' ', width: '1320px' });
 
     function rebind() {
       // Sort headers
