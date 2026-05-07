@@ -279,7 +279,9 @@
         },
         donutCenter: {
           label: opts.centerLabel || 'Total',
-          formatter: opts.centerFormatter || ((v) => fmtTHB(v)),
+          // Default = comma format with no decimals (eg. "106,683,558")
+          // Override with opts.centerFormatter (eg. for abbreviated "106.68M")
+          formatter: opts.centerFormatter || ((v) => fmtComma(v)),
         },
         datalabels: {
           display: (ctx) => {

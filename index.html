@@ -98,11 +98,22 @@ const DonutCenterPlugin = {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const labelText = String(opts.label || 'Total');
+      // Always format with commas + no decimals as a safe default
+      function safeFormat(n) {
+        const num = Number(n);
+        if (!isFinite(num)) return '—';
+        return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
       let valueText;
       try {
-        valueText = opts.formatter ? String(opts.formatter(total)) : Number(total).toLocaleString();
+        if (opts.formatter) {
+          const r = opts.formatter(total);
+          valueText = (typeof r === 'string' && r.trim()) ? r : safeFormat(total);
+        } else {
+          valueText = safeFormat(total);
+        }
       } catch (e) {
-        valueText = String(total);
+        valueText = safeFormat(total);
       }
       ctx.font = "600 10px 'Sukhumvit Set', 'Inter', sans-serif";
       ctx.fillStyle = '#94a3b8';

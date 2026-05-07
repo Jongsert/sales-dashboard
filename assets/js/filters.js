@@ -191,12 +191,12 @@
         STATE.msHandles.user.setOptions(allUsers);
       }
       Object.values(STATE.msHandles).forEach(h => h && h.rerender());
-      applyPreset('ytd');
+      applyPreset('thisYear');
       updatePeriodTrigger();
       onChange && onChange();
     });
 
-    applyPreset('ytd');
+    applyPreset('thisYear');
     updatePeriodTrigger();
     return container;
   }

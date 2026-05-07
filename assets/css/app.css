@@ -349,9 +349,28 @@ a:hover { text-decoration: underline; }
 .pp-custom {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  background: var(--surface-2);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
 }
-.pp-arrow { color: var(--text-muted); }
+.pp-custom .date-input {
+  flex: 1;
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.pp-custom .date-input:hover { border-color: var(--text-faint); }
+.pp-custom .date-input:focus { outline: none; border-color: var(--primary); background: var(--primary-50); }
+.pp-arrow { color: var(--text-muted); font-size: 16px; }
 .pp-select {
   width: 100%;
   padding: 8px 12px;
