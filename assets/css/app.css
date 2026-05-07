@@ -673,7 +673,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  cursor: help;
+  cursor: default;
   z-index: 10;
   pointer-events: auto;
   background: transparent;
