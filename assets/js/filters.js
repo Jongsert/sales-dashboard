@@ -21,35 +21,105 @@
   };
 
   /* ----- Period preset application ----- */
-  function applyPreset(preset) {
+  function applyPreset(preset, year, sub) {
     const today = new Date();
-    let from = null, to = null;
+    const useYear = year || today.getFullYear();
+    let from = null, to = null, label = '';
     switch (preset) {
-      case 'month':
-        from = new Date(today.getFullYear(), today.getMonth(), 1);
-        to = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      case 'today':
+        from = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        label = 'Today';
         break;
-      case 'quarter': {
-        const q = Math.floor(today.getMonth() / 3);
-        from = new Date(today.getFullYear(), q * 3, 1);
-        to = new Date(today.getFullYear(), q * 3 + 3, 0);
+      case 'thisWeek': {
+        const day = today.getDay() || 7;
+        from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (day - 1));
+        to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6, 23, 59, 59);
+        label = 'This week';
         break;
       }
-      case 'year':
+      case 'thisMonth':
+        from = new Date(today.getFullYear(), today.getMonth(), 1);
+        to = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+        label = `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()}`;
+        break;
+      case 'thisQuarter': {
+        const q = Math.floor(today.getMonth() / 3);
+        from = new Date(today.getFullYear(), q * 3, 1);
+        to = new Date(today.getFullYear(), q * 3 + 3, 0, 23, 59, 59);
+        label = `Q${q + 1} ${today.getFullYear()}`;
+        break;
+      }
+      case 'ytd':
         from = new Date(today.getFullYear(), 0, 1);
-        to = new Date(today.getFullYear(), 11, 31);
+        to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        label = `${today.getFullYear()} YTD`;
+        break;
+      case 'lastWeek': {
+        const day = today.getDay() || 7;
+        const lastMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (day - 1) - 7);
+        from = lastMonday;
+        to = new Date(lastMonday.getFullYear(), lastMonday.getMonth(), lastMonday.getDate() + 6, 23, 59, 59);
+        label = 'Last week';
+        break;
+      }
+      case 'lastMonth': {
+        const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        from = lm;
+        to = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+        label = `${MONTH_NAMES[lm.getMonth()]} ${lm.getFullYear()}`;
+        break;
+      }
+      case 'lastQuarter': {
+        const q = Math.floor(today.getMonth() / 3) - 1;
+        const baseY = q < 0 ? today.getFullYear() - 1 : today.getFullYear();
+        const baseQ = q < 0 ? 3 : q;
+        from = new Date(baseY, baseQ * 3, 1);
+        to = new Date(baseY, baseQ * 3 + 3, 0, 23, 59, 59);
+        label = `Q${baseQ + 1} ${baseY}`;
+        break;
+      }
+      case 'lastYear':
+        from = new Date(today.getFullYear() - 1, 0, 1);
+        to = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
+        label = `${today.getFullYear() - 1} (full year)`;
         break;
       case 'all':
         from = null; to = null;
+        label = 'All time';
+        break;
+      case 'year':
+        from = new Date(useYear, 0, 1);
+        to = new Date(useYear, 11, 31, 23, 59, 59);
+        label = `${useYear} (full year)`;
+        break;
+      case 'quarter': {
+        const q = sub - 1;
+        from = new Date(useYear, q * 3, 1);
+        to = new Date(useYear, q * 3 + 3, 0, 23, 59, 59);
+        label = `Q${sub} ${useYear}`;
+        break;
+      }
+      case 'month': {
+        const m = sub - 1;
+        from = new Date(useYear, m, 1);
+        to = new Date(useYear, m + 1, 0, 23, 59, 59);
+        label = `${MONTH_NAMES[m]} ${useYear}`;
+        break;
+      }
+      case 'custom':
+        // from/to already in STATE; keep
+        from = STATE.period.from;
+        to = STATE.period.to;
+        label = (from ? from.toISOString().slice(0, 10) : '...') + ' → ' + (to ? to.toISOString().slice(0, 10) : '...');
         break;
     }
     STATE.period.preset = preset;
+    STATE.period.year = useYear;
+    STATE.period.sub = sub;
     STATE.period.from = from;
     STATE.period.to = to;
-    const fromInput = document.getElementById('dateFrom');
-    const toInput = document.getElementById('dateTo');
-    if (fromInput) fromInput.value = from ? from.toISOString().slice(0, 10) : '';
-    if (toInput) toInput.value = to ? to.toISOString().slice(0, 10) : '';
+    STATE.period.label = label;
   }
 
   /* ----- Build the filter UI inside a container element ----- */
@@ -57,19 +127,9 @@
     container.innerHTML = `
       <div class="f-group">
         <span class="f-label">Period</span>
-        <div class="preset-group">
-          <button class="preset-btn" data-preset="month">Month</button>
-          <button class="preset-btn" data-preset="quarter">Quarter</button>
-          <button class="preset-btn active" data-preset="year">Year</button>
-          <button class="preset-btn" data-preset="all">All</button>
-          <button class="preset-btn" data-preset="custom">Custom</button>
-        </div>
-      </div>
-      <div class="f-group" id="customDateGroup" style="display:none">
-        <span class="f-label">From — To</span>
-        <div style="display:flex; gap:4px;">
-          <input type="date" id="dateFrom" class="date-input">
-          <input type="date" id="dateTo" class="date-input">
+        <div class="period-picker">
+          <button id="periodTrigger" class="ms-trigger has-value" type="button">📅 Period</button>
+          <div class="period-panel" id="periodPanel"></div>
         </div>
       </div>
       <div class="f-group">
@@ -102,45 +162,138 @@
       </div>
     `;
 
-    // Period buttons
-    container.querySelectorAll('.preset-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        container.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const p = btn.dataset.preset;
-        const customGroup = container.querySelector('#customDateGroup');
-        customGroup.style.display = p === 'custom' ? '' : 'none';
-        if (p !== 'custom') applyPreset(p);
-        onChange && onChange();
-      });
-    });
-
-    container.querySelector('#dateFrom').addEventListener('change', e => {
-      STATE.period.from = e.target.value ? new Date(e.target.value) : null;
-      onChange && onChange();
-    });
-    container.querySelector('#dateTo').addEventListener('change', e => {
-      STATE.period.to = e.target.value ? new Date(e.target.value + 'T23:59:59') : null;
-      onChange && onChange();
-    });
+    setupPeriodPicker(container, onChange);
 
     container.querySelector('#resetFiltersBtn').addEventListener('click', () => {
       ['team', 'user', 'pipeline', 'dealType', 'productType', 'status'].forEach(k => STATE[k].clear());
-      // Restore User dropdown to show ALL users (since team cleared)
       if (STATE.msHandles.user && STATE.allDeals) {
         const allUsers = Array.from(new Set(STATE.allDeals.map(d => d.responsible).filter(Boolean)))
           .sort((a, b) => String(a).localeCompare(String(b)));
         STATE.msHandles.user.setOptions(allUsers);
       }
       Object.values(STATE.msHandles).forEach(h => h && h.rerender());
-      container.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === 'year'));
-      applyPreset('year');
-      container.querySelector('#customDateGroup').style.display = 'none';
+      applyPreset('ytd');
+      updatePeriodTrigger();
       onChange && onChange();
     });
 
-    applyPreset('year');
+    applyPreset('ytd');
+    updatePeriodTrigger();
     return container;
+  }
+
+  function updatePeriodTrigger() {
+    const t = document.getElementById('periodTrigger');
+    if (!t) return;
+    t.textContent = '📅 ' + (STATE.period.label || 'Select period');
+  }
+
+  /* ----- Period picker UI ----- */
+  function setupPeriodPicker(container, onChange) {
+    const trigger = container.querySelector('#periodTrigger');
+    const panel = container.querySelector('#periodPanel');
+    const today = new Date();
+    const baseYear = today.getFullYear();
+
+    function renderPanel() {
+      const yp = STATE.period.year || baseYear;
+      const presets = [
+        { key: 'today', lbl: 'Today' },
+        { key: 'thisWeek', lbl: 'This week' },
+        { key: 'thisMonth', lbl: 'This month' },
+        { key: 'thisQuarter', lbl: 'This quarter' },
+        { key: 'ytd', lbl: 'Year-to-date' },
+        { key: 'lastWeek', lbl: 'Last week' },
+        { key: 'lastMonth', lbl: 'Last month' },
+        { key: 'lastQuarter', lbl: 'Last quarter' },
+        { key: 'lastYear', lbl: 'Last year' },
+        { key: 'all', lbl: 'All time' },
+      ];
+      const years = [baseYear - 2, baseYear - 1, baseYear, baseYear + 1];
+      const fromVal = STATE.period.from ? STATE.period.from.toISOString().slice(0, 10) : '';
+      const toVal = STATE.period.to ? STATE.period.to.toISOString().slice(0, 10) : '';
+
+      panel.innerHTML = `
+        <div class="pp-section">
+          <div class="pp-section-title">Quick presets</div>
+          <div class="pp-presets">
+            ${presets.map(p => `<button class="pp-btn ${STATE.period.preset === p.key ? 'active' : ''}" data-pp-preset="${p.key}">${p.lbl}</button>`).join('')}
+          </div>
+        </div>
+        <div class="pp-section">
+          <div class="pp-section-title">By year</div>
+          <div class="pp-years">
+            ${years.map(y => `<button class="pp-btn ${STATE.period.preset === 'year' && STATE.period.year === y ? 'active' : ''}" data-pp-year="${y}">${y}</button>`).join('')}
+          </div>
+          <div class="pp-section-sub">Quarter in ${yp}</div>
+          <div class="pp-quarters">
+            ${[1,2,3,4].map(q => `<button class="pp-btn ${STATE.period.preset === 'quarter' && STATE.period.year === yp && STATE.period.sub === q ? 'active' : ''}" data-pp-q="${q}" data-pp-y="${yp}">Q${q}</button>`).join('')}
+          </div>
+          <div class="pp-section-sub">Month in ${yp}</div>
+          <div class="pp-months">
+            ${MONTH_NAMES.map((m, i) => `<button class="pp-btn ${STATE.period.preset === 'month' && STATE.period.year === yp && STATE.period.sub === i + 1 ? 'active' : ''}" data-pp-m="${i + 1}" data-pp-y="${yp}">${m}</button>`).join('')}
+          </div>
+        </div>
+        <div class="pp-section">
+          <div class="pp-section-title">Custom range</div>
+          <div class="pp-custom">
+            <input type="date" id="ppFrom" class="date-input" value="${fromVal}">
+            <span class="pp-arrow">→</span>
+            <input type="date" id="ppTo" class="date-input" value="${toVal}">
+          </div>
+        </div>
+      `;
+
+      panel.querySelectorAll('[data-pp-preset]').forEach(b => b.addEventListener('click', () => {
+        applyPreset(b.dataset.ppPreset);
+        renderPanel();
+        updatePeriodTrigger();
+        onChange && onChange();
+      }));
+      panel.querySelectorAll('[data-pp-year]').forEach(b => b.addEventListener('click', () => {
+        applyPreset('year', parseInt(b.dataset.ppYear));
+        renderPanel();
+        updatePeriodTrigger();
+        onChange && onChange();
+      }));
+      panel.querySelectorAll('[data-pp-q]').forEach(b => b.addEventListener('click', () => {
+        applyPreset('quarter', parseInt(b.dataset.ppY), parseInt(b.dataset.ppQ));
+        renderPanel();
+        updatePeriodTrigger();
+        onChange && onChange();
+      }));
+      panel.querySelectorAll('[data-pp-m]').forEach(b => b.addEventListener('click', () => {
+        applyPreset('month', parseInt(b.dataset.ppY), parseInt(b.dataset.ppM));
+        renderPanel();
+        updatePeriodTrigger();
+        onChange && onChange();
+      }));
+      const fromEl = panel.querySelector('#ppFrom');
+      const toEl = panel.querySelector('#ppTo');
+      function commitCustom() {
+        STATE.period.preset = 'custom';
+        STATE.period.from = fromEl.value ? new Date(fromEl.value) : null;
+        STATE.period.to = toEl.value ? new Date(toEl.value + 'T23:59:59') : null;
+        STATE.period.label = (fromEl.value || '...') + ' → ' + (toEl.value || '...');
+        renderPanel();
+        updatePeriodTrigger();
+        onChange && onChange();
+      }
+      fromEl.addEventListener('change', commitCustom);
+      toEl.addEventListener('change', commitCustom);
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const opening = !panel.classList.contains('open');
+      document.querySelectorAll('.period-panel.open, .ms-panel.open').forEach(el => el.classList.remove('open'));
+      if (opening) {
+        renderPanel();
+        panel.classList.add('open');
+      }
+    });
+    panel.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', () => panel.classList.remove('open'));
   }
 
   /* ----- Re-build multi-select option lists from current data ----- */

@@ -2,13 +2,16 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
+  const VERSION = '1.1.0';
+  const VERSION_DATE = '2026-05-07';
+
   const PAGES = [
     { id: 'overview',  label: '📊 Overview',        ready: true,  needsFilter: true },
     { id: 'renew',     label: '🔄 Renew',           ready: true,  needsFilter: true },
     { id: 'newsell',   label: '✨ New Sell',         ready: true,  needsFilter: true },
     { id: 'combined',  label: '📈 Combined',        ready: true,  needsFilter: true },
     { id: 'forecast',  label: '🎯 Forecast',         ready: true,  star: true, needsFilter: true },
-    { id: 'pipeline',  label: '📄 Pipeline Detail', ready: true,  needsFilter: true },
+    { id: 'pipeline',  label: '📄 All Deals',       ready: true,  needsFilter: true },
     { id: 'targets',   label: '🎯 Targets',         ready: true,  needsFilter: false },
     { id: 'teams',     label: '👥 Teams',           ready: true,  hideFromNav: true, needsFilter: false },
     { id: 'statusmap', label: '🏷️ Status Mapping',  ready: true,  hideFromNav: true, needsFilter: false },
@@ -140,9 +143,23 @@
     });
   }
 
+  /* ----- Live clock ----- */
+  const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function updateClock() {
+    const el = document.getElementById('liveClock');
+    if (!el) return;
+    const now = new Date();
+    const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    el.textContent = `${now.getDate()} ${MONTH_ABBR[now.getMonth()]} ${now.getFullYear()} · ${time}`;
+  }
+
   /* ----- Bootstrap ----- */
   function init() {
     App.Settings.load();   // load from localStorage
+    const v = document.getElementById('brandVersion');
+    if (v) v.textContent = 'v' + VERSION;
+    updateClock();
+    setInterval(updateClock, 30 * 1000);
     renderTabs();
 
     // Wire up file upload buttons
@@ -177,6 +194,8 @@
   window.App.bootstrap = init;
   window.App.handleFile = handleFile;
   window.App.STATE = APP_STATE;
+  window.App.VERSION = VERSION;
+  window.App.VERSION_DATE = VERSION_DATE;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

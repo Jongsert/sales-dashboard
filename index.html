@@ -23,9 +23,12 @@
 <header class="topbar">
   <a href="#/overview" class="brand" title="Back to Overview">
     <div class="brand-icon">S</div>
-    <div>
-      <span class="brand-name">Sales Dashboard</span>
-      <span class="brand-sub">· Phase 2</span>
+    <div class="brand-text">
+      <div class="brand-name">Sales Dashboard</div>
+      <div class="brand-meta">
+        <span id="liveClock" class="brand-clock">—</span>
+        <span class="brand-version" id="brandVersion">v1.1.0</span>
+      </div>
     </div>
   </a>
   <div class="topbar-actions">
@@ -62,14 +65,41 @@
 
 <script>
 // Show main, hide empty state once data loaded (handled in app.js); keep this fallback
+// Universal Chart.js plugin for donut center text — registered once on load
+const DonutCenterPlugin = {
+  id: 'donutCenter',
+  afterDraw(chart) {
+    if (chart.config.type !== 'doughnut') return;
+    const opts = chart.options.plugins && chart.options.plugins.donutCenter;
+    if (!opts || opts.display === false) return;
+    const total = chart.data.datasets[0].data.reduce((s, v) => s + (Number(v) || 0), 0);
+    if (total <= 0 && !opts.value) return;
+    const { ctx, chartArea } = chart;
+    const cx = (chartArea.left + chartArea.right) / 2;
+    const cy = (chartArea.top + chartArea.bottom) / 2;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const labelText = opts.label || 'Total';
+    const valueText = opts.formatter ? opts.formatter(total) : total.toLocaleString();
+    ctx.font = "600 10px 'Sukhumvit Set', 'Inter', sans-serif";
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(labelText.toUpperCase(), cx, cy - 14);
+    ctx.font = "800 18px 'Sukhumvit Set', 'Inter', sans-serif";
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(valueText, cx, cy + 6);
+    ctx.restore();
+  },
+};
+
 window.addEventListener('load', () => {
-  // Register Chart.js datalabels plugin once
   if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
     Chart.register(ChartDataLabels);
+    Chart.register(DonutCenterPlugin);
     Chart.defaults.font.family = "'Sukhumvit Set', 'SukhumvitSet-Text', -apple-system, 'Inter', 'Noto Sans Thai', sans-serif";
     Chart.defaults.color = '#64748b';
     Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
-    Chart.defaults.plugins.datalabels.display = false; // global default off
+    Chart.defaults.plugins.datalabels.display = false;
   }
 });
 </script>

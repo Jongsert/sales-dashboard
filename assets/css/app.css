@@ -113,14 +113,34 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.01em;
   color: var(--text);
   cursor: pointer;
   transition: opacity 0.15s;
 }
 .brand:hover { opacity: 0.82; }
+.brand-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.1; }
+.brand-name {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.brand-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.brand-clock { font-variant-numeric: tabular-nums; }
+.brand-version {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
 .brand-icon {
   width: 30px;
   height: 30px;
@@ -268,6 +288,70 @@ a:hover { text-decoration: underline; }
 }
 .preset-btn:hover { background: var(--surface-2); color: var(--text); }
 .preset-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* ----- Period picker ----- */
+.period-picker { position: relative; min-width: 220px; }
+.period-picker .ms-trigger { font-size: 12px; min-height: 30px; }
+.period-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  padding: 14px;
+  display: none;
+}
+.period-panel.open { display: block; }
+.pp-section { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border); }
+.pp-section:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+.pp-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.pp-section-sub {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.pp-presets, .pp-years, .pp-quarters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pp-months { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.pp-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.pp-btn:hover { background: var(--surface-2); border-color: var(--text-faint); }
+.pp-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.pp-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pp-arrow { color: var(--text-muted); }
 
 .date-input,
 .select-input {
@@ -453,6 +537,101 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
+/* ----- Hero KPI cards (the Big 3 on Overview) ----- */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1000px) { .hero-grid { grid-template-columns: 1fr; } }
+.hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.hero-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: var(--accent);
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+.hero-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.hero-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.hero-achieve-label {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.hero-achieve {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  line-height: 1.05;
+  margin-bottom: 14px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.hero-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.hero-won { font-weight: 600; }
+.hero-divider { color: var(--text-faint); font-weight: 400; }
+.hero-target { color: var(--text-muted); }
+.hero-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.hero-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.4s ease-out;
+}
+.hero-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
 .kpi-card.kpi-primary {
   background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
   border-width: 1px;
@@ -528,6 +707,11 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+}
+/* Sticky header — applies to any .tbl inside a scrollable container */
+.tbl thead { position: sticky; top: 0; z-index: 5; }
+.tbl thead th {
+  background: var(--surface-2);
 }
 .tbl th {
   text-align: left;

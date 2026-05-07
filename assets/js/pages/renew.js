@@ -171,21 +171,7 @@
           borderWidth: 2, borderColor: 'white',
         }],
       },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right', labels: { font: { size: 11 } } },
-          tooltip: { callbacks: { label: c => `${c.label}: ${fmt.THBFull(c.parsed)}` } },
-          datalabels: {
-            display: ctx => ctx.parsed > 0,
-            color: 'white', font: { size: 11, weight: 'bold' },
-            formatter: (v, ctx) => {
-              const total = ctx.dataset.data.reduce((s, x) => s + x, 0);
-              return total > 0 ? (v / total * 100).toFixed(0) + '%' : '';
-            },
-          },
-        },
-      },
+      options: App.UI.donutOptions({ centerLabel: 'Won Renew' }),
     });
 
     // Top renewing customers

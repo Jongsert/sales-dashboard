@@ -37,7 +37,7 @@
 
     container.innerHTML = `
       <div class="section-title">
-        Pipeline Detail
+        All Deals
         <span class="actions">
           <button class="btn btn-sm" id="customizeColsBtn">⚙️ Columns</button>
           <button class="btn btn-sm" id="exportPipelineBtn">⬇️ Export CSV</button>

@@ -246,12 +246,47 @@
     return d.toISOString().slice(0, 10);
   }
 
+  /* ----- Reusable donut chart options (center text + slice labels) ----- */
+  function donutOptions(opts = {}) {
+    const f = { THB: fmtTHB, THBFull: fmtTHBFull };
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: opts.cutout || '62%',
+      plugins: {
+        legend: { position: opts.legend || 'right', labels: { font: { size: 11 }, usePointStyle: true } },
+        tooltip: {
+          callbacks: { label: c => `${c.label}: ${f.THBFull(c.parsed)}` },
+        },
+        donutCenter: {
+          label: opts.centerLabel || 'Total',
+          formatter: opts.centerFormatter || (v => f.THB(v)),
+        },
+        datalabels: {
+          display: ctx => {
+            const total = ctx.dataset.data.reduce((s, x) => s + (Number(x) || 0), 0);
+            return total > 0 && ctx.parsed / total >= 0.04;
+          },
+          color: 'white',
+          font: { size: 11, weight: 'bold' },
+          textAlign: 'center',
+          formatter: (v, ctx) => {
+            const total = ctx.dataset.data.reduce((s, x) => s + (Number(x) || 0), 0);
+            if (total === 0) return '';
+            return `${f.THB(v)}\n${(v / total * 100).toFixed(0)}%`;
+          },
+        },
+      },
+    };
+  }
+
   window.App = window.App || {};
   window.App.UI = {
     toast,
     buildMultiSelect,
     modal,
     confirm,
+    donutOptions,
     fmt: { THB: fmtTHB, THBFull: fmtTHBFull, comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate },
   };
 })();

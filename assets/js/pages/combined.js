@@ -187,20 +187,7 @@
         labels: ['Renew', 'New Sell'],
         datasets: [{ data: [wonRenew, wonNew], backgroundColor: ['#259b24', '#9ccc65'], borderWidth: 2, borderColor: 'white' }],
       },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right', labels: { font: { size: 12 } } },
-          tooltip: { callbacks: { label: c => `${c.label}: ${fmt.THBFull(c.parsed)}` } },
-          datalabels: {
-            color: 'white', font: { size: 14, weight: 'bold' },
-            formatter: (v, ctx) => {
-              const total = ctx.dataset.data.reduce((s, x) => s + x, 0);
-              return total > 0 ? (v / total * 100).toFixed(0) + '%' : '';
-            },
-          },
-        },
-      },
+      options: App.UI.donutOptions({ centerLabel: 'Won Total' }),
     });
 
     // Pipeline status pie
@@ -216,20 +203,7 @@
         labels: STATUSES,
         datasets: [{ data: STATUSES.map(s => statusBuckets[s]), backgroundColor: STATUSES.map(s => COLORS[s].fill), borderWidth: 2, borderColor: 'white' }],
       },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right', labels: { font: { size: 12 } } },
-          tooltip: { callbacks: { label: c => `${c.label}: ${fmt.THBFull(c.parsed)}` } },
-          datalabels: {
-            color: 'white', font: { size: 12, weight: 'bold' },
-            formatter: (v, ctx) => {
-              const total = ctx.dataset.data.reduce((s, x) => s + x, 0);
-              return total > 0 && v / total > 0.04 ? (v / total * 100).toFixed(0) + '%' : '';
-            },
-          },
-        },
-      },
+      options: App.UI.donutOptions({ centerLabel: 'Pipeline' }),
     });
   }
 

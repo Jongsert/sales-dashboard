@@ -59,7 +59,8 @@
           <button class="btn btn-sm" id="overviewSnapBtn">📸 Save snapshot</button>
         </span>
       </div>
-      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="hero-grid" id="kpiHero"></div>
+      <div class="kpi-grid" id="kpiGrid" style="margin-top:14px;"></div>
 
       <div class="section-title">Trend by Month — All deals (Won/Commit/Upside/Open/Lost)</div>
       <div class="card">
@@ -202,44 +203,63 @@
 
     const renewDeals = deals.filter(M.isRenew).length;
     const newDeals = deals.filter(d => F().NEW_TYPES.has(d.dealType)).length;
-    const newSellTargetSet = newSellTargetSum > 0;
 
-    const kpis = [
-      // Big picture (row 1)
-      { cls: 'target', primary: true, icon: '🎯', label: 'Total Target',
-        value: fmt().THBFull(totalTargetSum),
-        sub: `Renew ${fmt().THB(renewTargetSum)} + New ${fmt().THB(newSellTargetSum)}` },
-      { cls: 'won', primary: true, icon: '🏆', label: 'Won — Total',
-        value: fmt().THBFull(wonAllSum),
-        sub: `${wonCount.toLocaleString()} deals` },
-      { cls: 'pct', primary: true, icon: '📈', label: 'Total Achievement %',
-        value: fmt().pct(totalAchievement),
-        sub: `Won ${fmt().THB(wonAllSum)} ÷ Target ${fmt().THB(totalTargetSum)}` },
+    // Format period label
+    const f = App.Filters.STATE.period;
+    let periodLabel = '';
+    if (f.from && f.to) {
+      periodLabel = `${App.UI.fmt.date(f.from)} → ${App.UI.fmt.date(f.to)}`;
+    } else {
+      periodLabel = 'All time';
+    }
 
-      // Renew (row 2)
-      { cls: 'renew', icon: '🔄', label: 'Renew Target',
-        value: fmt().THBFull(renewTargetSum),
-        sub: `${renewDeals.toLocaleString()} deals` },
-      { cls: 'renew', icon: '🔄', label: 'Won — Renew',
-        value: fmt().THBFull(wonRenewSum),
-        sub: `${fmt().pct(renewAchievement)} of Renew Target` },
-      { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage',
-        value: fmt().pct(renewCoverage),
-        sub: `Open Renew ${fmt().THB(openRenewSum)}` },
-
-      // New (row 3)
-      { cls: 'new', icon: '✨', label: 'New Sell Target',
-        value: fmt().THBFull(newSellTargetSum),
-        sub: newSellTargetSet ? 'Manual (from Targets)' : '⚠️ Not set — open Targets page' },
-      { cls: 'new', icon: '✨', label: 'Won — New',
-        value: fmt().THBFull(wonNewSum),
-        sub: newSellTargetSet ? `${fmt().pct(newAchievement)} of New Target` : `${newDeals.toLocaleString()} deals in scope` },
-      { cls: 'rate', icon: '⚡', label: 'Win Rate',
-        value: fmt().pct(winRate),
-        sub: `${wonCount} won / ${closedCount} closed` },
+    // Big 3 hero cards: Total / Renew / New
+    const heroes = [
+      { id: 'total', icon: '🎯', label: 'Total', accent: 'var(--primary)',
+        achievement: totalAchievement,
+        won: wonAllSum, target: totalTargetSum, count: wonCount },
+      { id: 'renew', icon: '🔄', label: 'Renew', accent: 'var(--won)',
+        achievement: renewAchievement,
+        won: wonRenewSum, target: renewTargetSum, count: deals.filter(d => M.isRenew(d) && M.won(d)).length },
+      { id: 'new',   icon: '✨', label: 'New',   accent: 'var(--upside)',
+        achievement: newAchievement,
+        won: wonNewSum, target: newSellTargetSum, count: deals.filter(d => F().NEW_TYPES.has(d.dealType) && M.won(d)).length },
     ];
-    document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
-      <div class="kpi-card ${k.cls}${k.primary ? ' kpi-primary' : ''}">
+
+    document.getElementById('kpiHero').innerHTML = heroes.map(h => {
+      const pct = (h.achievement * 100);
+      const barWidth = Math.min(100, Math.max(0, pct));
+      const targetSet = h.target > 0;
+      return `
+        <div class="hero-card" style="--accent: ${h.accent};">
+          <div class="hero-head">
+            <div class="hero-title"><span class="hero-dot"></span>${h.label}</div>
+            <div class="hero-achieve-label">Achievement (Won)</div>
+          </div>
+          <div class="hero-achieve">${targetSet ? fmt().pct(h.achievement) : '—'}</div>
+          <div class="hero-line">
+            <span class="hero-won">Won ${fmt().THBFull(h.won)}</span>
+            <span class="hero-divider">/</span>
+            <span class="hero-target">Target ${targetSet ? fmt().THBFull(h.target) : '— set in Targets'}</span>
+          </div>
+          <div class="hero-bar"><div class="hero-bar-fill" style="width:${barWidth}%;"></div></div>
+          <div class="hero-meta">
+            <span>${h.count.toLocaleString()} won deals</span>
+            <span>${periodLabel}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Secondary metrics (smaller cards below)
+    const secondary = [
+      { cls: 'pct', icon: '⚡', label: 'Win Rate', value: fmt().pct(winRate), sub: `${wonCount} won / ${closedCount} closed` },
+      { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage', value: fmt().pct(renewCoverage), sub: `Open ${fmt().THB(openRenewSum)} ÷ Renew Target` },
+      { cls: 'commit', icon: '🔄', label: 'Open Renew Pipeline', value: fmt().THBFull(openRenewSum), sub: `${deals.filter(d => M.isRenew(d) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
+      { cls: 'upside', icon: '✨', label: 'Open New Pipeline', value: fmt().THBFull(deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).reduce((s,d) => s + d.income, 0)), sub: `${deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
+      { cls: 'lost', icon: '📉', label: 'Lost Total', value: fmt().THBFull(deals.filter(M.lost).reduce((s,d) => s + d.income, 0)), sub: `${deals.filter(M.lost).length.toLocaleString()} deals` },
+    ];
+    document.getElementById('kpiGrid').innerHTML = secondary.map(k => `
+      <div class="kpi-card ${k.cls}">
         <div class="kpi-label"><span>${k.icon}</span>${k.label}</div>
         <div class="kpi-value">${k.value}</div>
         <div class="kpi-meta"><span>${k.sub}</span></div>
