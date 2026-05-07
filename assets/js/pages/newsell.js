@@ -41,20 +41,19 @@
       <div class="kpi-grid">
         <div class="kpi-card target kpi-primary"><div class="kpi-label"><span>🎯</span>New Sell Target</div><div class="kpi-value" title="${fmt.THBExact(newTarget)}">${fmt.THBFull(newTarget)}</div><div class="kpi-meta"><span>Manual (from Targets page)</span></div></div>
         <div class="kpi-card won kpi-primary"><div class="kpi-label"><span>🏆</span>Won — New</div><div class="kpi-value" title="${fmt.THBExact(wonValue)}">${fmt.THBFull(wonValue)}</div><div class="kpi-meta"><span>${fmt.pct(achievement)} of target · ${won.length.toLocaleString()} won</span></div></div>
-        <div class="kpi-card pct kpi-primary"><div class="kpi-label"><span>⚡</span>Win Rate</div><div class="kpi-value" title="${fmt.pct(winRate)}">${fmt.pct(winRate)}</div><div class="kpi-meta"><span>Won ${won.length} / Closed ${closedCount}</span></div></div>
-        <div class="kpi-card upside kpi-primary"><div class="kpi-label"><span>📊</span>Avg Deal Size</div><div class="kpi-value" title="${fmt.THBExact(avgDealSize)}">${fmt.THBFull(avgDealSize)}</div><div class="kpi-meta"><span>across ${won.length} won deals</span></div></div>
-        <div class="kpi-card commit"><div class="kpi-label"><span>📋</span>Open Pipeline</div><div class="kpi-value" title="${fmt.THBExact(open.reduce((s, d) => s + d.income, 0))}">${fmt.THBFull(open.reduce((s, d) => s + d.income, 0))}</div><div class="kpi-meta"><span>${open.length.toLocaleString()} deals</span></div></div>
+        <div class="kpi-card pct kpi-primary"><div class="kpi-label"><span>⚡</span>Win Rate</div><div class="kpi-value">${fmt.pct(winRate)}</div><div class="kpi-meta"><span>Won ${won.length} / Closed ${closedCount}</span></div></div>
+        <div class="kpi-card commit kpi-primary"><div class="kpi-label"><span>📋</span>Open Pipeline</div><div class="kpi-value" title="${fmt.THBExact(open.reduce((s, d) => s + d.income, 0))}">${fmt.THBFull(open.reduce((s, d) => s + d.income, 0))}</div><div class="kpi-meta"><span>${open.length.toLocaleString()} deals · O+C+U</span></div></div>
       </div>
 
-      <div class="section-title">Deal Source &amp; Stage Funnel</div>
+      <div class="section-title">Won breakdown &amp; Stage Funnel</div>
       <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:16px;">
         <div class="card">
-          <div class="card-header"><div><div class="card-title">Won by Deal Source</div><div class="card-subtitle">เห็นช่องทางที่ปิดดีลได้</div></div></div>
-          <div class="chart-canvas-md"><canvas id="newSourceChart"></canvas></div>
+          <div class="card-header"><div><div class="card-title">Won by Product Type</div><div class="card-subtitle">เห็นว่าสินค้าตัวไหนปิดได้เยอะ</div></div></div>
+          <div class="chart-canvas-md"><canvas id="newProductChart"></canvas></div>
         </div>
         <div class="card">
-          <div class="card-header"><div><div class="card-title">Stage Funnel</div><div class="card-subtitle">Open New deals at each stage</div></div></div>
-          <div style="max-height:340px; overflow:auto"><table class="tbl" id="newFunnel"><thead><tr><th>Stage</th><th class="num">#</th><th class="num">Value</th></tr></thead><tbody></tbody></table></div>
+          <div class="card-header"><div><div class="card-title">Stage Funnel — open New deals</div><div class="card-subtitle">Count + value at each stage</div></div></div>
+          <div style="max-height:340px; overflow:auto"><table class="tbl" id="newFunnel"><thead><tr><th>Stage</th><th class="num">#</th><th class="num">Value</th><th>Bar</th></tr></thead><tbody></tbody></table></div>
         </div>
       </div>
 
@@ -63,11 +62,26 @@
         <div class="chart-canvas-md"><canvas id="newMonthChart"></canvas></div>
       </div>
 
+      <div class="section-title">⚠️ New deals overdue — open + close date passed</div>
+      <div class="card">
+        <div id="newOverdueWrap"></div>
+      </div>
+
+      <div class="section-title">🏆 Top performers — Win Rate by Responsible (closed deals)</div>
+      <div class="card">
+        <div style="max-height:380px; overflow:auto">
+          <table class="tbl" id="winRateTbl">
+            <thead><tr><th style="width:36px">#</th><th>Responsible</th><th>Team</th><th class="num">Won</th><th class="num">Lost</th><th class="num">Win Rate</th><th class="num">Won Value</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="section-title">Top New Customers Acquired</div>
       <div class="card">
         <div style="max-height:380px; overflow:auto">
           <table class="tbl" id="topNewTbl">
-            <thead><tr><th style="width:36px">#</th><th>Company</th><th>Deal Name</th><th>Responsible</th><th>Deal Type</th><th>Source</th><th class="num">Income</th></tr></thead>
+            <thead><tr><th style="width:36px">#</th><th>Deal Name</th><th>Company</th><th>Responsible</th><th>Deal Type</th><th>Product Type</th><th class="num">Income</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -76,27 +90,27 @@
 
     document.getElementById('newPrintBtn').addEventListener('click', () => window.print());
 
-    // Source donut
-    const srcBuckets = {};
+    // Won by Product Type donut
+    const prodBuckets = {};
     won.forEach(d => {
-      const s = d.dealSource || d.sourceChannel || '(none)';
-      if (!srcBuckets[s]) srcBuckets[s] = 0;
-      srcBuckets[s] += d.income;
+      const p = d.productType || '(none)';
+      if (!prodBuckets[p]) prodBuckets[p] = 0;
+      prodBuckets[p] += d.income;
     });
-    const srcLabels = Object.keys(srcBuckets);
-    const srcVals = srcLabels.map(k => srcBuckets[k]);
-    const srcColors = ['#259b24', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#9ccc65'];
+    const prodLabels = Object.keys(prodBuckets);
+    const prodVals = prodLabels.map(k => prodBuckets[k]);
+    const palette = ['#259b24', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#9ccc65'];
 
-    new Chart(document.getElementById('newSourceChart').getContext('2d'), {
+    new Chart(document.getElementById('newProductChart').getContext('2d'), {
       type: 'doughnut',
       data: {
-        labels: srcLabels,
-        datasets: [{ data: srcVals, backgroundColor: srcLabels.map((_, i) => srcColors[i % srcColors.length]), borderWidth: 2, borderColor: 'white' }],
+        labels: prodLabels,
+        datasets: [{ data: prodVals, backgroundColor: prodLabels.map((_, i) => palette[i % palette.length]), borderWidth: 2, borderColor: 'white' }],
       },
-      options: App.UI.donutOptions({ centerLabel: 'Won' }),
+      options: App.UI.donutOptions({ centerLabel: 'Won New' }),
     });
 
-    // Stage funnel
+    // Stage funnel — with bar visualization
     const stages = {};
     open.forEach(d => {
       const s = d.stage || '(none)';
@@ -105,9 +119,16 @@
       stages[s].value += d.income;
     });
     const stageRows = Object.entries(stages).sort((a, b) => b[1].value - a[1].value);
-    document.querySelector('#newFunnel tbody').innerHTML = stageRows.map(([s, v]) => `
-      <tr><td>${escapeHtml(s)}</td><td class="num">${fmt.int(v.count)}</td><td class="num">${fmt.THBFull(v.value)}</td></tr>
-    `).join('') || '<tr><td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">No open deals</td></tr>';
+    const maxStageValue = stageRows.reduce((m, [, v]) => Math.max(m, v.value), 0);
+    document.querySelector('#newFunnel tbody').innerHTML = stageRows.map(([s, v]) => {
+      const pct = maxStageValue > 0 ? (v.value / maxStageValue * 100) : 0;
+      return `<tr>
+        <td>${escapeHtml(s)}</td>
+        <td class="num">${fmt.int(v.count)}</td>
+        <td class="num" title="${fmt.THBExact(v.value)}">${fmt.THBFull(v.value)}</td>
+        <td><div style="height:10px; background: var(--surface-3); border-radius:4px; overflow:hidden; min-width:100px;"><div style="width:${pct}%; height:100%; background: var(--commit);"></div></div></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-muted);">No open deals</td></tr>';
 
     // Monthly status chart
     const COLORS = App.StatusMapping.COLORS;
@@ -137,19 +158,95 @@
       },
     });
 
+    // Overdue New deals (open + expectedClose < today)
+    renderOverdue(newDeals);
+
+    // Win rate by Responsible (top 10)
+    const userStats = {};
+    newDeals.forEach(d => {
+      const u = d.responsible || 'Unassigned';
+      if (!userStats[u]) userStats[u] = { team: d.team || '—', won: 0, lost: 0, wonValue: 0 };
+      if (M.won(d)) { userStats[u].won++; userStats[u].wonValue += d.income; }
+      else if (M.lost(d)) userStats[u].lost++;
+    });
+    const userArr = Object.entries(userStats)
+      .map(([name, v]) => ({ name, ...v, closed: v.won + v.lost, winRate: (v.won + v.lost) > 0 ? v.won / (v.won + v.lost) : 0 }))
+      .filter(x => x.closed > 0)
+      .sort((a, b) => b.winRate - a.winRate || b.wonValue - a.wonValue)
+      .slice(0, 15);
+    document.querySelector('#winRateTbl tbody').innerHTML = userArr.map((x, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${escapeHtml(x.name)}</strong></td>
+        <td>${escapeHtml(x.team)}</td>
+        <td class="num">${x.won}</td>
+        <td class="num" style="color:var(--text-muted);">${x.lost}</td>
+        <td class="num" style="font-weight:700; color: var(--won);">${fmt.pct(x.winRate)}</td>
+        <td class="num" title="${fmt.THBExact(x.wonValue)}">${fmt.THBFull(x.wonValue)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No closed deals in scope</td></tr>';
+
     // Top new customers
     const topNew = won.slice().sort((a, b) => b.income - a.income).slice(0, 30);
     document.querySelector('#topNewTbl tbody').innerHTML = topNew.map((d, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td><strong>${escapeHtml(d.company || '—')}</strong></td>
-        <td>${escapeHtml(d.dealName || '—')}</td>
+        <td><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+        <td>${escapeHtml(d.company || '—')}</td>
         <td>${escapeHtml(d.responsible || '—')}</td>
         <td>${escapeHtml(d.dealType || '—')}</td>
-        <td>${escapeHtml(d.dealSource || d.sourceChannel || '—')}</td>
-        <td class="num">${fmt.THBFull(d.income || 0)}</td>
+        <td>${escapeHtml(d.productType || '—')}</td>
+        <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
       </tr>
     `).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No new customers in scope</td></tr>';
+  }
+
+  function renderOverdue(newDeals) {
+    const fmt = App.UI.fmt;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const overdue = newDeals
+      .filter(d => (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
+                && d.expectedClose && d.expectedClose < today);
+
+    overdue.sort((a, b) => a.expectedClose - b.expectedClose);   // most overdue first
+
+    if (overdue.length === 0) {
+      document.getElementById('newOverdueWrap').innerHTML = `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No overdue New deals 🎉</div>`;
+      return;
+    }
+
+    const totalValue = overdue.reduce((s, d) => s + d.income, 0);
+
+    document.getElementById('newOverdueWrap').innerHTML = `
+      <div style="margin-bottom:12px; font-size:12px; padding:6px 12px; background:#fef2f2; border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); display:inline-block; font-weight:600;">
+        🔴 ${overdue.length} deals overdue · Total ${fmt.THBFull(totalValue)}
+      </div>
+      <div style="max-height:480px; overflow:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>Deal Name</th><th>Company</th><th>Responsible</th><th>Stage</th>
+            <th class="num">Income</th><th>Expected close</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+            ${overdue.map(d => {
+              const closeDay = new Date(d.expectedClose.getFullYear(), d.expectedClose.getMonth(), d.expectedClose.getDate());
+              const days = Math.floor((today - closeDay) / 86400000);
+              return `
+                <tr style="background: #fef2f2;">
+                  <td><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+                  <td>${escapeHtml(d.company || '—')}</td>
+                  <td>${escapeHtml(d.responsible || '—')}</td>
+                  <td>${escapeHtml(d.stage || '—')}</td>
+                  <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
+                  <td>${fmt.date(d.expectedClose)}</td>
+                  <td><strong style="color: var(--danger);">🔴 Overdue ${days} day${days > 1 ? 's' : ''}</strong></td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
   }
 
   function computeNewSellTargetSum(settings) {

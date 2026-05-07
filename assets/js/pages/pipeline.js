@@ -181,43 +181,123 @@
     }
 
     function openDealDetail(deal) {
-      const settings = App.Settings.load();
-      const allColumns = parsed.headers || Object.keys(deal._raw || {});
-      const comment = App.Settings.getDealComment(deal.id || deal.dealName);
+      const fmt = App.UI.fmt;
+      const raw = (col) => (deal._raw && deal._raw[col] !== undefined && deal._raw[col] !== null ? deal._raw[col] : '');
+      const dRaw = (col) => {
+        const v = raw(col);
+        if (v instanceof Date) return fmt.date(v);
+        if (v === '' || v == null) return '—';
+        return escapeHtml(String(v));
+      };
+      const moneyVal = (n) => {
+        const num = Number(n);
+        return isFinite(num) ? `<span class="num-tip" title="${fmt.THBExact(num).replace(/"/g, '&quot;')}">${fmt.THBFull(num)}</span>` : '—';
+      };
+      const dealKey = deal.id || deal.dealName || ('row_' + parsed.deals.indexOf(deal));
+      const comment = App.Settings.getDealComment(dealKey);
+      const statusColor = (App.StatusMapping.COLORS[deal.status] || {}).fill || '#94a3b8';
+
+      // Helper to read a raw column with multiple possible names
+      function rawAny(...cols) {
+        for (const c of cols) {
+          const v = deal._raw ? deal._raw[c] : undefined;
+          if (v !== undefined && v !== null && v !== '') return v;
+        }
+        return '';
+      }
+      const saleOrderNo = rawAny('Sale Order No. (Dynamic365)', 'Sale Order No.', 'Dynamic365', 'SO No.');
+      const zoomAccount = rawAny('Zoom Account Number', 'Zoom Account No.');
+      const zoomLicense = rawAny('Detail Zoom License Activation', 'Zoom License Activation');
 
       const body = document.createElement('div');
-      const rowsHtml = allColumns.map(col => {
-        let v = deal._raw ? deal._raw[col] : '';
-        if (v instanceof Date) v = App.UI.fmt.date(v);
-        else if (typeof v === 'number') v = (col.toLowerCase().includes('income') || col.toLowerCase().includes('profit')) ? App.UI.fmt.THBFull(v) : v.toLocaleString();
-        else if (v == null) v = '';
-        return `<tr>
-          <td style="font-weight:600; color:var(--text-muted); padding:6px 12px; border-bottom:1px solid var(--border); width:200px;">${col}</td>
-          <td style="padding:6px 12px; border-bottom:1px solid var(--border);">${escapeHtml(String(v))}</td>
-        </tr>`;
-      }).join('');
-
-      const dealKey = deal.id || deal.dealName || ('row_' + parsed.deals.indexOf(deal));
       body.innerHTML = `
-        <div style="margin-bottom:14px; padding:12px; background:var(--surface-2); border-radius:var(--radius-sm); display:flex; gap:14px; flex-wrap:wrap;">
-          <div><div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Status</div>
-               <div style="font-weight:700; color:${App.StatusMapping.COLORS[deal.status]?.fill || 'inherit'}; font-size:14px;">${deal.status}</div></div>
-          <div><div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Income</div>
-               <div style="font-weight:700; font-size:14px;">${App.UI.fmt.THBFull(deal.income || 0)}</div></div>
-          <div><div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Responsible</div>
-               <div style="font-weight:700; font-size:14px;">${deal.responsible || '—'}</div></div>
-          <div><div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Team</div>
-               <div style="font-weight:700; font-size:14px;">${deal.team || '—'}</div></div>
-          <div><div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Expected close</div>
-               <div style="font-weight:700; font-size:14px;">${App.UI.fmt.date(deal.expectedClose)}</div></div>
+        <!-- Header strip with status -->
+        <div class="deal-header">
+          <div class="deal-header-main">
+            <div class="deal-name-text">${escapeHtml(deal.dealName || deal.company || ('Deal #' + deal.id))}</div>
+            <div class="deal-meta-line">${escapeHtml(deal.company || '—')} · ID #${escapeHtml(String(deal.id || '—'))}</div>
+          </div>
+          <div class="deal-status-badge" style="background:${statusColor}20; color:${statusColor}; border:1.5px solid ${statusColor};">
+            ${deal.status || '—'}
+          </div>
         </div>
 
-        <div style="margin-bottom:14px;">
-          <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">💬 Comments (saved locally)</div>
-          <textarea id="dealCommentInput" placeholder="Add notes about this deal..." style="width:100%; min-height:60px; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:inherit; font-size:13px; resize:vertical;">${escapeHtml(comment)}</textarea>
+        <!-- Key Metrics: Income, Gross Profit, Net Profit -->
+        <div class="deal-section">
+          <div class="deal-section-title">Key Metrics</div>
+          <div class="deal-metrics">
+            <div class="deal-metric income">
+              <div class="metric-label">Income</div>
+              <div class="metric-value">${moneyVal(deal.income)}</div>
+            </div>
+            <div class="deal-metric gp">
+              <div class="metric-label">Gross Profit</div>
+              <div class="metric-value">${moneyVal(deal.grossProfit)}</div>
+            </div>
+            <div class="deal-metric np">
+              <div class="metric-label">Net Profit</div>
+              <div class="metric-value">${moneyVal(deal.netProfit)}</div>
+            </div>
+          </div>
         </div>
 
-        <table style="width:100%; border-collapse:collapse; font-size:13px;">${rowsHtml}</table>
+        <!-- 2-column grid: Deal Info | Ownership -->
+        <div class="deal-grid-2">
+          <div class="deal-section">
+            <div class="deal-section-title">Deal Info</div>
+            <table class="deal-tbl">
+              <tr><th>Pipeline</th><td>${escapeHtml(deal.pipeline || '—')}</td></tr>
+              <tr><th>Stage</th><td>${escapeHtml(deal.stage || '—')}</td></tr>
+              <tr><th>Deal Type</th><td>${escapeHtml(deal.dealType || '—')}</td></tr>
+              <tr><th>Billing Type</th><td>${dRaw('Billing Type')}</td></tr>
+              <tr><th>Product Type</th><td>${escapeHtml(deal.productType || '—')}</td></tr>
+            </table>
+          </div>
+          <div class="deal-section">
+            <div class="deal-section-title">Ownership &amp; Customer</div>
+            <table class="deal-tbl">
+              <tr><th>Responsible</th><td><strong>${escapeHtml(deal.responsible || '—')}</strong></td></tr>
+              <tr><th>Team</th><td>${escapeHtml(deal.team || '—')}</td></tr>
+              <tr><th>Company</th><td><strong>${escapeHtml(deal.company || '—')}</strong></td></tr>
+              <tr><th>End Customer</th><td>${escapeHtml(deal.endCustomer || '—')}</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Renewal & Contract -->
+        <div class="deal-section">
+          <div class="deal-section-title">Renewal &amp; Contract</div>
+          <table class="deal-tbl deal-tbl-wide">
+            <tr>
+              <th>Renew Target</th><td>${moneyVal(deal.renewTarget)}</td>
+              <th>Sale Order No. (Dynamic365)</th><td>${escapeHtml(String(saleOrderNo || '—'))}</td>
+            </tr>
+            <tr>
+              <th>Contract Start Date</th><td>${fmt.date(deal.contractStartDate)}</td>
+              <th>Contract End Date</th><td>${fmt.date(deal.contractEndDate)}</td>
+            </tr>
+            <tr>
+              <th>Expected Close Date</th><td colspan="3">${fmt.date(deal.expectedClose)}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Zoom -->
+        <div class="deal-section">
+          <div class="deal-section-title">Zoom</div>
+          <table class="deal-tbl deal-tbl-wide">
+            <tr>
+              <th>Account Number</th><td>${escapeHtml(String(zoomAccount || '—'))}</td>
+              <th>License Activation</th><td>${escapeHtml(String(zoomLicense || '—'))}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Comments -->
+        <div class="deal-section">
+          <div class="deal-section-title">💬 Comments <span style="font-weight:400; color:var(--text-faint); font-size:11px;">— saved locally on this device</span></div>
+          <textarea id="dealCommentInput" placeholder="Add notes about this deal..." class="deal-comment">${escapeHtml(comment)}</textarea>
+        </div>
       `;
       const m = App.UI.modal({
         title: deal.dealName || deal.company || ('Deal #' + deal.id),

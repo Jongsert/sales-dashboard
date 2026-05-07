@@ -30,9 +30,17 @@
     const wonRenew = renewDeals.filter(M.won).reduce((s, d) => s + d.income, 0);
     const wonNew = newDeals.filter(M.won).reduce((s, d) => s + d.income, 0);
     const wonTotal = wonRenew + wonNew;
-    const lastYear = computeLastYearActual(parsed.deals);
-    const yoy = lastYear > 0 ? (wonTotal - lastYear) / lastYear : 0;
     const achievement = totalTarget > 0 ? wonTotal / totalTarget : 0;
+
+    // Forecast Revenue = Won + Renewal Estimate (Open Renew × multiplier) + Sales Forecast (manual)
+    const renewYear = (App.Filters.STATE.period.from || new Date()).getFullYear();
+    const renewMult = ((settings.renewalEstimate && settings.renewalEstimate[renewYear]) || {}).multiplier;
+    const multiplier = (renewMult !== undefined ? renewMult : 0.8);
+    const openRenew = renewDeals.filter(d => d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside').reduce((s, d) => s + d.income, 0);
+    const renewalEstimate = openRenew * multiplier;
+    const salesForecast = computeSalesForecastSum(settings);
+    const forecastRevenue = wonTotal + renewalEstimate + salesForecast;
+    const forecastAchievement = totalTarget > 0 ? forecastRevenue / totalTarget : 0;
 
     container.innerHTML = `
       <div class="section-title">
@@ -43,9 +51,8 @@
       <div class="kpi-grid">
         <div class="kpi-card target kpi-primary"><div class="kpi-label"><span>🎯</span>Total Target</div><div class="kpi-value" title="${fmt.THBExact(totalTarget)}">${fmt.THBFull(totalTarget)}</div><div class="kpi-meta"><span>Renew ${fmt.THB(renewTarget)} + New ${fmt.THB(newTarget)}</span></div></div>
         <div class="kpi-card won kpi-primary"><div class="kpi-label"><span>🏆</span>Won Total</div><div class="kpi-value" title="${fmt.THBExact(wonTotal)}">${fmt.THBFull(wonTotal)}</div><div class="kpi-meta"><span>${fmt.pct(achievement)} of target</span></div></div>
-        <div class="kpi-card pct kpi-primary"><div class="kpi-label"><span>📊</span>YoY</div><div class="kpi-value" title="${(yoy >= 0 ? '+' : '') + fmt.pct(yoy)}">${(yoy >= 0 ? '+' : '') + fmt.pct(yoy)}</div><div class="kpi-meta"><span>${fmt.THB(lastYear)} → ${fmt.THB(wonTotal)}</span></div></div>
-        <div class="kpi-card commit kpi-primary"><div class="kpi-label"><span>♻️</span>Renew Mix</div><div class="kpi-value" title="${wonTotal > 0 ? fmt.pct(wonRenew / wonTotal) : '—'}">${wonTotal > 0 ? fmt.pct(wonRenew / wonTotal) : '—'}</div><div class="kpi-meta"><span>${fmt.THB(wonRenew)} of total Won</span></div></div>
-        <div class="kpi-card upside kpi-primary"><div class="kpi-label"><span>✨</span>New Mix</div><div class="kpi-value" title="${wonTotal > 0 ? fmt.pct(wonNew / wonTotal) : '—'}">${wonTotal > 0 ? fmt.pct(wonNew / wonTotal) : '—'}</div><div class="kpi-meta"><span>${fmt.THB(wonNew)} of total Won</span></div></div>
+        <div class="kpi-card commit kpi-primary"><div class="kpi-label"><span>🔮</span>Forecast Revenue</div><div class="kpi-value" title="${fmt.THBExact(forecastRevenue)}">${fmt.THBFull(forecastRevenue)}</div><div class="kpi-meta"><span>Won + Renew Est ${(multiplier * 100).toFixed(0)}% + Sales Fcst</span></div></div>
+        <div class="kpi-card upside kpi-primary"><div class="kpi-label"><span>📈</span>Forecast Achievement</div><div class="kpi-value">${fmt.pct(forecastAchievement)}</div><div class="kpi-meta"><span>${fmt.THB(forecastRevenue)} ÷ ${fmt.THB(totalTarget)}</span></div></div>
       </div>
 
       <div class="section-title">Monthly trend — Renew vs New stacked vs Target</div>
@@ -205,6 +212,37 @@
       },
       options: App.UI.donutOptions({ centerLabel: 'Pipeline' }),
     });
+  }
+
+  function computeSalesForecastSum(settings) {
+    const fcst = settings.salesForecast || {};
+    const usersList = settings.users || [];
+    const F = App.Filters.STATE;
+    const from = F.period.from, to = F.period.to;
+    const userTeamMap = {};
+    usersList.forEach(u => userTeamMap[u.name] = u.team || 'Unassigned');
+    function userPasses(name) {
+      if (F.user.size && !F.user.has(name)) return false;
+      if (F.team.size && !F.team.has(userTeamMap[name] || 'Unassigned')) return false;
+      return true;
+    }
+    let total = 0;
+    Object.keys(fcst).forEach(yearStr => {
+      const year = parseInt(yearStr);
+      if (from && year < from.getFullYear()) return;
+      if (to && year > to.getFullYear()) return;
+      Object.entries(fcst[yearStr]).forEach(([userName, arr]) => {
+        if (!userPasses(userName) || !Array.isArray(arr)) return;
+        arr.forEach((v, idx) => {
+          const monthStart = new Date(year, idx, 1);
+          const monthEnd = new Date(year, idx + 1, 0, 23, 59, 59);
+          if (from && monthEnd < from) return;
+          if (to && monthStart > to) return;
+          total += v || 0;
+        });
+      });
+    });
+    return total;
   }
 
   function computeNewSellTargetSum(settings) {

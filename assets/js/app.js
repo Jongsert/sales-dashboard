@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.1.5';
+  const VERSION = '1.2.0';
   const VERSION_DATE = '2026-05-07';
 
   const PAGES = [
