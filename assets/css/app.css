@@ -780,17 +780,21 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
 }
-/* Long text columns (Deal Name, Company) — allow wrap with explicit .wrap class.
-   Constrain max-width so wrap actually triggers without table overflowing. */
+/* Long text columns: in auto-layout tables, `width: 100%` on a cell tells the
+   browser "give me all remaining space after other columns auto-fit their
+   content". Multiple .wrap cells in the same row share the remaining space
+   proportionally — primary (.wrap) gets more than secondary (.wrap-sm). */
 .tbl th.wrap, .tbl td.wrap {
   white-space: normal;
-  max-width: 280px;
   word-break: break-word;
+  width: 100%;
+  min-width: 220px;
 }
 .tbl th.wrap-sm, .tbl td.wrap-sm {
   white-space: normal;
-  max-width: 180px;
   word-break: break-word;
+  min-width: 140px;
+  max-width: 240px;
 }
 .tbl th.ellipsis, .tbl td.ellipsis {
   max-width: 320px;
