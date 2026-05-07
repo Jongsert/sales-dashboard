@@ -101,13 +101,21 @@
     const prodVals = prodLabels.map(k => prodBuckets[k]);
     const palette = ['#259b24', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#9ccc65'];
 
+    const productOpts = App.UI.donutOptions({ centerLabel: 'Won New' });
+    productOpts.onClick = (event, elements) => {
+      if (!elements.length) return;
+      const productType = prodLabels[elements[0].index];
+      const matched = won.filter(d => (d.productType || '(none)') === productType);
+      App.UI.drillModal({ title: `Won New · Product: ${productType}`, subtitle: 'Won New Sell deals with this product type', deals: matched });
+    };
+    productOpts.onHover = (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); };
     new Chart(document.getElementById('newProductChart').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: prodLabels,
         datasets: [{ data: prodVals, backgroundColor: prodLabels.map((_, i) => palette[i % palette.length]), borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white' }],
       },
-      options: App.UI.donutOptions({ centerLabel: 'Won New' }),
+      options: productOpts,
     });
 
     // Stage funnel — with bar visualization
@@ -138,6 +146,7 @@
     STATUSES.forEach(s => preds[s] = d => d.status === s);
     const monthAgg = App.Filters.aggregateByMonthMulti(newDeals, preds, d => d.income, f.from, f.to);
 
+    const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     new Chart(document.getElementById('newMonthChart').getContext('2d'), {
       type: 'bar',
       data: {
@@ -146,6 +155,19 @@
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        onClick: (event, elements) => {
+          if (!elements.length) return;
+          const el = elements[0];
+          const status = STATUSES[el.datasetIndex];
+          const lbl = monthAgg.labels[el.index];
+          const [mon, yr] = lbl.split(' ');
+          const monthIdx = MN.indexOf(mon);
+          const year = parseInt(yr);
+          const matched = newDeals.filter(d => d.status === status && d.expectedClose
+            && d.expectedClose.getMonth() === monthIdx && d.expectedClose.getFullYear() === year);
+          App.UI.drillModal({ title: `New · ${status} · ${lbl}`, subtitle: 'New Sell deals only', deals: matched });
+        },
+        onHover: (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); },
         plugins: {
           legend: { position: 'top', align: 'end', labels: { font: { size: 11 }, usePointStyle: true } },
           tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBExact(c.parsed.y)}` } },

@@ -118,6 +118,20 @@
       return total;
     });
 
+    const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const isOCU = d => d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside';
+    function dealsByMonthSegment(label, monthLabel) {
+      const [mon, yr] = monthLabel.split(' ');
+      const monthIdx = MN.indexOf(mon);
+      const year = parseInt(yr);
+      const matchMonth = d => d.expectedClose
+        && d.expectedClose.getMonth() === monthIdx && d.expectedClose.getFullYear() === year;
+      if (label === 'Won Renew')   return renewDeals.filter(d => M.won(d) && matchMonth(d));
+      if (label === 'Won New')     return newDeals.filter(d => M.won(d) && matchMonth(d));
+      if (label === 'Open Renew')  return renewDeals.filter(d => isOCU(d) && matchMonth(d));
+      if (label === 'Open New')    return newDeals.filter(d => isOCU(d) && matchMonth(d));
+      return [];
+    }
     new Chart(document.getElementById('combinedMonthChart').getContext('2d'), {
       type: 'bar',
       data: {
@@ -132,6 +146,22 @@
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        onClick: (event, elements, chart) => {
+          if (!elements.length) return;
+          const el = elements[0];
+          const dataset = chart.config.data.datasets[el.datasetIndex];
+          if (dataset.label === 'Total Target') return;   // line — skip
+          const monthLabel = monthAgg.labels[el.index];
+          const matched = dealsByMonthSegment(dataset.label, monthLabel);
+          App.UI.drillModal({ title: `${dataset.label} · ${monthLabel}`, deals: matched });
+        },
+        onHover: (e, els, chart) => {
+          if (!e.native) return;
+          // Don't show pointer for Total Target line
+          const el = els[0];
+          const isClickable = el && chart.config.data.datasets[el.datasetIndex].label !== 'Total Target';
+          e.native.target.style.cursor = isClickable ? 'pointer' : 'default';
+        },
         plugins: {
           legend: { position: 'top', align: 'end', labels: { font: { size: 11 }, usePointStyle: true } },
           tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBExact(c.parsed.y)}` } },
@@ -161,6 +191,14 @@
       .sort((a, b) => b.total - a.total)
       .slice(0, 12);
 
+    function dealsByUserSegment(userName, label) {
+      const matchUser = d => (d.responsible || 'Unassigned') === userName;
+      if (label === 'Won Renew')   return renewDeals.filter(d => matchUser(d) && M.won(d));
+      if (label === 'Won New')     return newDeals.filter(d => matchUser(d) && M.won(d));
+      if (label === 'Open Renew')  return renewDeals.filter(d => matchUser(d) && isOCU(d));
+      if (label === 'Open New')    return newDeals.filter(d => matchUser(d) && isOCU(d));
+      return [];
+    }
     new Chart(document.getElementById('combinedUserChart').getContext('2d'), {
       type: 'bar',
       data: {
@@ -175,6 +213,15 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         indexAxis: 'y',
+        onClick: (event, elements, chart) => {
+          if (!elements.length) return;
+          const el = elements[0];
+          const userName = arr[el.index].name;
+          const dataset = chart.config.data.datasets[el.datasetIndex];
+          const matched = dealsByUserSegment(userName, dataset.label);
+          App.UI.drillModal({ title: `${userName} · ${dataset.label}`, deals: matched });
+        },
+        onHover: (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); },
         plugins: {
           legend: { position: 'top', align: 'end', labels: { font: { size: 11 }, usePointStyle: true } },
           tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBExact(c.parsed.x)}` } },
@@ -188,13 +235,21 @@
     });
 
     // Renew vs New share donut (won)
+    const shareOpts = App.UI.donutOptions({ centerLabel: 'Won Total' });
+    shareOpts.onClick = (event, elements) => {
+      if (!elements.length) return;
+      const lbl = ['Renew', 'New Sell'][elements[0].index];
+      const matched = lbl === 'Renew' ? renewDeals.filter(M.won) : newDeals.filter(M.won);
+      App.UI.drillModal({ title: `Won · ${lbl}`, subtitle: `Won ${lbl} deals`, deals: matched });
+    };
+    shareOpts.onHover = (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); };
     new Chart(document.getElementById('renewNewShareChart').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: ['Renew', 'New Sell'],
         datasets: [{ data: [wonRenew, wonNew], backgroundColor: ['#259b24', '#9ccc65'], borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white' }],
       },
-      options: App.UI.donutOptions({ centerLabel: 'Won Total' }),
+      options: shareOpts,
     });
 
     // Pipeline status pie
@@ -204,13 +259,21 @@
     STATUSES.forEach(s => statusBuckets[s] = 0);
     [...renewDeals, ...newDeals].forEach(d => { statusBuckets[d.status] = (statusBuckets[d.status] || 0) + d.income; });
 
+    const pipelineOpts = App.UI.donutOptions({ centerLabel: 'Pipeline' });
+    pipelineOpts.onClick = (event, elements) => {
+      if (!elements.length) return;
+      const status = STATUSES[elements[0].index];
+      const matched = [...renewDeals, ...newDeals].filter(d => d.status === status);
+      App.UI.drillModal({ title: `Combined · ${status}`, subtitle: 'All Renew + New deals with this status', deals: matched });
+    };
+    pipelineOpts.onHover = (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); };
     new Chart(document.getElementById('pipelineStatusChart').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: STATUSES,
         datasets: [{ data: STATUSES.map(s => statusBuckets[s]), backgroundColor: STATUSES.map(s => COLORS[s].fill), borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white' }],
       },
-      options: App.UI.donutOptions({ centerLabel: 'Pipeline' }),
+      options: pipelineOpts,
     });
   }
 
