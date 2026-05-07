@@ -150,7 +150,7 @@
     s.exportedAt = new Date().toISOString();
     save();
 
-    const today = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD
+    const today = (App.UI && App.UI.fmt && App.UI.fmt.todayLocalISO) ? App.UI.fmt.todayLocalISO() : new Date().toISOString().slice(0, 10);
     const filename = `sales-dashboard-settings_${today}.json`;
     const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -179,7 +179,7 @@
   function recordSnapshot(metrics) {
     const s = load();
     s.snapshots.push({
-      date: new Date().toISOString().slice(0, 10),
+      date: (App.UI && App.UI.fmt && App.UI.fmt.todayLocalISO) ? App.UI.fmt.todayLocalISO() : new Date().toISOString().slice(0, 10),
       timestamp: Date.now(),
       ...metrics,
     });

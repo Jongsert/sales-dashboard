@@ -337,7 +337,7 @@
         return s.includes(',') || s.includes('"') || s.includes('\n')
           ? '"' + s.replace(/"/g, '""') + '"' : s;
       }).join(',')).join('\n');
-      const today = new Date().toISOString().slice(0, 10);
+      const today = App.UI.fmt.todayLocalISO();
       const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

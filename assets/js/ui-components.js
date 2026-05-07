@@ -240,6 +240,12 @@
     if (!isFinite(num)) return '—';
     return 'THB ' + formatter.format(Math.round(num));
   }
+  // Exact precision (2 decimals) — used in tooltips/hover for financial detail
+  function fmtTHBExact(n) {
+    const num = toNum(n);
+    if (!isFinite(num)) return '—';
+    return 'THB ' + formatter2.format(num);
+  }
   function fmtComma(n) {
     const num = toNum(n);
     if (!isFinite(num)) return '—';
@@ -263,7 +269,19 @@
     if (!d) return '—';
     if (typeof d === 'string') d = new Date(d);
     if (!(d instanceof Date) || isNaN(d.getTime())) return '—';
-    return d.toISOString().slice(0, 10);
+    return localDateISO(d);
+  }
+  // Format a Date as YYYY-MM-DD in LOCAL timezone (avoid UTC shift)
+  function localDateISO(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  // Today as YYYY-MM-DD in local timezone (used in export filenames)
+  function todayLocalISO() {
+    return localDateISO(new Date());
   }
 
   /* ----- Reusable donut chart options (center text + slice labels) ----- */
@@ -275,7 +293,7 @@
       plugins: {
         legend: { position: opts.legend || 'right', labels: { font: { size: 11 }, usePointStyle: true } },
         tooltip: {
-          callbacks: { label: c => `${c.label}: ${fmtTHBFull(c.parsed)}` },
+          callbacks: { label: c => `${c.label}: ${fmtTHBExact(c.parsed)}` },
         },
         donutCenter: {
           label: opts.centerLabel || 'Total',
@@ -318,6 +336,6 @@
     modal,
     confirm,
     donutOptions,
-    fmt: { THB: fmtTHB, THBFull: fmtTHBFull, comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate },
+    fmt: { THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact, comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate, localDateISO, todayLocalISO },
   };
 })();

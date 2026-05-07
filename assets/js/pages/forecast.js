@@ -396,7 +396,7 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            callbacks: { label: c => `${c.dataset.label}: ${App.UI.fmt.THBFull(c.parsed.y)}` },
+            callbacks: { label: c => `${c.dataset.label}: ${App.UI.fmt.THBExact(c.parsed.y)}` },
           },
         },
         scales: {
@@ -448,7 +448,7 @@
           legend: { position: 'top', align: 'end', labels: { font: { size: 11 }, usePointStyle: true } },
           tooltip: {
             mode: 'index', intersect: false,
-            callbacks: { label: c => c.parsed.y === null ? '' : `${c.dataset.label}: ${App.UI.fmt.THBFull(c.parsed.y)}` },
+            callbacks: { label: c => c.parsed.y === null ? '' : `${c.dataset.label}: ${App.UI.fmt.THBExact(c.parsed.y)}` },
           },
         },
         scales: {
@@ -863,7 +863,7 @@
       const s = String(c == null ? '' : c);
       return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     }).join(',')).join('\n');
-    const today = new Date().toISOString().slice(0, 10);
+    const today = App.UI.fmt.todayLocalISO();
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

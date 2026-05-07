@@ -294,7 +294,7 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            callbacks: { label: (c) => c.dataset.label + ': ' + fmt().THBFull(c.parsed.y) },
+            callbacks: { label: (c) => c.dataset.label + ': ' + fmt().THBExact(c.parsed.y) },
           },
           datalabels: { display: false },
         },
@@ -340,7 +340,7 @@
         indexAxis: 'y',
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt().THBFull(c.parsed.x) } },
+          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt().THBExact(c.parsed.x) } },
           datalabels: { display: false },
         },
         scales: {

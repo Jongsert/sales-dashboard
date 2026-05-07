@@ -127,7 +127,7 @@
         responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { position: 'top', align: 'end', labels: { font: { size: 11 }, usePointStyle: true } },
-          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBFull(c.parsed.y)}` } },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBExact(c.parsed.y)}` } },
         },
         scales: {
           x: { stacked: true, grid: { display: false } },
@@ -170,7 +170,7 @@
         indexAxis: 'y',
         plugins: {
           legend: { position: 'top', align: 'end', labels: { font: { size: 11 }, usePointStyle: true } },
-          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBFull(c.parsed.x)}` } },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBExact(c.parsed.x)}` } },
           datalabels: { display: false },
         },
         scales: {

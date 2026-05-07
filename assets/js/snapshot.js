@@ -45,7 +45,7 @@
     const snapshot = {
       label: label || '',
       timestamp: Date.now(),
-      date: new Date().toISOString().slice(0, 10),
+      date: (App.UI && App.UI.fmt && App.UI.fmt.todayLocalISO) ? App.UI.fmt.todayLocalISO() : new Date().toISOString().slice(0, 10),
       time: new Date().toTimeString().slice(0, 5),
       fileName: parsed.fileName,
       dealCount: all.length,

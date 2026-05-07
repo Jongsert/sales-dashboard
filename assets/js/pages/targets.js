@@ -449,7 +449,7 @@
         const s = String(c == null ? '' : c);
         return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
       }).join(',')).join('\n');
-      const today = new Date().toISOString().slice(0, 10);
+      const today = App.UI.fmt.todayLocalISO();
       // BOM for Excel UTF-8 compatibility (Thai names)
       const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);

@@ -7,6 +7,15 @@
 (function () {
   const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+  // Local-time YYYY-MM-DD (avoid UTC shift on positive timezones like Thailand UTC+7)
+  function toLocalISODate(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   const STATE = {
     deals: [],            // raw, not filtered
     parsed: null,         // last parse result (from data-parser)
@@ -130,7 +139,7 @@
       case 'custom':
         from = STATE.period.from;
         to = STATE.period.to;
-        label = (from ? from.toISOString().slice(0, 10) : '...') + ' → ' + (to ? to.toISOString().slice(0, 10) : '...');
+        label = (from ? toLocalISODate(from) : '...') + ' → ' + (to ? toLocalISODate(to) : '...');
         break;
     }
     STATE.period.preset = preset;
@@ -256,8 +265,8 @@
       ];
 
       const years = dataYears();
-      const fromVal = STATE.period.from ? STATE.period.from.toISOString().slice(0, 10) : '';
-      const toVal   = STATE.period.to   ? STATE.period.to.toISOString().slice(0, 10)   : '';
+      const fromVal = STATE.period.from ? toLocalISODate(STATE.period.from) : '';
+      const toVal   = STATE.period.to   ? toLocalISODate(STATE.period.to)   : '';
 
       // Cascade: if a quarter is selected, only show months in that quarter
       const monthList = selectedQuarter ? QUARTER_MONTHS[selectedQuarter] : [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -332,7 +341,8 @@
       const toEl = panel.querySelector('#ppTo');
       function commitCustom() {
         STATE.period.preset = 'custom';
-        STATE.period.from = fromEl.value ? new Date(fromEl.value) : null;
+        // Append T-time to force local-time parsing (avoid UTC interpretation)
+        STATE.period.from = fromEl.value ? new Date(fromEl.value + 'T00:00:00') : null;
         STATE.period.to = toEl.value ? new Date(toEl.value + 'T23:59:59') : null;
         STATE.period.label = (fromEl.value || '...') + ' → ' + (toEl.value || '...');
         renderPanel();
