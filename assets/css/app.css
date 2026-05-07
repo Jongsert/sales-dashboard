@@ -780,9 +780,18 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
 }
-/* Long text columns (Deal Name, Company) — allow wrap with explicit .wrap class
-   or use max-width + ellipsis with .ellipsis class */
-.tbl th.wrap, .tbl td.wrap { white-space: normal; }
+/* Long text columns (Deal Name, Company) — allow wrap with explicit .wrap class.
+   Constrain max-width so wrap actually triggers without table overflowing. */
+.tbl th.wrap, .tbl td.wrap {
+  white-space: normal;
+  max-width: 280px;
+  word-break: break-word;
+}
+.tbl th.wrap-sm, .tbl td.wrap-sm {
+  white-space: normal;
+  max-width: 180px;
+  word-break: break-word;
+}
 .tbl th.ellipsis, .tbl td.ellipsis {
   max-width: 320px;
   overflow: hidden;

@@ -81,7 +81,7 @@
       <div class="card">
         <div style="max-height:380px; overflow:auto">
           <table class="tbl" id="topNewTbl">
-            <thead><tr><th style="width:36px">#</th><th>Deal Name</th><th>Company</th><th>Responsible</th><th>Deal Type</th><th>Product Type</th><th class="num">Income</th></tr></thead>
+            <thead><tr><th style="width:36px">#</th><th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Deal Type</th><th>Product Type</th><th class="num">Income</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -191,8 +191,8 @@
     document.querySelector('#topNewTbl tbody').innerHTML = topNew.map((d, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-        <td>${escapeHtml(d.company || '—')}</td>
+        <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+        <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
         <td>${escapeHtml(d.responsible || '—')}</td>
         <td>${escapeHtml(d.dealType || '—')}</td>
         <td>${escapeHtml(d.productType || '—')}</td>
@@ -224,7 +224,7 @@
       <div style="max-height:480px; overflow:auto;">
         <table class="tbl">
           <thead><tr>
-            <th>Deal Name</th><th>Company</th><th>Responsible</th><th>Stage</th>
+            <th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Stage</th>
             <th class="num">Income</th><th>Expected close</th><th>Status</th>
           </tr></thead>
           <tbody>
@@ -233,13 +233,13 @@
               const days = Math.floor((today - closeDay) / 86400000);
               return `
                 <tr style="background: #fef2f2;">
-                  <td><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-                  <td>${escapeHtml(d.company || '—')}</td>
+                  <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+                  <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
                   <td>${escapeHtml(d.responsible || '—')}</td>
                   <td>${escapeHtml(d.stage || '—')}</td>
                   <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
                   <td>${fmt.date(d.expectedClose)}</td>
-                  <td><strong style="color: var(--danger);">Overdue ${days} day${days > 1 ? 's' : ''}</strong></td>
+                  <td><strong style="color: var(--danger);">Overdue<br>${days} day${days > 1 ? 's' : ''}</strong></td>
                 </tr>
               `;
             }).join('')}

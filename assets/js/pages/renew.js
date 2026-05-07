@@ -91,7 +91,7 @@
       <div class="card">
         <div style="max-height:420px; overflow:auto">
           <table class="tbl" id="topRenewTbl">
-            <thead><tr><th style="width:36px">#</th><th>Deal Name</th><th>Company</th><th>Responsible</th><th>Stage</th><th class="num">Renew Target</th><th class="num">Income</th><th>Expected close</th></tr></thead>
+            <thead><tr><th style="width:36px">#</th><th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Stage</th><th class="num">Renew Target</th><th class="num">Income</th><th>Expected close</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -160,8 +160,8 @@
     document.querySelector('#topRenewTbl tbody').innerHTML = topRenew.map((d, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-        <td>${escapeHtml(d.company || '—')}</td>
+        <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+        <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
         <td>${escapeHtml(d.responsible || '—')}</td>
         <td>${escapeHtml(d.stage || '—')}</td>
         <td class="num" title="${fmt.THBExact(d.renewTarget || 0)}">${fmt.THBFull(d.renewTarget || 0)}</td>
@@ -190,14 +190,14 @@
       const daysFromToday = Math.floor((today - closeDay) / 86400000);
       if (daysFromToday > 0) {
         return {
-          html: `<strong style="color: var(--danger);">Overdue ${daysFromToday} day${daysFromToday > 1 ? 's' : ''}</strong>`,
+          html: `<strong style="color: var(--danger);">Overdue<br>${daysFromToday} day${daysFromToday > 1 ? 's' : ''}</strong>`,
           isOverdue: true, sortKey: -daysFromToday,
         };
       } else if (daysFromToday === 0) {
-        return { html: `<strong style="color: var(--danger);">Overdue today</strong>`, isOverdue: true, sortKey: 0 };
+        return { html: `<strong style="color: var(--danger);">Overdue<br>today</strong>`, isOverdue: true, sortKey: 0 };
       } else {
         return {
-          html: `<span style="color: var(--upside); font-weight:600;">Due in ${-daysFromToday} day${-daysFromToday > 1 ? 's' : ''}</span>`,
+          html: `<span style="color: var(--upside); font-weight:600;">Due in<br>${-daysFromToday} day${-daysFromToday > 1 ? 's' : ''}</span>`,
           isOverdue: false, sortKey: -daysFromToday,
         };
       }
@@ -230,14 +230,14 @@
       <div style="max-height:520px; overflow:auto;">
         <table class="tbl">
           <thead><tr>
-            <th>Deal Name</th><th>Company</th><th>Responsible</th><th>Stage</th>
+            <th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Stage</th>
             <th class="num">Income</th><th>Expected close</th><th>Status</th>
           </tr></thead>
           <tbody>
             ${atRisk.map(({ d, info }) => `
               <tr style="${info.isOverdue ? 'background: #fef2f2;' : ''}">
-                <td><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-                <td>${escapeHtml(d.company || '—')}</td>
+                <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+                <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
                 <td>${escapeHtml(d.responsible || '—')}</td>
                 <td>${escapeHtml(d.stage || '—')}</td>
                 <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
@@ -291,8 +291,8 @@
     const lostTop = lost.slice().sort((a, b) => b.income - a.income).slice(0, 30);
     const lostDetailRows = lostTop.map(d => `
       <tr>
-        <td><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-        <td>${escapeHtml(d.company || '—')}</td>
+        <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+        <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
         <td>${escapeHtml(d.responsible || '—')}</td>
         <td>${escapeHtml(d.dealType || '—')}</td>
         <td class="num" style="color: var(--lost);" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
@@ -321,7 +321,7 @@
         <div class="deal-section-title">Top 30 lost deals by value</div>
         <div style="max-height:380px; overflow:auto">
           <table class="tbl">
-            <thead><tr><th>Deal Name</th><th>Company</th><th>Responsible</th><th>Deal Type</th><th class="num">Income</th><th>Expected close</th></tr></thead>
+            <thead><tr><th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Deal Type</th><th class="num">Income</th><th>Expected close</th></tr></thead>
             <tbody>${lostDetailRows}</tbody>
           </table>
         </div>
