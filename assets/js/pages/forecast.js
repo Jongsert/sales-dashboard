@@ -160,7 +160,7 @@
     `;
 
     renderKPIs(yearTotals, parsed.deals, settings);
-    renderMonthlyChart(monthly);
+    renderMonthlyChart(monthly, deals);
     renderCumulativeChart(monthly);
     renderRenewEstimateTable(monthly, settings);
     renderSalesForecastTable(settings);
@@ -352,8 +352,21 @@
   }
 
   /* ----- Monthly chart ----- */
-  function renderMonthlyChart(monthly) {
+  function renderMonthlyChart(monthly, deals) {
     const ctx = document.getElementById('forecastMonthlyChart').getContext('2d');
+    const M = App.Filters.Matchers;
+    const NEW = App.Filters.NEW_TYPES;
+    const isOCU = d => d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside';
+    function dealsForSegment(label, monthIdx) {
+      const matchMonth = d => d.expectedClose
+        && d.expectedClose.getMonth() === monthIdx
+        && d.expectedClose.getFullYear() === STATE.year;
+      if (label === 'Won Renew') return (deals || []).filter(d => M.isRenew(d) && M.won(d) && matchMonth(d));
+      if (label === 'Won New') return (deals || []).filter(d => NEW.has(d.dealType) && M.won(d) && matchMonth(d));
+      if (label === 'Renewal Est.') return (deals || []).filter(d => M.isRenew(d) && isOCU(d) && matchMonth(d));
+      // Sales Forecast / Total Target / lastYear — no deals to drill
+      return null;
+    }
     charts.monthly = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -393,6 +406,36 @@
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        onClick: (event, elements, chart) => {
+          if (!elements.length) return;
+          const el = elements[0];
+          const dataset = chart.config.data.datasets[el.datasetIndex];
+          const monthIdx = el.index;
+          const monthLabel = MONTHS[monthIdx] + ' ' + STATE.year;
+          if (dataset.label === 'Sales Forecast') {
+            App.UI.toast('Sales Forecast is manual input — see Forecast > Sales Forecast section to edit', '');
+            return;
+          }
+          const matched = dealsForSegment(dataset.label, monthIdx);
+          if (matched === null) return;   // line / non-clickable
+          const subtitle = dataset.label === 'Renewal Est.'
+            ? `Open + Commit + Upside Renew deals for ${monthLabel} (estimate = these × multiplier)`
+            : '';
+          App.UI.drillModal({
+            title: `Forecast · ${dataset.label} · ${monthLabel}`,
+            subtitle, deals: matched,
+          });
+        },
+        onHover: (e, els, chart) => {
+          if (!e.native) return;
+          const el = els[0];
+          let isClickable = false;
+          if (el) {
+            const lbl = chart.config.data.datasets[el.datasetIndex].label;
+            isClickable = lbl === 'Won Renew' || lbl === 'Won New' || lbl === 'Renewal Est.' || lbl === 'Sales Forecast';
+          }
+          e.native.target.style.cursor = isClickable ? 'pointer' : 'default';
+        },
         plugins: {
           legend: { display: false },
           tooltip: {

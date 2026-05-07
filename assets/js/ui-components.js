@@ -140,7 +140,16 @@
     document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
   });
 
-  /* ----- Modal ----- */
+  /* ----- Modal — supports ESC to close + click backdrop + close button ----- */
+  // Stack of currently-open modals (innermost last). ESC closes the topmost only.
+  const _openModals = [];
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && _openModals.length > 0) {
+      const top = _openModals[_openModals.length - 1];
+      if (top && typeof top.close === 'function') top.close();
+    }
+  });
+
   function modal({ title, body, footer, onClose, width }) {
     let backdrop = document.getElementById('modalBackdrop');
     if (!backdrop) {
@@ -153,7 +162,7 @@
       <div class="modal" style="${width ? 'width:' + width + ';' : ''}">
         <div class="modal-header">
           <div class="modal-title">${title || ''}</div>
-          <button class="modal-close" aria-label="Close">×</button>
+          <button class="modal-close" aria-label="Close" title="Close (ESC)">×</button>
         </div>
         <div class="modal-body"></div>
         ${footer ? '<div class="modal-footer"></div>' : ''}
@@ -168,8 +177,13 @@
       else if (footer instanceof Node) footerEl.appendChild(footer);
     }
 
+    let closed = false;
     function close() {
+      if (closed) return;
+      closed = true;
       backdrop.classList.remove('open');
+      const idx = _openModals.indexOf(handle);
+      if (idx >= 0) _openModals.splice(idx, 1);
       onClose && onClose();
     }
     backdrop.querySelector('.modal-close').addEventListener('click', close);
@@ -177,7 +191,9 @@
 
     setTimeout(() => backdrop.classList.add('open'), 10);
 
-    return { close, el: backdrop };
+    const handle = { close, el: backdrop };
+    _openModals.push(handle);
+    return handle;
   }
 
   /* ----- Confirm dialog (supports HTML message + cancel callback) ----- */
