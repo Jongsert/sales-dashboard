@@ -438,18 +438,35 @@
     f.appendChild(close);
   }
 
-  /* ----- Drill-down modal: show a list of deals matching a chart segment.
-     Sortable columns + clickable Deal Name → opens full deal detail. ----- */
+  /* ----- Drill-down modal: search + sortable columns + clickable Deal Name ----- */
   function drillModal({ title, subtitle, deals }) {
     if (!deals || deals.length === 0) {
       toast('No deals to show for this segment', '');
       return;
     }
-    const total = deals.reduce((s, d) => s + (d.income || 0), 0);
+    const totalAll = deals.reduce((s, d) => s + (d.income || 0), 0);
     const COLORS = (window.App && App.StatusMapping && App.StatusMapping.COLORS) || {};
 
-    const STATE = { sortKey: 'income', sortDir: -1 };
+    const STATE = { sortKey: 'income', sortDir: -1, search: '' };
 
+    function applySearch(arr) {
+      if (!STATE.search || !STATE.search.trim()) return arr;
+      const s = STATE.search.toLowerCase();
+      return arr.filter(d => {
+        const fields = [
+          d.dealName, d.company, d.responsible, d.team, d.stage, d.status,
+          d.dealType, d.productType, d.endCustomer, d.id,
+        ];
+        if (fields.some(f => f != null && String(f).toLowerCase().includes(s))) return true;
+        // Also search through raw columns for thoroughness
+        if (d._raw) {
+          for (const v of Object.values(d._raw)) {
+            if (v != null && String(v).toLowerCase().includes(s)) return true;
+          }
+        }
+        return false;
+      });
+    }
     function compare(a, b) {
       const k = STATE.sortKey;
       let va = a[k], vb = b[k];
@@ -464,13 +481,28 @@
       return STATE.sortDir === 1 ? ' ▲' : ' ▼';
     }
     function buildBodyHtml() {
-      const sorted = deals.slice().sort(compare);
+      const filtered = applySearch(deals);
+      const sorted = filtered.slice().sort(compare);
+      const totalFiltered = filtered.reduce((s, d) => s + (d.income || 0), 0);
+      const isSearching = !!(STATE.search && STATE.search.trim());
       return `
         ${subtitle ? `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${subtitle}</div>` : ''}
-        <div style="margin-bottom:10px; padding:10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); display:flex; gap:18px; flex-wrap:wrap; font-size:12px;">
-          <span><strong style="font-size:16px;">${deals.length.toLocaleString()}</strong> deal${deals.length>1?'s':''}</span>
-          <span>·</span>
-          <span>Total: <strong style="font-size:14px;" title="${fmtTHBExact(total)}">${fmtTHBFull(total)}</strong></span>
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+          <input type="text" id="drillSearch" class="select-input"
+                 placeholder="🔍 Search across all columns (deal name, company, responsible, ...)"
+                 value="${escapeHtml(STATE.search)}"
+                 style="flex:1; padding:9px 12px; font-size:13px;">
+          ${isSearching ? `<button class="btn btn-sm btn-ghost" id="drillClearSearch">× Clear</button>` : ''}
+        </div>
+        <div style="margin-bottom:10px; padding:10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); display:flex; gap:18px; flex-wrap:wrap; font-size:12px; align-items:center;">
+          ${isSearching
+            ? `<span><strong style="font-size:16px;">${filtered.length.toLocaleString()}</strong> of ${deals.length.toLocaleString()} deals match</span>
+               <span>·</span>
+               <span>Filtered total: <strong style="font-size:14px;" title="${fmtTHBExact(totalFiltered)}">${fmtTHBFull(totalFiltered)}</strong></span>
+               <span style="color:var(--text-faint);">/ ${fmtTHBFull(totalAll)} all</span>`
+            : `<span><strong style="font-size:16px;">${deals.length.toLocaleString()}</strong> deal${deals.length>1?'s':''}</span>
+               <span>·</span>
+               <span>Total: <strong style="font-size:14px;" title="${fmtTHBExact(totalAll)}">${fmtTHBFull(totalAll)}</strong></span>`}
           <span style="margin-left:auto; color:var(--text-faint); font-size:11px;">Click column header to sort · Click Deal Name to view detail</span>
         </div>
         <div class="drill-scroll" style="max-height:60vh; overflow:auto; overscroll-behavior: contain; border:1px solid var(--border); border-radius: var(--radius-sm);">
@@ -485,18 +517,20 @@
               <th class="drill-th" data-sort="expectedClose">Expected close${sortInd('expectedClose')}</th>
             </tr></thead>
             <tbody>
-              ${sorted.map((d, i) => {
-                const sc = (COLORS[d.status] || {}).fill || 'var(--text-muted)';
-                return `<tr>
-                  <td class="wrap"><a href="javascript:void(0)" class="drill-deal-link" data-i="${i}"><strong>${escapeHtml(d.dealName || '—')}</strong></a></td>
-                  <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
-                  <td>${escapeHtml(d.responsible || '—')}</td>
-                  <td>${escapeHtml(d.stage || '—')}</td>
-                  <td><span style="color:${sc}; font-weight:600;">${d.status || '—'}</span></td>
-                  <td class="num" title="${fmtTHBExact(d.income||0)}">${fmtTHBFull(d.income || 0)}</td>
-                  <td>${fmtDate(d.expectedClose)}</td>
-                </tr>`;
-              }).join('')}
+              ${sorted.length === 0
+                ? `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">No deals match "${escapeHtml(STATE.search)}"</td></tr>`
+                : sorted.map((d, i) => {
+                    const sc = (COLORS[d.status] || {}).fill || 'var(--text-muted)';
+                    return `<tr>
+                      <td class="wrap"><a href="javascript:void(0)" class="drill-deal-link" data-i="${i}"><strong>${escapeHtml(d.dealName || '—')}</strong></a></td>
+                      <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
+                      <td>${escapeHtml(d.responsible || '—')}</td>
+                      <td>${escapeHtml(d.stage || '—')}</td>
+                      <td><span style="color:${sc}; font-weight:600;">${d.status || '—'}</span></td>
+                      <td class="num" title="${fmtTHBExact(d.income||0)}">${fmtTHBFull(d.income || 0)}</td>
+                      <td>${fmtDate(d.expectedClose)}</td>
+                    </tr>`;
+                  }).join('')}
             </tbody>
           </table>
         </div>
@@ -507,6 +541,7 @@
     body.innerHTML = buildBodyHtml();
     const m = modal({ title, body, footer: ' ', width: '1320px' });
 
+    let searchDebounce = null;
     function rebind() {
       // Sort headers
       m.el.querySelectorAll('.drill-th').forEach(th => {
@@ -524,12 +559,40 @@
       m.el.querySelectorAll('.drill-deal-link').forEach(a => {
         a.addEventListener('click', (e) => {
           e.preventDefault();
-          const sorted = deals.slice().sort(compare);
+          const filtered = applySearch(deals);
+          const sorted = filtered.slice().sort(compare);
           const idx = parseInt(a.dataset.i);
           const d = sorted[idx];
           if (d && App.UI.openDealDetail) App.UI.openDealDetail(d);
         });
       });
+      // Search input
+      const searchEl = m.el.querySelector('#drillSearch');
+      if (searchEl) {
+        // Auto-focus search on open
+        if (!STATE.search) setTimeout(() => searchEl.focus(), 50);
+        searchEl.addEventListener('input', () => {
+          STATE.search = searchEl.value;
+          const cursor = searchEl.selectionStart;
+          clearTimeout(searchDebounce);
+          searchDebounce = setTimeout(() => {
+            m.el.querySelector('.modal-body').innerHTML = buildBodyHtml();
+            rebind();
+            const newEl = m.el.querySelector('#drillSearch');
+            if (newEl) { newEl.focus(); try { newEl.setSelectionRange(cursor, cursor); } catch (_) {} }
+          }, 150);
+        });
+      }
+      const clearBtn = m.el.querySelector('#drillClearSearch');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          STATE.search = '';
+          m.el.querySelector('.modal-body').innerHTML = buildBodyHtml();
+          rebind();
+          const newEl = m.el.querySelector('#drillSearch');
+          if (newEl) newEl.focus();
+        });
+      }
     }
     rebind();
 

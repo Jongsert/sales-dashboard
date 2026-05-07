@@ -2,8 +2,8 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.4.2';
-  const VERSION_DATE = '2026-05-07';
+  const VERSION = '1.4.3';
+  const VERSION_DATE = '2026-05-08';
 
   const PAGES = [
     { id: 'overview',  label: '📊 Overview',        ready: true,  needsFilter: true },
