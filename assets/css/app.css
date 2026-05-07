@@ -1004,8 +1004,16 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
    Print
    ======================================================================== */
 @media print {
-  .topbar, .tabnav, .filter-bar, .topbar-actions { display: none !important; }
+  .topbar, .tabnav, .filter-bar, .topbar-actions,
+  .section-title .actions, .modal-backdrop, .toast { display: none !important; }
   body { background: white; }
   .card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
   .main { padding: 0; max-width: none; }
+  .kpi-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+  .chart-canvas, .chart-canvas-md, .chart-canvas-tall { break-inside: avoid; height: 280px !important; }
+  .targets-wrap, .pipeline-tbl, .forecast-detail-tbl { max-height: none !important; }
+  .section-title { page-break-after: avoid; margin-top: 16px; }
+  .section-title:first-child { margin-top: 0; }
+  /* Print color: keep accents but switch to print-friendly */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }

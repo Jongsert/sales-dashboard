@@ -41,11 +41,24 @@
     container.querySelector('#performerGroupBy').addEventListener('change', () => {
       renderTopPerformers(deals);
     });
+    const printBtn = container.querySelector('#overviewPrintBtn');
+    if (printBtn) printBtn.addEventListener('click', () => window.print());
+    const snapBtn = container.querySelector('#overviewSnapBtn');
+    if (snapBtn) snapBtn.addEventListener('click', () => {
+      const snap = App.Snapshot.capture();
+      if (snap) App.UI.toast(`Snapshot saved — Achievement ${(snap.achievement * 100).toFixed(1)}%`, 'success');
+    });
   }
 
   function renderHTML() {
     return `
-      <div class="section-title">Key Metrics</div>
+      <div class="section-title">
+        Key Metrics
+        <span class="actions">
+          <button class="btn btn-sm" id="overviewPrintBtn">🖨️ Print</button>
+          <button class="btn btn-sm" id="overviewSnapBtn">📸 Save snapshot</button>
+        </span>
+      </div>
       <div class="kpi-grid" id="kpiGrid"></div>
 
       <div class="section-title">Trend by Month — All deals (Won/Commit/Upside/Open/Lost)</div>

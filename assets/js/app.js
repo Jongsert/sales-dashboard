@@ -4,9 +4,9 @@
 (function () {
   const PAGES = [
     { id: 'overview',  label: '📊 Overview',        ready: true,  needsFilter: true },
-    { id: 'renew',     label: '🔄 Renew',           ready: false, phase: 'Phase 4', needsFilter: true },
-    { id: 'newsell',   label: '✨ New Sell',         ready: false, phase: 'Phase 4', needsFilter: true },
-    { id: 'combined',  label: '📈 Combined',        ready: false, phase: 'Phase 4', needsFilter: true },
+    { id: 'renew',     label: '🔄 Renew',           ready: true,  needsFilter: true },
+    { id: 'newsell',   label: '✨ New Sell',         ready: true,  needsFilter: true },
+    { id: 'combined',  label: '📈 Combined',        ready: true,  needsFilter: true },
     { id: 'forecast',  label: '🎯 Forecast',         ready: true,  star: true, needsFilter: true },
     { id: 'pipeline',  label: '📄 Pipeline Detail', ready: true,  needsFilter: true },
     { id: 'targets',   label: '🎯 Targets',         ready: true,  needsFilter: false },

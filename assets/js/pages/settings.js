@@ -55,6 +55,20 @@
         </div>
       </div>
 
+      <div class="section-title">
+        Snapshot History
+        <span class="actions">
+          <button class="btn btn-sm btn-primary" id="takeSnapshotBtn">📸 Take snapshot now</button>
+          ${(settings.snapshots || []).length > 0 ? '<button class="btn btn-sm btn-ghost" id="clearSnapshotsBtn">Clear all</button>' : ''}
+        </span>
+      </div>
+      <div class="card">
+        <div class="card-subtitle" style="margin-bottom: 12px;">
+          Snapshot capture KPIs ตอนนี้ — ใช้ tracking trend อาทิตย์ต่ออาทิตย์ (week-over-week)
+        </div>
+        <div id="snapshotsList"></div>
+      </div>
+
       <div class="section-title">UI Preferences</div>
       <div class="card">
         <label class="toggle" style="display:block; padding:8px 0;">
@@ -80,11 +94,36 @@
     `;
 
     renderStorageSize();
+    renderSnapshots();
+
+    // Wire snapshot actions
+    document.getElementById('takeSnapshotBtn').addEventListener('click', () => {
+      const snap = App.Snapshot.capture();
+      if (snap) {
+        App.UI.toast(`Snapshot taken — Achievement ${(snap.achievement * 100).toFixed(1)}%`, 'success');
+        render(container, parsed);
+      }
+    });
+    const clearBtn = document.getElementById('clearSnapshotsBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        App.UI.confirm('Clear all snapshot history?', () => {
+          App.Snapshot.clearAll();
+          render(container, parsed);
+          App.UI.toast('All snapshots cleared', 'success');
+        });
+      });
+    }
 
     // Wire up actions
     document.getElementById('exportBtn').addEventListener('click', () => {
+      // Auto-capture snapshot on export so trend keeps building
+      if (App.STATE && App.STATE.parsed) {
+        App.Snapshot.capture('Auto on export');
+      }
       const filename = App.Settings.exportToFile();
       App.UI.toast('Exported: ' + filename, 'success');
+      render(container, parsed);
     });
     document.getElementById('importBtn').addEventListener('click', () => {
       document.getElementById('importInput').click();
@@ -137,6 +176,88 @@
       const display = size > 1024 ? (size / 1024).toFixed(1) + ' KB' : size + ' bytes';
       document.getElementById('storageSize').textContent = display + ' (limit ~5 MB)';
     } catch (e) {}
+  }
+
+  function renderSnapshots() {
+    const list = document.getElementById('snapshotsList');
+    if (!list) return;
+    const snapshots = (App.Settings.load().snapshots || []).slice().sort((a, b) => b.timestamp - a.timestamp);
+    if (snapshots.length === 0) {
+      list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No snapshots yet — click "Take snapshot now" to capture current KPIs</div>';
+      return;
+    }
+
+    // Trend mini-chart of achievement %
+    const fmt = App.UI.fmt;
+    const recent = snapshots.slice(0, 16).reverse();   // oldest → newest for chart
+    const trendCanvas = `<div style="height:140px; margin-bottom:14px;"><canvas id="snapshotsTrendChart"></canvas></div>`;
+
+    const tableHtml = `
+      <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Date / Time</th>
+            <th>File</th>
+            <th class="num">Total Target</th>
+            <th class="num">Won Total</th>
+            <th class="num">Achievement</th>
+            <th class="num">Open Renew</th>
+            <th class="num">Commit + Upside</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${snapshots.map(sn => `
+            <tr>
+              <td><strong>${sn.date}</strong> ${sn.time || ''}</td>
+              <td style="font-size:11px; color:var(--text-muted);">${sn.fileName ? sn.fileName.slice(0, 30) : '—'}</td>
+              <td class="num">${fmt.THBFull(sn.totalTarget)}</td>
+              <td class="num">${fmt.THBFull(sn.wonTotal)}</td>
+              <td class="num"><strong style="color: var(--won);">${fmt.pct(sn.achievement)}</strong></td>
+              <td class="num">${fmt.THB(sn.openRenew)}</td>
+              <td class="num">${fmt.THB((sn.commitTotal || 0) + (sn.upsideTotal || 0))}</td>
+              <td><button class="btn btn-ghost btn-sm" data-del-snap="${sn.timestamp}" title="Delete">🗑</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      </div>
+    `;
+
+    list.innerHTML = trendCanvas + tableHtml;
+
+    // Render trend chart
+    const ctx = document.getElementById('snapshotsTrendChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: recent.map(s => s.date),
+        datasets: [
+          { label: 'Achievement %', data: recent.map(s => s.achievement * 100), borderColor: '#259b24', backgroundColor: 'rgba(37,155,36,0.15)', fill: true, tension: 0.25, pointRadius: 4, datalabels: { display: false } },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => 'Achievement: ' + c.parsed.y.toFixed(1) + '%' } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { ticks: { callback: v => v.toFixed(0) + '%', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+        },
+      },
+    });
+
+    // Wire delete buttons
+    list.querySelectorAll('[data-del-snap]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        App.Snapshot.delete(parseInt(btn.dataset.delSnap));
+        const main = document.getElementById('main');
+        App.Pages.settings.render(main, App.STATE.parsed);
+      });
+    });
   }
 
   function renderStatusMapTable() {
