@@ -111,6 +111,7 @@
     STATUSES.forEach(s => preds[s] = d => d.status === s);
     const monthAgg = App.Filters.aggregateByMonthMulti(renewDeals, preds, d => d.income, f.from, f.to);
 
+    const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     charts.month = new Chart(document.getElementById('renewMonthChart').getContext('2d'), {
       type: 'bar',
       data: {
@@ -119,6 +120,19 @@
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        onClick: (event, elements) => {
+          if (!elements.length) return;
+          const el = elements[0];
+          const status = STATUSES[el.datasetIndex];
+          const lbl = monthAgg.labels[el.index];
+          const [mon, yr] = lbl.split(' ');
+          const monthIdx = MN.indexOf(mon);
+          const year = parseInt(yr);
+          const matched = renewDeals.filter(d => d.status === status && d.expectedClose
+            && d.expectedClose.getMonth() === monthIdx && d.expectedClose.getFullYear() === year);
+          App.UI.drillModal({ title: `Renew · ${status} · ${lbl}`, subtitle: 'Renew deals only', deals: matched });
+        },
+        onHover: (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); },
         plugins: {
           legend: { position: 'top', align: 'end', labels: { font: { size: 11 }, usePointStyle: true } },
           tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt.THBExact(c.parsed.y)}` } },
@@ -136,6 +150,14 @@
     STATUSES.forEach(s => statusBuckets[s] = 0);
     renewDeals.forEach(d => { statusBuckets[d.status] = (statusBuckets[d.status] || 0) + d.income; });
 
+    const renewDonutOpts = App.UI.donutOptions({ centerLabel: 'Renew Total' });
+    renewDonutOpts.onClick = (event, elements) => {
+      if (!elements.length) return;
+      const status = STATUSES[elements[0].index];
+      const matched = renewDeals.filter(d => d.status === status);
+      App.UI.drillModal({ title: `Renew · ${status}`, subtitle: 'All renew deals with this status', deals: matched });
+    };
+    renewDonutOpts.onHover = (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); };
     charts.status = new Chart(document.getElementById('renewStatusChart').getContext('2d'), {
       type: 'doughnut',
       data: {
@@ -146,7 +168,7 @@
           borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white',
         }],
       },
-      options: App.UI.donutOptions({ centerLabel: 'Renew Total' }),
+      options: renewDonutOpts,
     });
 
     // ===== Customers at Risk =====

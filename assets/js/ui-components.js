@@ -309,6 +309,66 @@
     return localDateISO(new Date());
   }
 
+  /* ----- Drill-down modal: show a list of deals matching a chart segment ----- */
+  function drillModal({ title, subtitle, deals }) {
+    if (!deals || deals.length === 0) {
+      toast('No deals to show for this segment', '');
+      return;
+    }
+    const total = deals.reduce((s, d) => s + (d.income || 0), 0);
+    const COLORS = (window.App && App.StatusMapping && App.StatusMapping.COLORS) || {};
+
+    const body = document.createElement('div');
+    body.innerHTML = `
+      ${subtitle ? `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${subtitle}</div>` : ''}
+      <div style="margin-bottom:10px; padding:10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); display:flex; gap:18px; flex-wrap:wrap; font-size:12px;">
+        <span><strong style="font-size:16px;">${deals.length.toLocaleString()}</strong> deal${deals.length>1?'s':''}</span>
+        <span>·</span>
+        <span>Total: <strong style="font-size:14px;" title="${fmtTHBExact(total)}">${fmtTHBFull(total)}</strong></span>
+      </div>
+      <div style="max-height:60vh; overflow:auto; border:1px solid var(--border); border-radius: var(--radius-sm);">
+        <table class="tbl">
+          <thead><tr>
+            <th class="wrap">Deal Name</th>
+            <th class="wrap-sm">Company</th>
+            <th>Responsible</th>
+            <th>Stage</th>
+            <th>Status</th>
+            <th class="num">Income</th>
+            <th>Expected close</th>
+          </tr></thead>
+          <tbody>
+            ${deals.slice().sort((a,b) => (b.income||0) - (a.income||0)).map(d => {
+              const sc = (COLORS[d.status] || {}).fill || 'var(--text-muted)';
+              return `<tr>
+                <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+                <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
+                <td>${escapeHtml(d.responsible || '—')}</td>
+                <td>${escapeHtml(d.stage || '—')}</td>
+                <td><span style="color:${sc}; font-weight:600;">${d.status || '—'}</span></td>
+                <td class="num" title="${fmtTHBExact(d.income||0)}">${fmtTHBFull(d.income || 0)}</td>
+                <td>${fmtDate(d.expectedClose)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    const m = modal({ title, body, footer: ' ', width: '1100px' });
+    const f = m.el.querySelector('.modal-footer');
+    f.innerHTML = '';
+    const close = document.createElement('button'); close.className = 'btn'; close.textContent = 'Close';
+    close.addEventListener('click', () => m.close());
+    const goAll = document.createElement('button'); goAll.className = 'btn btn-primary'; goAll.textContent = '📄 Open All Deals';
+    goAll.addEventListener('click', () => { m.close(); location.hash = '#/pipeline'; });
+    f.appendChild(close);
+    f.appendChild(goAll);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   /* ----- Reusable donut chart options (center text + slice labels) ----- */
   function donutOptions(opts = {}) {
     return {
@@ -361,6 +421,7 @@
     modal,
     confirm,
     donutOptions,
+    drillModal,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       THBTip: fmtTHBTip, THBShortTip: fmtTHBShortTip, commaTip: fmtCommaTip,

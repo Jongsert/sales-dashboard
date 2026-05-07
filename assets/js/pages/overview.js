@@ -33,6 +33,7 @@
 
     const deals = F().dashboardScope(F().apply(parsed.deals));
     renderKPIs(deals);
+    renderInsights(deals);
     renderStatusByMonth(deals);
     renderStatusByUser(deals);
     renderTopPerformers(deals);
@@ -60,6 +61,7 @@
         </span>
       </div>
       <div class="hero-grid" id="kpiHero"></div>
+      <div class="insights-strip" id="insightsStrip"></div>
       <div class="kpi-grid" id="kpiGrid" style="margin-top:14px;"></div>
 
       <div class="section-title">Trend by Month — All deals (Won/Commit/Upside/Open/Lost)</div>
@@ -270,6 +272,115 @@
       </div>`).join('');
   }
 
+  /* ----- Auto-generated insights strip ----- */
+  function renderInsights(deals) {
+    const M = F().Matchers;
+    const NEW = F().NEW_TYPES;
+    const insights = [];
+    const fm = fmt();
+
+    // Top performer (most won value)
+    const userWon = {};
+    deals.filter(M.won).forEach(d => {
+      const u = d.responsible || 'Unassigned';
+      userWon[u] = (userWon[u] || 0) + d.income;
+    });
+    const topEntries = Object.entries(userWon).sort((a, b) => b[1] - a[1]);
+    if (topEntries[0]) {
+      insights.push({
+        icon: '🏆',
+        text: `Top performer: <strong>${escapeHtml(topEntries[0][0])}</strong> with <span title="${fm.THBExact(topEntries[0][1])}">${fm.THBFull(topEntries[0][1])}</span> won`,
+      });
+    }
+
+    // Renewal rate (Won / (Won+Lost) for renew deals)
+    const renewDeals = deals.filter(M.isRenew);
+    const renewWon = renewDeals.filter(M.won).length;
+    const renewLost = renewDeals.filter(M.lost).length;
+    if (renewWon + renewLost > 0) {
+      const rate = renewWon / (renewWon + renewLost);
+      const color = rate >= 0.8 ? 'var(--won)' : rate >= 0.6 ? 'var(--upside)' : 'var(--lost)';
+      insights.push({
+        icon: '♻️',
+        text: `Renewal rate: <strong style="color:${color};">${fm.pct(rate)}</strong> (${renewWon} won / ${renewWon + renewLost} closed)`,
+      });
+    }
+
+    // Deals due in next 7 days (open + close in next 7d)
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const in7 = new Date(today.getTime() + 7 * 86400 * 1000);
+    const dueSoon = deals.filter(d =>
+      (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
+      && d.expectedClose && d.expectedClose >= today && d.expectedClose <= in7
+    );
+    if (dueSoon.length > 0) {
+      const total = dueSoon.reduce((s, d) => s + d.income, 0);
+      insights.push({
+        icon: '📅',
+        text: `<strong>${dueSoon.length}</strong> deal${dueSoon.length > 1 ? 's' : ''} due in next 7 days · <span title="${fm.THBExact(total)}">${fm.THBFull(total)}</span>`,
+      });
+    }
+
+    // Overdue alert
+    const overdue = deals.filter(d =>
+      (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
+      && d.expectedClose && d.expectedClose < today
+    );
+    if (overdue.length > 0) {
+      const total = overdue.reduce((s, d) => s + d.income, 0);
+      insights.push({
+        icon: '⚠️',
+        accent: 'danger',
+        text: `<strong>${overdue.length}</strong> overdue deal${overdue.length > 1 ? 's' : ''} · <span title="${fm.THBExact(total)}">${fm.THBFull(total)}</span> need attention`,
+      });
+    }
+
+    // Top product type (Won)
+    const prodWon = {};
+    deals.filter(M.won).forEach(d => {
+      const p = d.productType || '(none)';
+      if (p === '(none)') return;
+      prodWon[p] = (prodWon[p] || 0) + d.income;
+    });
+    const topProd = Object.entries(prodWon).sort((a, b) => b[1] - a[1])[0];
+    if (topProd) {
+      insights.push({
+        icon: '📦',
+        text: `Top product: <strong>${escapeHtml(topProd[0])}</strong> with <span title="${fm.THBExact(topProd[1])}">${fm.THBFull(topProd[1])}</span> won`,
+      });
+    }
+
+    // Snapshot trend (vs last snapshot if exists)
+    const snaps = (App.Settings.load().snapshots || []).slice().sort((a, b) => b.timestamp - a.timestamp);
+    if (snaps.length >= 2) {
+      const cur = snaps[0];
+      const prev = snaps[1];
+      const diff = cur.achievement - prev.achievement;
+      if (Math.abs(diff) > 0.0001) {
+        const arrow = diff > 0 ? '↑' : '↓';
+        const color = diff > 0 ? 'var(--won)' : 'var(--lost)';
+        insights.push({
+          icon: '📈',
+          text: `Achievement <span style="color:${color}; font-weight:700;">${arrow} ${fm.pct(Math.abs(diff))}</span> vs last snapshot (${prev.date})`,
+        });
+      }
+    }
+
+    const el = document.getElementById('insightsStrip');
+    if (!el) return;
+    if (insights.length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = insights.map(ins => `
+      <div class="insight ${ins.accent || ''}">
+        <span class="insight-ico">${ins.icon}</span>
+        <span class="insight-text">${ins.text}</span>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   function renderStatusByMonth(deals) {
     const f = F().STATE.period;
     const COLORS = App.StatusMapping.COLORS;
@@ -280,6 +391,7 @@
     const agg = F().aggregateByMonthMulti(deals, predicates, d => d.income, f.from, f.to);
 
     const ctx = document.getElementById('chartStatusMonth').getContext('2d');
+    const MONTH_NAMES_LOCAL = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     charts.statusMonth = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -295,6 +407,23 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        onClick: (event, elements, chart) => {
+          if (!elements.length) return;
+          const el = elements[0];
+          const status = STATUSES[el.datasetIndex];
+          const lbl = agg.labels[el.index];
+          const [mon, yr] = lbl.split(' ');
+          const monthIdx = MONTH_NAMES_LOCAL.indexOf(mon);
+          const year = parseInt(yr);
+          const matched = deals.filter(d => d.status === status && d.expectedClose
+            && d.expectedClose.getMonth() === monthIdx && d.expectedClose.getFullYear() === year);
+          App.UI.drillModal({
+            title: `${status} deals — ${lbl}`,
+            subtitle: 'Filtered by current period and other dashboard filters',
+            deals: matched,
+          });
+        },
+        onHover: (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -342,6 +471,19 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         indexAxis: 'y',
+        onClick: (event, elements) => {
+          if (!elements.length) return;
+          const el = elements[0];
+          const status = STATUSES[el.datasetIndex];
+          const userName = arr[el.index].name;
+          const matched = deals.filter(d => d.status === status && (d.responsible || 'Unassigned') === userName);
+          App.UI.drillModal({
+            title: `${userName} — ${status} deals`,
+            subtitle: 'Filtered by current period and other dashboard filters',
+            deals: matched,
+          });
+        },
+        onHover: (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); },
         plugins: {
           legend: { display: false },
           tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt().THBExact(c.parsed.x) } },

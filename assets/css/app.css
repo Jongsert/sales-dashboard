@@ -282,11 +282,12 @@ a:hover { text-decoration: underline; }
   gap: 6px;
   white-space: nowrap;
 }
-.btn:hover { background: var(--surface-2); border-color: var(--text-faint); }
+.btn:hover { background: var(--surface-2); border-color: var(--text-faint); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
 .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
 .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
 .btn-ghost { border: none; color: var(--text-muted); }
-.btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+.btn-ghost:hover { background: var(--surface-2); color: var(--text); transform: none; }
 .btn-danger { background: var(--danger); color: white; border-color: var(--danger); }
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 .btn-lg { padding: 10px 20px; font-size: 14px; }
@@ -650,6 +651,32 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   vertical-align: middle;
 }
 
+/* Auto-insights strip — shown above secondary KPIs on Overview */
+.insights-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.insight {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+.insight.danger {
+  background: var(--tint-danger);
+  border-color: var(--lost);
+}
+.insight-ico { font-size: 14px; flex: 0 0 auto; }
+.insight-text { color: var(--text); }
+.insight-text strong { color: var(--text); }
+
 /* ========================================================================
    Cards
    ======================================================================== */
@@ -658,7 +685,9 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
+.card:hover { box-shadow: var(--shadow-sm); }
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -786,6 +815,11 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   padding: 16px;
   position: relative;
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 .kpi-card::before {
   content: "";
