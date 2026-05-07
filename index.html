@@ -144,7 +144,9 @@ const DonutCenterPlugin = {
         const exact = (window.App && App.UI && App.UI.fmt && App.UI.fmt.THBExact)
           ? App.UI.fmt.THBExact(total)
           : String(total);
-        overlay.title = `${labelText}: ${exact}`;
+        const tipText = `${labelText}: ${exact}`;
+        overlay.title = tipText;
+        overlay.setAttribute('data-tooltip', tipText);
       }
     } catch (e) {
       console.warn('DonutCenterPlugin error:', e);
