@@ -219,7 +219,7 @@
 
     document.getElementById('newOverdueWrap').innerHTML = `
       <div style="margin-bottom:12px; font-size:12px; padding:6px 12px; background:#fef2f2; border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); display:inline-block; font-weight:600;">
-        🔴 ${overdue.length} deals overdue · Total ${fmt.THBFull(totalValue)}
+        <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} deals overdue · Total ${fmt.THBFull(totalValue)}
       </div>
       <div style="max-height:480px; overflow:auto;">
         <table class="tbl">
@@ -239,7 +239,7 @@
                   <td>${escapeHtml(d.stage || '—')}</td>
                   <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
                   <td>${fmt.date(d.expectedClose)}</td>
-                  <td><strong style="color: var(--danger);">🔴 Overdue ${days} day${days > 1 ? 's' : ''}</strong></td>
+                  <td><strong style="color: var(--danger);">Overdue ${days} day${days > 1 ? 's' : ''}</strong></td>
                 </tr>
               `;
             }).join('')}

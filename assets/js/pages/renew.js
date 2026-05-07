@@ -190,14 +190,14 @@
       const daysFromToday = Math.floor((today - closeDay) / 86400000);
       if (daysFromToday > 0) {
         return {
-          html: `<strong style="color: var(--danger);">🔴 Overdue ${daysFromToday} day${daysFromToday > 1 ? 's' : ''}</strong>`,
+          html: `<strong style="color: var(--danger);">Overdue ${daysFromToday} day${daysFromToday > 1 ? 's' : ''}</strong>`,
           isOverdue: true, sortKey: -daysFromToday,
         };
       } else if (daysFromToday === 0) {
-        return { html: `<strong style="color: var(--danger);">🔴 Overdue today</strong>`, isOverdue: true, sortKey: 0 };
+        return { html: `<strong style="color: var(--danger);">Overdue today</strong>`, isOverdue: true, sortKey: 0 };
       } else {
         return {
-          html: `<span style="color: var(--upside); font-weight:600;">🟠 Due in ${-daysFromToday} day${-daysFromToday > 1 ? 's' : ''}</span>`,
+          html: `<span style="color: var(--upside); font-weight:600;">Due in ${-daysFromToday} day${-daysFromToday > 1 ? 's' : ''}</span>`,
           isOverdue: false, sortKey: -daysFromToday,
         };
       }
@@ -221,10 +221,10 @@
     document.getElementById('atRiskWrap').innerHTML = `
       <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
         <div style="padding:6px 12px; background: #fef2f2; border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
-          🔴 ${overdueCount} overdue · ${fmt.THBFull(overdueValue)}
+          <span class="status-dot" style="background: var(--danger);"></span>${overdueCount} overdue · ${fmt.THBFull(overdueValue)}
         </div>
         <div style="padding:6px 12px; background: #fff7ed; border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
-          🟠 ${upcomingCount} due in 30 days · ${fmt.THBFull(upcomingValue)}
+          <span class="status-dot" style="background: var(--upside);"></span>${upcomingCount} due in 30 days · ${fmt.THBFull(upcomingValue)}
         </div>
       </div>
       <div style="max-height:520px; overflow:auto;">

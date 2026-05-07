@@ -550,6 +550,16 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 .num-tip:hover { border-bottom-color: var(--text-faint); }
 
+/* Inline status dot (replacement for emoji circles) */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
 /* ========================================================================
    Cards
    ======================================================================== */
@@ -753,6 +763,9 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .tbl thead th {
   background: var(--surface-2);
 }
+.tbl th, .tbl td {
+  white-space: nowrap;
+}
 .tbl th {
   text-align: left;
   padding: 8px 10px;
@@ -766,6 +779,14 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .tbl td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
+}
+/* Long text columns (Deal Name, Company) — allow wrap with explicit .wrap class
+   or use max-width + ellipsis with .ellipsis class */
+.tbl th.wrap, .tbl td.wrap { white-space: normal; }
+.tbl th.ellipsis, .tbl td.ellipsis {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tbl tr:last-child td { border-bottom: none; }
 .tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
