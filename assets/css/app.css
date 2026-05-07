@@ -542,6 +542,14 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
+/* Hover-tooltip wrapper for monetary values (rounded display, exact on hover) */
+.num-tip {
+  cursor: help;
+  border-bottom: 1px dotted transparent;
+  transition: border-color 0.15s;
+}
+.num-tip:hover { border-bottom-color: var(--text-faint); }
+
 /* ========================================================================
    Cards
    ======================================================================== */

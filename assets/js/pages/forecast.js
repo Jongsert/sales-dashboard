@@ -346,7 +346,7 @@
     document.getElementById('forecastKpis').innerHTML = cards.map(k => `
       <div class="kpi-card ${k.cls}${k.primary ? ' kpi-primary' : ''}">
         <div class="kpi-label"><span>${k.icon}</span>${k.label}</div>
-        <div class="kpi-value">${k.value}</div>
+        <div class="kpi-value" title="${k.value}">${k.value}</div>
         <div class="kpi-meta"><span>${k.sub}</span></div>
       </div>`).join('');
   }

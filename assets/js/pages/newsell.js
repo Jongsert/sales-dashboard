@@ -39,11 +39,11 @@
       </div>
 
       <div class="kpi-grid">
-        <div class="kpi-card target kpi-primary"><div class="kpi-label"><span>🎯</span>New Sell Target</div><div class="kpi-value">${fmt.THBFull(newTarget)}</div><div class="kpi-meta"><span>Manual (from Targets page)</span></div></div>
-        <div class="kpi-card won kpi-primary"><div class="kpi-label"><span>🏆</span>Won — New</div><div class="kpi-value">${fmt.THBFull(wonValue)}</div><div class="kpi-meta"><span>${fmt.pct(achievement)} of target · ${won.length.toLocaleString()} won</span></div></div>
-        <div class="kpi-card pct kpi-primary"><div class="kpi-label"><span>⚡</span>Win Rate</div><div class="kpi-value">${fmt.pct(winRate)}</div><div class="kpi-meta"><span>Won ${won.length} / Closed ${closedCount}</span></div></div>
-        <div class="kpi-card upside kpi-primary"><div class="kpi-label"><span>📊</span>Avg Deal Size</div><div class="kpi-value">${fmt.THBFull(avgDealSize)}</div><div class="kpi-meta"><span>across ${won.length} won deals</span></div></div>
-        <div class="kpi-card commit"><div class="kpi-label"><span>📋</span>Open Pipeline</div><div class="kpi-value">${fmt.THBFull(open.reduce((s, d) => s + d.income, 0))}</div><div class="kpi-meta"><span>${open.length.toLocaleString()} deals</span></div></div>
+        <div class="kpi-card target kpi-primary"><div class="kpi-label"><span>🎯</span>New Sell Target</div><div class="kpi-value" title="${fmt.THBExact(newTarget)}">${fmt.THBFull(newTarget)}</div><div class="kpi-meta"><span>Manual (from Targets page)</span></div></div>
+        <div class="kpi-card won kpi-primary"><div class="kpi-label"><span>🏆</span>Won — New</div><div class="kpi-value" title="${fmt.THBExact(wonValue)}">${fmt.THBFull(wonValue)}</div><div class="kpi-meta"><span>${fmt.pct(achievement)} of target · ${won.length.toLocaleString()} won</span></div></div>
+        <div class="kpi-card pct kpi-primary"><div class="kpi-label"><span>⚡</span>Win Rate</div><div class="kpi-value" title="${fmt.pct(winRate)}">${fmt.pct(winRate)}</div><div class="kpi-meta"><span>Won ${won.length} / Closed ${closedCount}</span></div></div>
+        <div class="kpi-card upside kpi-primary"><div class="kpi-label"><span>📊</span>Avg Deal Size</div><div class="kpi-value" title="${fmt.THBExact(avgDealSize)}">${fmt.THBFull(avgDealSize)}</div><div class="kpi-meta"><span>across ${won.length} won deals</span></div></div>
+        <div class="kpi-card commit"><div class="kpi-label"><span>📋</span>Open Pipeline</div><div class="kpi-value" title="${fmt.THBExact(open.reduce((s, d) => s + d.income, 0))}">${fmt.THBFull(open.reduce((s, d) => s + d.income, 0))}</div><div class="kpi-meta"><span>${open.length.toLocaleString()} deals</span></div></div>
       </div>
 
       <div class="section-title">Deal Source &amp; Stage Funnel</div>

@@ -230,17 +230,19 @@
       const pct = (h.achievement * 100);
       const barWidth = Math.min(100, Math.max(0, pct));
       const targetSet = h.target > 0;
+      const wonExact = fmt().THBExact(h.won);
+      const targetExact = fmt().THBExact(h.target);
       return `
         <div class="hero-card" style="--accent: ${h.accent};">
           <div class="hero-head">
             <div class="hero-title"><span class="hero-dot"></span>${h.label}</div>
             <div class="hero-achieve-label">Achievement (Won)</div>
           </div>
-          <div class="hero-achieve">${targetSet ? fmt().pct(h.achievement) : '—'}</div>
+          <div class="hero-achieve" title="${wonExact} ÷ ${targetExact}">${targetSet ? fmt().pct(h.achievement) : '—'}</div>
           <div class="hero-line">
-            <span class="hero-won">Won ${fmt().THBFull(h.won)}</span>
+            <span class="hero-won" title="${wonExact}">Won ${fmt().THBFull(h.won)}</span>
             <span class="hero-divider">/</span>
-            <span class="hero-target">Target ${targetSet ? fmt().THBFull(h.target) : '— set in Targets'}</span>
+            <span class="hero-target" title="${targetExact}">Target ${targetSet ? fmt().THBFull(h.target) : '— set in Targets'}</span>
           </div>
           <div class="hero-bar"><div class="hero-bar-fill" style="width:${barWidth}%;"></div></div>
           <div class="hero-meta">
@@ -251,17 +253,19 @@
     }).join('');
 
     // Secondary metrics (smaller cards below)
+    const openNewSum = deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).reduce((s,d) => s + d.income, 0);
+    const lostSum = deals.filter(M.lost).reduce((s,d) => s + d.income, 0);
     const secondary = [
-      { cls: 'pct', icon: '⚡', label: 'Win Rate', value: fmt().pct(winRate), sub: `${wonCount} won / ${closedCount} closed` },
-      { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage', value: fmt().pct(renewCoverage), sub: `Open ${fmt().THB(openRenewSum)} ÷ Renew Target` },
-      { cls: 'commit', icon: '🔄', label: 'Open Renew Pipeline', value: fmt().THBFull(openRenewSum), sub: `${deals.filter(d => M.isRenew(d) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
-      { cls: 'upside', icon: '✨', label: 'Open New Pipeline', value: fmt().THBFull(deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).reduce((s,d) => s + d.income, 0)), sub: `${deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
-      { cls: 'lost', icon: '📉', label: 'Lost Total', value: fmt().THBFull(deals.filter(M.lost).reduce((s,d) => s + d.income, 0)), sub: `${deals.filter(M.lost).length.toLocaleString()} deals` },
+      { cls: 'pct', icon: '⚡', label: 'Win Rate', value: fmt().pct(winRate), tip: `${wonCount} won out of ${closedCount} closed`, sub: `${wonCount} won / ${closedCount} closed` },
+      { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage', value: fmt().pct(renewCoverage), tip: `Open Renew ${fmt().THBExact(openRenewSum)} ÷ Renew Target ${fmt().THBExact(renewTargetSum)}`, sub: `Open ${fmt().THB(openRenewSum)} ÷ Renew Target` },
+      { cls: 'commit', icon: '🔄', label: 'Open Renew Pipeline', value: fmt().THBFull(openRenewSum), tip: fmt().THBExact(openRenewSum), sub: `${deals.filter(d => M.isRenew(d) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
+      { cls: 'upside', icon: '✨', label: 'Open New Pipeline', value: fmt().THBFull(openNewSum), tip: fmt().THBExact(openNewSum), sub: `${deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
+      { cls: 'lost', icon: '📉', label: 'Lost Total', value: fmt().THBFull(lostSum), tip: fmt().THBExact(lostSum), sub: `${deals.filter(M.lost).length.toLocaleString()} deals` },
     ];
     document.getElementById('kpiGrid').innerHTML = secondary.map(k => `
       <div class="kpi-card ${k.cls}">
         <div class="kpi-label"><span>${k.icon}</span>${k.label}</div>
-        <div class="kpi-value">${k.value}</div>
+        <div class="kpi-value" title="${k.tip || ''}">${k.value}</div>
         <div class="kpi-meta"><span>${k.sub}</span></div>
       </div>`).join('');
   }

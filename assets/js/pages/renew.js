@@ -45,27 +45,27 @@
       <div class="kpi-grid">
         <div class="kpi-card target kpi-primary">
           <div class="kpi-label"><span>🎯</span>Renew Target</div>
-          <div class="kpi-value">${fmt.THBFull(renewTarget)}</div>
+          <div class="kpi-value" title="${fmt.THBExact(renewTarget)}">${fmt.THBFull(renewTarget)}</div>
           <div class="kpi-meta"><span>${fmt.int(renewDeals.length)} deals in scope</span></div>
         </div>
         <div class="kpi-card won kpi-primary">
           <div class="kpi-label"><span>🏆</span>Won Renew</div>
-          <div class="kpi-value">${fmt.THBFull(wonRenew)}</div>
+          <div class="kpi-value" title="${fmt.THBExact(wonRenew)}">${fmt.THBFull(wonRenew)}</div>
           <div class="kpi-meta"><span>${fmt.pct(achievement)} of target · ${wonCount.toLocaleString()} won</span></div>
         </div>
         <div class="kpi-card pct kpi-primary">
           <div class="kpi-label"><span>♻️</span>Renewal Rate</div>
-          <div class="kpi-value">${fmt.pct(renewalRate)}</div>
+          <div class="kpi-value" title="${fmt.pct(renewalRate)}">${fmt.pct(renewalRate)}</div>
           <div class="kpi-meta"><span>Won ${wonCount} / Closed ${closedCount}</span></div>
         </div>
         <div class="kpi-card lost kpi-primary">
           <div class="kpi-label"><span>📉</span>Churn Rate</div>
-          <div class="kpi-value">${fmt.pct(churnRate)}</div>
+          <div class="kpi-value" title="${fmt.pct(churnRate)}">${fmt.pct(churnRate)}</div>
           <div class="kpi-meta"><span>Lost ${fmt.THB(lostRenew)} from ${lostCount} deals</span></div>
         </div>
         <div class="kpi-card coverage">
           <div class="kpi-label"><span>🛡️</span>Renew Coverage</div>
-          <div class="kpi-value">${fmt.pct(coverage)}</div>
+          <div class="kpi-value" title="${fmt.pct(coverage)}">${fmt.pct(coverage)}</div>
           <div class="kpi-meta"><span>Open ${fmt.THB(openRenew)} ÷ Target</span></div>
         </div>
       </div>

@@ -41,11 +41,11 @@
       </div>
 
       <div class="kpi-grid">
-        <div class="kpi-card target kpi-primary"><div class="kpi-label"><span>🎯</span>Total Target</div><div class="kpi-value">${fmt.THBFull(totalTarget)}</div><div class="kpi-meta"><span>Renew ${fmt.THB(renewTarget)} + New ${fmt.THB(newTarget)}</span></div></div>
-        <div class="kpi-card won kpi-primary"><div class="kpi-label"><span>🏆</span>Won Total</div><div class="kpi-value">${fmt.THBFull(wonTotal)}</div><div class="kpi-meta"><span>${fmt.pct(achievement)} of target</span></div></div>
-        <div class="kpi-card pct kpi-primary"><div class="kpi-label"><span>📊</span>YoY</div><div class="kpi-value">${(yoy >= 0 ? '+' : '') + fmt.pct(yoy)}</div><div class="kpi-meta"><span>${fmt.THB(lastYear)} → ${fmt.THB(wonTotal)}</span></div></div>
-        <div class="kpi-card commit kpi-primary"><div class="kpi-label"><span>♻️</span>Renew Mix</div><div class="kpi-value">${wonTotal > 0 ? fmt.pct(wonRenew / wonTotal) : '—'}</div><div class="kpi-meta"><span>${fmt.THB(wonRenew)} of total Won</span></div></div>
-        <div class="kpi-card upside kpi-primary"><div class="kpi-label"><span>✨</span>New Mix</div><div class="kpi-value">${wonTotal > 0 ? fmt.pct(wonNew / wonTotal) : '—'}</div><div class="kpi-meta"><span>${fmt.THB(wonNew)} of total Won</span></div></div>
+        <div class="kpi-card target kpi-primary"><div class="kpi-label"><span>🎯</span>Total Target</div><div class="kpi-value" title="${fmt.THBExact(totalTarget)}">${fmt.THBFull(totalTarget)}</div><div class="kpi-meta"><span>Renew ${fmt.THB(renewTarget)} + New ${fmt.THB(newTarget)}</span></div></div>
+        <div class="kpi-card won kpi-primary"><div class="kpi-label"><span>🏆</span>Won Total</div><div class="kpi-value" title="${fmt.THBExact(wonTotal)}">${fmt.THBFull(wonTotal)}</div><div class="kpi-meta"><span>${fmt.pct(achievement)} of target</span></div></div>
+        <div class="kpi-card pct kpi-primary"><div class="kpi-label"><span>📊</span>YoY</div><div class="kpi-value" title="${(yoy >= 0 ? '+' : '') + fmt.pct(yoy)}">${(yoy >= 0 ? '+' : '') + fmt.pct(yoy)}</div><div class="kpi-meta"><span>${fmt.THB(lastYear)} → ${fmt.THB(wonTotal)}</span></div></div>
+        <div class="kpi-card commit kpi-primary"><div class="kpi-label"><span>♻️</span>Renew Mix</div><div class="kpi-value" title="${wonTotal > 0 ? fmt.pct(wonRenew / wonTotal) : '—'}">${wonTotal > 0 ? fmt.pct(wonRenew / wonTotal) : '—'}</div><div class="kpi-meta"><span>${fmt.THB(wonRenew)} of total Won</span></div></div>
+        <div class="kpi-card upside kpi-primary"><div class="kpi-label"><span>✨</span>New Mix</div><div class="kpi-value" title="${wonTotal > 0 ? fmt.pct(wonNew / wonTotal) : '—'}">${wonTotal > 0 ? fmt.pct(wonNew / wonTotal) : '—'}</div><div class="kpi-meta"><span>${fmt.THB(wonNew)} of total Won</span></div></div>
       </div>
 
       <div class="section-title">Monthly trend — Renew vs New stacked vs Target</div>
