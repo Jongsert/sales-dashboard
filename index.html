@@ -130,7 +130,8 @@ const DonutCenterPlugin = {
       ctx.restore();
 
       // Attach an HTML overlay div on the donut hole for hover-tooltip showing exact value.
-      // This gives users the full-precision number on hover.
+      // Position is calculated from chart.chartArea (real donut center, not wrapper center
+      // — important when legend takes up space on the right).
       const wrap = chart.canvas && chart.canvas.parentElement;
       if (wrap) {
         const cs = getComputedStyle(wrap);
@@ -145,8 +146,17 @@ const DonutCenterPlugin = {
           ? App.UI.fmt.THBExact(total)
           : String(total);
         const tipText = `${labelText}: ${exact}`;
-        overlay.title = tipText;
         overlay.setAttribute('data-tooltip', tipText);
+        // Remove native title so it doesn't show as a second tooltip after delay
+        overlay.removeAttribute('title');
+
+        // Position overlay at the actual donut center (chartArea center) — not wrapper center
+        const wrapRect = wrap.getBoundingClientRect();
+        const canvasRect = chart.canvas.getBoundingClientRect();
+        const offsetLeft = (canvasRect.left - wrapRect.left) + cx;
+        const offsetTop = (canvasRect.top - wrapRect.top) + cy;
+        overlay.style.left = offsetLeft + 'px';
+        overlay.style.top = offsetTop + 'px';
       }
     } catch (e) {
       console.warn('DonutCenterPlugin error:', e);
