@@ -71,6 +71,17 @@
 
       <div class="section-title">UI Preferences</div>
       <div class="card">
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">Appearance</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="themePicker">
+            <button class="btn btn-sm theme-opt" data-theme-opt="light">☀️ Light</button>
+            <button class="btn btn-sm theme-opt" data-theme-opt="dark">🌙 Dark</button>
+            <button class="btn btn-sm theme-opt" data-theme-opt="system">🖥️ Follow system</button>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+            Quick toggle also in topbar (cycles Light → Dark → System)
+          </div>
+        </div>
         <label class="toggle" style="display:block; padding:8px 0;">
           <input type="checkbox" id="diffEnabled" ${settings.uiPreferences.diffViewEnabled ? 'checked' : ''}>
           <span>Enable Diff view (Weekly comparison)</span>
@@ -82,7 +93,7 @@
       </div>
 
       <div class="section-title">Danger Zone</div>
-      <div class="card" style="border-color: var(--danger-light); background: #fff5f5;">
+      <div class="card" style="border-color: var(--danger-light); background: var(--tint-danger);">
         <div class="card-header">
           <div>
             <div class="card-title" style="color: var(--danger);">⚠️ Reset all settings</div>
@@ -155,6 +166,23 @@
     document.getElementById('openStatusMapBtn').addEventListener('click', () => {
       location.hash = '#/statusmap';
     });
+    // Theme picker
+    const curTheme = localStorage.getItem('salesDashboard.theme') || 'system';
+    document.querySelectorAll('.theme-opt').forEach(btn => {
+      if (btn.dataset.themeOpt === curTheme) {
+        btn.classList.add('btn-primary');
+      }
+      btn.addEventListener('click', () => {
+        document.documentElement.setAttribute('data-theme', btn.dataset.themeOpt);
+        localStorage.setItem('salesDashboard.theme', btn.dataset.themeOpt);
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.textContent = { light: '☀️', dark: '🌙', system: '🖥️' }[btn.dataset.themeOpt] || '☀️';
+        document.querySelectorAll('.theme-opt').forEach(b => b.classList.remove('btn-primary'));
+        btn.classList.add('btn-primary');
+        App.UI.toast(`Theme: ${btn.dataset.themeOpt}`, 'success');
+      });
+    });
+
     document.getElementById('diffEnabled').addEventListener('change', (e) => {
       App.Settings.set('uiPreferences.diffViewEnabled', e.target.checked);
     });
@@ -245,7 +273,7 @@
         },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-          y: { ticks: { callback: v => v.toFixed(0) + '%', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+          y: { ticks: { callback: v => v.toFixed(0) + '%', font: { size: 10 } }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#f1f5f9' } },
         },
       },
     });

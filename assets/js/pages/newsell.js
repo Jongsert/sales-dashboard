@@ -105,7 +105,7 @@
       type: 'doughnut',
       data: {
         labels: prodLabels,
-        datasets: [{ data: prodVals, backgroundColor: prodLabels.map((_, i) => palette[i % palette.length]), borderWidth: 2, borderColor: 'white' }],
+        datasets: [{ data: prodVals, backgroundColor: prodLabels.map((_, i) => palette[i % palette.length]), borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white' }],
       },
       options: App.UI.donutOptions({ centerLabel: 'Won New' }),
     });
@@ -153,7 +153,7 @@
         },
         scales: {
           x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { callback: v => fmt.THB(v) }, grid: { color: '#f1f5f9' } },
+          y: { stacked: true, ticks: { callback: v => fmt.THB(v) }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#f1f5f9' } },
         },
       },
     });
@@ -218,7 +218,7 @@
     const totalValue = overdue.reduce((s, d) => s + d.income, 0);
 
     document.getElementById('newOverdueWrap').innerHTML = `
-      <div style="margin-bottom:12px; font-size:12px; padding:6px 12px; background:#fef2f2; border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); display:inline-block; font-weight:600;">
+      <div style="margin-bottom:12px; font-size:12px; padding:6px 12px; background:var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); display:inline-block; font-weight:600;">
         <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} deals overdue · Total ${fmt.THBFull(totalValue)}
       </div>
       <div style="max-height:480px; overflow:auto;">
@@ -232,7 +232,7 @@
               const closeDay = new Date(d.expectedClose.getFullYear(), d.expectedClose.getMonth(), d.expectedClose.getDate());
               const days = Math.floor((today - closeDay) / 86400000);
               return `
-                <tr style="background: #fef2f2;">
+                <tr style="background: var(--tint-danger);">
                   <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
                   <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
                   <td>${escapeHtml(d.responsible || '—')}</td>

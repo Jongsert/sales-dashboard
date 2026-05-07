@@ -126,7 +126,7 @@
         },
         scales: {
           x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { callback: v => fmt.THB(v) }, grid: { color: '#f1f5f9' } },
+          y: { stacked: true, ticks: { callback: v => fmt.THB(v) }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#f1f5f9' } },
         },
       },
     });
@@ -143,7 +143,7 @@
         datasets: [{
           data: STATUSES.map(s => statusBuckets[s]),
           backgroundColor: STATUSES.map(s => COLORS[s].fill),
-          borderWidth: 2, borderColor: 'white',
+          borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white',
         }],
       },
       options: App.UI.donutOptions({ centerLabel: 'Renew Total' }),
@@ -220,10 +220,10 @@
 
     document.getElementById('atRiskWrap').innerHTML = `
       <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
-        <div style="padding:6px 12px; background: #fef2f2; border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
+        <div style="padding:6px 12px; background: var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
           <span class="status-dot" style="background: var(--danger);"></span>${overdueCount} overdue · ${fmt.THBFull(overdueValue)}
         </div>
-        <div style="padding:6px 12px; background: #fff7ed; border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
+        <div style="padding:6px 12px; background: var(--tint-warning); border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
           <span class="status-dot" style="background: var(--upside);"></span>${upcomingCount} due in 30 days · ${fmt.THBFull(upcomingValue)}
         </div>
       </div>
@@ -235,7 +235,7 @@
           </tr></thead>
           <tbody>
             ${atRisk.map(({ d, info }) => `
-              <tr style="${info.isOverdue ? 'background: #fef2f2;' : ''}">
+              <tr style="${info.isOverdue ? 'background: var(--tint-danger);' : ''}">
                 <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
                 <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
                 <td>${escapeHtml(d.responsible || '—')}</td>

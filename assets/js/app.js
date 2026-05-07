@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.2.5';
+  const VERSION = '1.3.0';
   const VERSION_DATE = '2026-05-07';
 
   const PAGES = [
@@ -153,13 +153,58 @@
     el.textContent = `${now.getDate()} ${MONTH_ABBR[now.getMonth()]} ${now.getFullYear()} · ${time}`;
   }
 
+  /* ----- Theme system (Light / Dark / System) ----- */
+  const THEME_KEY = 'salesDashboard.theme';
+  const THEME_ORDER = ['light', 'dark', 'system'];
+  const THEME_ICON = { light: '☀️', dark: '🌙', system: '🖥️' };
+
+  function getTheme() {
+    return localStorage.getItem(THEME_KEY) || 'system';
+  }
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.textContent = THEME_ICON[theme] || '☀️';
+    // Update Chart.js text colors
+    if (typeof Chart !== 'undefined') {
+      const muted = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#64748b';
+      Chart.defaults.color = muted;
+      // Re-render any charts that exist by triggering route re-render
+      if (App && App.STATE && App.STATE.parsed) {
+        // Soft re-render — only if a chart is visible
+        const ev = new Event('themechange');
+        window.dispatchEvent(ev);
+      }
+    }
+  }
+  function cycleTheme() {
+    const cur = getTheme();
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length];
+    applyTheme(next);
+    if (App.UI && App.UI.toast) {
+      App.UI.toast(`Theme: ${next.charAt(0).toUpperCase() + next.slice(1)}`, 'success');
+    }
+  }
+  // Listen for OS dark/light changes when theme=system
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (getTheme() === 'system') applyTheme('system');
+    });
+  }
+
   /* ----- Bootstrap ----- */
   function init() {
     App.Settings.load();   // load from localStorage
+    applyTheme(getTheme());
     const v = document.getElementById('brandVersion');
     if (v) v.textContent = 'v' + VERSION;
     updateClock();
     setInterval(updateClock, 30 * 1000);
+
+    const tBtn = document.getElementById('themeBtn');
+    if (tBtn) tBtn.addEventListener('click', cycleTheme);
+
     renderTabs();
 
     // Wire up file upload buttons

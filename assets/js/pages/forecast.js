@@ -401,7 +401,7 @@
         },
         scales: {
           x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { callback: v => App.UI.fmt.THB(v) }, grid: { color: '#f1f5f9' } },
+          y: { stacked: true, ticks: { callback: v => App.UI.fmt.THB(v) }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#f1f5f9' } },
         },
       },
     });
@@ -453,7 +453,7 @@
         },
         scales: {
           x: { grid: { display: false } },
-          y: { ticks: { callback: v => App.UI.fmt.THB(v) }, grid: { color: '#f1f5f9' } },
+          y: { ticks: { callback: v => App.UI.fmt.THB(v) }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#f1f5f9' } },
         },
       },
     });

@@ -138,7 +138,7 @@
         },
         scales: {
           x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { callback: v => fmt.THB(v) }, grid: { color: '#f1f5f9' } },
+          y: { stacked: true, ticks: { callback: v => fmt.THB(v) }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#f1f5f9' } },
         },
       },
     });
@@ -192,7 +192,7 @@
       type: 'doughnut',
       data: {
         labels: ['Renew', 'New Sell'],
-        datasets: [{ data: [wonRenew, wonNew], backgroundColor: ['#259b24', '#9ccc65'], borderWidth: 2, borderColor: 'white' }],
+        datasets: [{ data: [wonRenew, wonNew], backgroundColor: ['#259b24', '#9ccc65'], borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white' }],
       },
       options: App.UI.donutOptions({ centerLabel: 'Won Total' }),
     });
@@ -208,7 +208,7 @@
       type: 'doughnut',
       data: {
         labels: STATUSES,
-        datasets: [{ data: STATUSES.map(s => statusBuckets[s]), backgroundColor: STATUSES.map(s => COLORS[s].fill), borderWidth: 2, borderColor: 'white' }],
+        datasets: [{ data: STATUSES.map(s => statusBuckets[s]), backgroundColor: STATUSES.map(s => COLORS[s].fill), borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || 'white' }],
       },
       options: App.UI.donutOptions({ centerLabel: 'Pipeline' }),
     });

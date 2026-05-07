@@ -53,7 +53,7 @@
       </div>
 
       ${unmapped.length > 0 ? `
-        <div class="card" style="background: #fef2f2; border-color: var(--danger-light); margin-bottom: 14px;">
+        <div class="card" style="background: var(--tint-danger); border-color: var(--danger-light); margin-bottom: 14px;">
           <div style="display:flex; gap:12px; align-items:center;">
             <span style="font-size:24px;">⚠️</span>
             <div>
@@ -120,7 +120,7 @@
         ${filtered.map(stage => {
           const c = classify(stage);
           const currentStatus = map[stage] || App.StatusMapping.resolve(stage, settings.statusMapping);
-          const rowStyle = c.badgeClass === 'unmapped' ? 'background: #fef2f2;' : '';
+          const rowStyle = c.badgeClass === 'unmapped' ? 'background: var(--tint-danger);' : '';
           return `<tr style="${rowStyle}">
             <td><strong>${escapeHtml(stage)}</strong></td>
             <td>

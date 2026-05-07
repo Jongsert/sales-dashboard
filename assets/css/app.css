@@ -3,7 +3,7 @@
    Font: Sukhumvit Set (Apple system) → Inter / Noto Sans Thai (fallback)
    ======================================================================== */
 
-:root {
+:root, [data-theme="light"] {
   /* Surfaces */
   --bg: #f1f5f9;
   --surface: #ffffff;
@@ -24,6 +24,11 @@
   --primary-light: #dbeafe;
   --primary-dark: #1d4ed8;
   --primary-50: #eff6ff;
+
+  /* Tinted-row backgrounds (for at-risk / overdue rows) */
+  --tint-danger: #fef2f2;
+  --tint-warning: #fff7ed;
+  --tint-success: #f0fdf4;
 
   /* Status (5-status palette) — Won=dark green, Commit=light green, Upside=orange, Open=blue, Lost=red */
   --won: #259b24;
@@ -64,6 +69,91 @@
   --topbar-height: 53px;
   --tabnav-height: 44px;
   --filter-height: 60px;
+}
+
+/* ----- Dark theme overrides ----- */
+[data-theme="dark"] {
+  --bg: #0b1220;
+  --surface: #1a2236;
+  --surface-2: #131b2c;
+  --surface-3: #0f1828;
+
+  --border: #2a334a;
+  --border-strong: #3b4664;
+
+  --text: #e6edf6;
+  --text-muted: #9aa6bb;
+  --text-faint: #6b7993;
+
+  --primary: #60a5fa;
+  --primary-light: #1e3a8a;
+  --primary-dark: #93c5fd;
+  --primary-50: #1f2c4d;
+
+  --won: #4ade80;
+  --won-light: #14532d;
+  --commit: #b8e87a;
+  --commit-light: #2d5016;
+  --upside: #fb923c;
+  --upside-light: #5c2d0e;
+  --open: #60a5fa;
+  --open-light: #1e3a8a;
+  --lost: #f87171;
+  --lost-light: #5c1d1d;
+
+  --success: #4ade80;
+  --success-light: #14532d;
+  --warning: #fbbf24;
+  --warning-light: #4a3514;
+  --danger: #f87171;
+  --danger-light: #5c1d1d;
+  --purple: #a78bfa;
+  --purple-light: #2e1f5c;
+
+  --tint-danger: #2c1414;
+  --tint-warning: #2a1d09;
+  --tint-success: #0c2818;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.45);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.55), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+}
+
+/* System mode: follow OS */
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --bg: #0b1220;
+    --surface: #1a2236;
+    --surface-2: #131b2c;
+    --surface-3: #0f1828;
+    --border: #2a334a;
+    --border-strong: #3b4664;
+    --text: #e6edf6;
+    --text-muted: #9aa6bb;
+    --text-faint: #6b7993;
+    --primary: #60a5fa;
+    --primary-light: #1e3a8a;
+    --primary-dark: #93c5fd;
+    --primary-50: #1f2c4d;
+    --won: #4ade80;
+    --won-light: #14532d;
+    --commit: #b8e87a;
+    --commit-light: #2d5016;
+    --upside: #fb923c;
+    --upside-light: #5c2d0e;
+    --open: #60a5fa;
+    --open-light: #1e3a8a;
+    --lost: #f87171;
+    --lost-light: #5c1d1d;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --purple: #a78bfa;
+    --tint-danger: #2c1414;
+    --tint-warning: #2a1d09;
+    --tint-success: #0c2818;
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

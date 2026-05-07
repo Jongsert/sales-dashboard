@@ -304,7 +304,7 @@
         },
         scales: {
           x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: { stacked: true, ticks: { callback: v => fmt().THB(v), font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+          y: { stacked: true, ticks: { callback: v => fmt().THB(v), font: { size: 11 } }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#f1f5f9' } },
         },
       },
     });
