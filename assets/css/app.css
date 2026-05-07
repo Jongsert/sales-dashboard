@@ -352,6 +352,19 @@ a:hover { text-decoration: underline; }
   gap: 8px;
 }
 .pp-arrow { color: var(--text-muted); }
+.pp-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  background: var(--surface);
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+.pp-select:focus { outline: none; border-color: var(--primary); }
+.pp-section-sub small { color: var(--text-faint); font-weight: 400; margin-left: 4px; font-size: 10px; }
 
 .date-input,
 .select-input {

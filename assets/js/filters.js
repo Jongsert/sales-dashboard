@@ -26,22 +26,29 @@
     const useYear = year || today.getFullYear();
     let from = null, to = null, label = '';
     switch (preset) {
-      case 'today':
-        from = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-        label = 'Today';
-        break;
-      case 'thisWeek': {
-        const day = today.getDay() || 7;
-        from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (day - 1));
-        to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6, 23, 59, 59);
-        label = 'This week';
-        break;
-      }
       case 'thisMonth':
         from = new Date(today.getFullYear(), today.getMonth(), 1);
         to = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
         label = `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()}`;
+        break;
+      case 'lastMonth': {
+        const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        from = lm;
+        to = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+        label = `${MONTH_NAMES[lm.getMonth()]} ${lm.getFullYear()}`;
+        break;
+      }
+      case 'nextMonth': {
+        const nm = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        from = nm;
+        to = new Date(today.getFullYear(), today.getMonth() + 2, 0, 23, 59, 59);
+        label = `${MONTH_NAMES[nm.getMonth()]} ${nm.getFullYear()}`;
+        break;
+      }
+      case 'mtd':
+        from = new Date(today.getFullYear(), today.getMonth(), 1);
+        to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        label = `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()} (MTD)`;
         break;
       case 'thisQuarter': {
         const q = Math.floor(today.getMonth() / 3);
@@ -50,28 +57,9 @@
         label = `Q${q + 1} ${today.getFullYear()}`;
         break;
       }
-      case 'ytd':
-        from = new Date(today.getFullYear(), 0, 1);
-        to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-        label = `${today.getFullYear()} YTD`;
-        break;
-      case 'lastWeek': {
-        const day = today.getDay() || 7;
-        const lastMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (day - 1) - 7);
-        from = lastMonday;
-        to = new Date(lastMonday.getFullYear(), lastMonday.getMonth(), lastMonday.getDate() + 6, 23, 59, 59);
-        label = 'Last week';
-        break;
-      }
-      case 'lastMonth': {
-        const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        from = lm;
-        to = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
-        label = `${MONTH_NAMES[lm.getMonth()]} ${lm.getFullYear()}`;
-        break;
-      }
       case 'lastQuarter': {
-        const q = Math.floor(today.getMonth() / 3) - 1;
+        const cq = Math.floor(today.getMonth() / 3);
+        const q = cq - 1;
         const baseY = q < 0 ? today.getFullYear() - 1 : today.getFullYear();
         const baseQ = q < 0 ? 3 : q;
         from = new Date(baseY, baseQ * 3, 1);
@@ -79,10 +67,42 @@
         label = `Q${baseQ + 1} ${baseY}`;
         break;
       }
+      case 'nextQuarter': {
+        const cq = Math.floor(today.getMonth() / 3);
+        const q = cq + 1;
+        const baseY = q > 3 ? today.getFullYear() + 1 : today.getFullYear();
+        const baseQ = q > 3 ? 0 : q;
+        from = new Date(baseY, baseQ * 3, 1);
+        to = new Date(baseY, baseQ * 3 + 3, 0, 23, 59, 59);
+        label = `Q${baseQ + 1} ${baseY}`;
+        break;
+      }
+      case 'qtd': {
+        const q = Math.floor(today.getMonth() / 3);
+        from = new Date(today.getFullYear(), q * 3, 1);
+        to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        label = `Q${q + 1} ${today.getFullYear()} (QTD)`;
+        break;
+      }
+      case 'thisYear':
+        from = new Date(today.getFullYear(), 0, 1);
+        to = new Date(today.getFullYear(), 11, 31, 23, 59, 59);
+        label = `${today.getFullYear()} (full year)`;
+        break;
       case 'lastYear':
         from = new Date(today.getFullYear() - 1, 0, 1);
         to = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
         label = `${today.getFullYear() - 1} (full year)`;
+        break;
+      case 'nextYear':
+        from = new Date(today.getFullYear() + 1, 0, 1);
+        to = new Date(today.getFullYear() + 1, 11, 31, 23, 59, 59);
+        label = `${today.getFullYear() + 1} (full year)`;
+        break;
+      case 'ytd':
+        from = new Date(today.getFullYear(), 0, 1);
+        to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        label = `${today.getFullYear()} YTD`;
         break;
       case 'all':
         from = null; to = null;
@@ -108,7 +128,6 @@
         break;
       }
       case 'custom':
-        // from/to already in STATE; keep
         from = STATE.period.from;
         to = STATE.period.to;
         label = (from ? from.toISOString().slice(0, 10) : '...') + ' → ' + (to ? to.toISOString().slice(0, 10) : '...');
@@ -189,51 +208,91 @@
   }
 
   /* ----- Period picker UI ----- */
+  // Quarter→months mapping for cascading
+  const QUARTER_MONTHS = { 1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12] };
+
+  // Compute available years from data (auto-detect — falls back to today ± 2 if empty)
+  function dataYears() {
+    const today = new Date();
+    if (!STATE.allDeals || STATE.allDeals.length === 0) {
+      return [today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1];
+    }
+    const years = new Set();
+    STATE.allDeals.forEach(d => {
+      if (d.expectedClose) years.add(d.expectedClose.getFullYear());
+    });
+    return Array.from(years).sort((a, b) => a - b);
+  }
+
   function setupPeriodPicker(container, onChange) {
     const trigger = container.querySelector('#periodTrigger');
     const panel = container.querySelector('#periodPanel');
     const today = new Date();
-    const baseYear = today.getFullYear();
 
     function renderPanel() {
-      const yp = STATE.period.year || baseYear;
+      const yp = STATE.period.year || today.getFullYear();
+      const qp = (STATE.period.preset === 'quarter' || STATE.period.preset === 'month')
+        ? STATE.period.sub && Math.ceil((STATE.period.sub) / 3)
+        : null;
+      const isQuarterSelected = STATE.period.preset === 'quarter' && STATE.period.year === yp;
+      const isMonthSelected = STATE.period.preset === 'month' && STATE.period.year === yp;
+      const selectedQuarter = isQuarterSelected ? STATE.period.sub : (isMonthSelected ? Math.ceil(STATE.period.sub / 3) : null);
+      const isYearActive = STATE.period.preset === 'year';
+
       const presets = [
-        { key: 'today', lbl: 'Today' },
-        { key: 'thisWeek', lbl: 'This week' },
-        { key: 'thisMonth', lbl: 'This month' },
+        { key: 'thisMonth',   lbl: 'This month' },
+        { key: 'lastMonth',   lbl: 'Last month' },
+        { key: 'nextMonth',   lbl: 'Next month' },
+        { key: 'mtd',         lbl: 'Month to date' },
         { key: 'thisQuarter', lbl: 'This quarter' },
-        { key: 'ytd', lbl: 'Year-to-date' },
-        { key: 'lastWeek', lbl: 'Last week' },
-        { key: 'lastMonth', lbl: 'Last month' },
         { key: 'lastQuarter', lbl: 'Last quarter' },
-        { key: 'lastYear', lbl: 'Last year' },
-        { key: 'all', lbl: 'All time' },
+        { key: 'nextQuarter', lbl: 'Next quarter' },
+        { key: 'qtd',         lbl: 'Quarter to date' },
+        { key: 'thisYear',    lbl: 'This year' },
+        { key: 'lastYear',    lbl: 'Last year' },
+        { key: 'nextYear',    lbl: 'Next year' },
+        { key: 'ytd',         lbl: 'Year to date' },
+        { key: 'all',         lbl: 'All time' },
       ];
-      const years = [baseYear - 2, baseYear - 1, baseYear, baseYear + 1];
+
+      const years = dataYears();
       const fromVal = STATE.period.from ? STATE.period.from.toISOString().slice(0, 10) : '';
-      const toVal = STATE.period.to ? STATE.period.to.toISOString().slice(0, 10) : '';
+      const toVal   = STATE.period.to   ? STATE.period.to.toISOString().slice(0, 10)   : '';
+
+      // Cascade: if a quarter is selected, only show months in that quarter
+      const monthList = selectedQuarter ? QUARTER_MONTHS[selectedQuarter] : [1,2,3,4,5,6,7,8,9,10,11,12];
 
       panel.innerHTML = `
         <div class="pp-section">
-          <div class="pp-section-title">Quick presets</div>
-          <div class="pp-presets">
-            ${presets.map(p => `<button class="pp-btn ${STATE.period.preset === p.key ? 'active' : ''}" data-pp-preset="${p.key}">${p.lbl}</button>`).join('')}
-          </div>
+          <div class="pp-section-title">Quick preset</div>
+          <select id="ppQuickSelect" class="pp-select">
+            <option value="">— select preset —</option>
+            ${presets.map(p => `<option value="${p.key}" ${STATE.period.preset === p.key ? 'selected' : ''}>${p.lbl}</option>`).join('')}
+          </select>
         </div>
+
         <div class="pp-section">
           <div class="pp-section-title">By year</div>
           <div class="pp-years">
-            ${years.map(y => `<button class="pp-btn ${STATE.period.preset === 'year' && STATE.period.year === y ? 'active' : ''}" data-pp-year="${y}">${y}</button>`).join('')}
-          </div>
-          <div class="pp-section-sub">Quarter in ${yp}</div>
-          <div class="pp-quarters">
-            ${[1,2,3,4].map(q => `<button class="pp-btn ${STATE.period.preset === 'quarter' && STATE.period.year === yp && STATE.period.sub === q ? 'active' : ''}" data-pp-q="${q}" data-pp-y="${yp}">Q${q}</button>`).join('')}
-          </div>
-          <div class="pp-section-sub">Month in ${yp}</div>
-          <div class="pp-months">
-            ${MONTH_NAMES.map((m, i) => `<button class="pp-btn ${STATE.period.preset === 'month' && STATE.period.year === yp && STATE.period.sub === i + 1 ? 'active' : ''}" data-pp-m="${i + 1}" data-pp-y="${yp}">${m}</button>`).join('')}
+            ${years.length === 0
+              ? '<span style="font-size:11px; color:var(--text-muted);">No data — upload a file first</span>'
+              : years.map(y => `<button class="pp-btn ${(STATE.period.year === y && (isYearActive || isQuarterSelected || isMonthSelected)) ? 'active' : ''}" data-pp-year="${y}">${y}</button>`).join('')}
           </div>
         </div>
+
+        ${(isYearActive || isQuarterSelected || isMonthSelected) ? `
+          <div class="pp-section">
+            <div class="pp-section-sub">Quarter in ${yp} <small>(click to narrow)</small></div>
+            <div class="pp-quarters">
+              ${[1,2,3,4].map(q => `<button class="pp-btn ${selectedQuarter === q ? 'active' : ''}" data-pp-q="${q}" data-pp-y="${yp}">Q${q}</button>`).join('')}
+            </div>
+            <div class="pp-section-sub">${selectedQuarter ? `Month in Q${selectedQuarter} ${yp}` : `Month in ${yp}`}</div>
+            <div class="pp-months">
+              ${monthList.map(m => `<button class="pp-btn ${isMonthSelected && STATE.period.sub === m ? 'active' : ''}" data-pp-m="${m}" data-pp-y="${yp}">${MONTH_NAMES[m - 1]}</button>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+
         <div class="pp-section">
           <div class="pp-section-title">Custom range</div>
           <div class="pp-custom">
@@ -244,12 +303,13 @@
         </div>
       `;
 
-      panel.querySelectorAll('[data-pp-preset]').forEach(b => b.addEventListener('click', () => {
-        applyPreset(b.dataset.ppPreset);
+      panel.querySelector('#ppQuickSelect').addEventListener('change', (e) => {
+        if (!e.target.value) return;
+        applyPreset(e.target.value);
         renderPanel();
         updatePeriodTrigger();
         onChange && onChange();
-      }));
+      });
       panel.querySelectorAll('[data-pp-year]').forEach(b => b.addEventListener('click', () => {
         applyPreset('year', parseInt(b.dataset.ppYear));
         renderPanel();
