@@ -212,32 +212,52 @@
   const formatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const formatter2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  // Defensive number coercion — Chart.js v4 sometimes passes proxy objects
+  function toNum(n) {
+    if (n == null) return NaN;
+    if (typeof n === 'number') return n;
+    if (typeof n === 'object') {
+      // Try common chart.js parsed shape
+      if (typeof n.y === 'number') return n.y;
+      if (typeof n.x === 'number') return n.x;
+      if (typeof n.value === 'number') return n.value;
+    }
+    const v = Number(n);
+    return isFinite(v) ? v : NaN;
+  }
+
   function fmtTHB(n) {
-    if (!isFinite(n)) return '—';
-    const abs = Math.abs(n);
-    if (abs >= 1e9) return (n/1e9).toFixed(2) + 'B';
-    if (abs >= 1e6) return (n/1e6).toFixed(2) + 'M';
-    if (abs >= 1e3) return (n/1e3).toFixed(1) + 'K';
-    return n.toFixed(0);
+    const num = toNum(n);
+    if (!isFinite(num)) return '—';
+    const abs = Math.abs(num);
+    if (abs >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    if (abs >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+    return num.toFixed(0);
   }
   function fmtTHBFull(n) {
-    if (!isFinite(n)) return '—';
-    return 'THB ' + formatter.format(Math.round(n));
+    const num = toNum(n);
+    if (!isFinite(num)) return '—';
+    return 'THB ' + formatter.format(Math.round(num));
   }
   function fmtComma(n) {
-    if (!isFinite(n)) return '—';
-    return formatter.format(Math.round(n));
+    const num = toNum(n);
+    if (!isFinite(num)) return '—';
+    return formatter.format(Math.round(num));
   }
   function fmtComma2(n) {
-    if (!isFinite(n)) return '—';
-    return formatter2.format(n);
+    const num = toNum(n);
+    if (!isFinite(num)) return '—';
+    return formatter2.format(num);
   }
   function fmtPct(n, digits = 1) {
-    if (!isFinite(n)) return '—';
-    return (n * 100).toFixed(digits) + '%';
+    const num = toNum(n);
+    if (!isFinite(num)) return '—';
+    return (num * 100).toFixed(digits) + '%';
   }
   function fmtInt(n) {
-    return formatter.format(Math.round(n || 0));
+    const num = toNum(n);
+    return formatter.format(Math.round(isFinite(num) ? num : 0));
   }
   function fmtDate(d) {
     if (!d) return '—';
@@ -248,7 +268,6 @@
 
   /* ----- Reusable donut chart options (center text + slice labels) ----- */
   function donutOptions(opts = {}) {
-    const f = { THB: fmtTHB, THBFull: fmtTHBFull };
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -256,24 +275,34 @@
       plugins: {
         legend: { position: opts.legend || 'right', labels: { font: { size: 11 }, usePointStyle: true } },
         tooltip: {
-          callbacks: { label: c => `${c.label}: ${f.THBFull(c.parsed)}` },
+          callbacks: { label: c => `${c.label}: ${fmtTHBFull(c.parsed)}` },
         },
         donutCenter: {
           label: opts.centerLabel || 'Total',
-          formatter: opts.centerFormatter || (v => f.THB(v)),
+          formatter: opts.centerFormatter || ((v) => fmtTHB(v)),
         },
         datalabels: {
-          display: ctx => {
-            const total = ctx.dataset.data.reduce((s, x) => s + (Number(x) || 0), 0);
-            return total > 0 && ctx.parsed / total >= 0.04;
+          display: (ctx) => {
+            try {
+              const dataArr = (ctx.dataset && ctx.dataset.data) || [];
+              let total = 0;
+              for (const x of dataArr) total += Number(x) || 0;
+              const v = Number(ctx.parsed) || 0;
+              return total > 0 && v / total >= 0.04;
+            } catch (_) { return false; }
           },
           color: 'white',
           font: { size: 11, weight: 'bold' },
           textAlign: 'center',
           formatter: (v, ctx) => {
-            const total = ctx.dataset.data.reduce((s, x) => s + (Number(x) || 0), 0);
-            if (total === 0) return '';
-            return `${f.THB(v)}\n${(v / total * 100).toFixed(0)}%`;
+            try {
+              const dataArr = (ctx.dataset && ctx.dataset.data) || [];
+              let total = 0;
+              for (const x of dataArr) total += Number(x) || 0;
+              const num = Number(v) || 0;
+              if (total === 0) return '';
+              return `${fmtTHB(num)}\n${(num / total * 100).toFixed(0)}%`;
+            } catch (_) { return ''; }
           },
         },
       },

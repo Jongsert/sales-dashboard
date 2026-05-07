@@ -69,26 +69,52 @@
 const DonutCenterPlugin = {
   id: 'donutCenter',
   afterDraw(chart) {
-    if (chart.config.type !== 'doughnut') return;
-    const opts = chart.options.plugins && chart.options.plugins.donutCenter;
-    if (!opts || opts.display === false) return;
-    const total = chart.data.datasets[0].data.reduce((s, v) => s + (Number(v) || 0), 0);
-    if (total <= 0 && !opts.value) return;
-    const { ctx, chartArea } = chart;
-    const cx = (chartArea.left + chartArea.right) / 2;
-    const cy = (chartArea.top + chartArea.bottom) / 2;
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const labelText = opts.label || 'Total';
-    const valueText = opts.formatter ? opts.formatter(total) : total.toLocaleString();
-    ctx.font = "600 10px 'Sukhumvit Set', 'Inter', sans-serif";
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(labelText.toUpperCase(), cx, cy - 14);
-    ctx.font = "800 18px 'Sukhumvit Set', 'Inter', sans-serif";
-    ctx.fillStyle = '#0f172a';
-    ctx.fillText(valueText, cx, cy + 6);
-    ctx.restore();
+    try {
+      // Get chart type (Chart.js v4 may expose differently)
+      const type = (chart.config && (chart.config.type || (chart.config._config && chart.config._config.type)))
+                || (chart.options && chart.options.type);
+      if (type !== 'doughnut' && type !== 'pie') return;
+
+      const opts = chart.options && chart.options.plugins && chart.options.plugins.donutCenter;
+      if (!opts || opts.display === false) return;
+
+      const dataset = chart.data && chart.data.datasets && chart.data.datasets[0];
+      const dataArr = dataset && Array.isArray(dataset.data) ? dataset.data : [];
+      let total = 0;
+      for (const v of dataArr) {
+        const num = typeof v === 'number' ? v
+                  : (v && typeof v.value === 'number') ? v.value
+                  : Number(v);
+        if (isFinite(num)) total += num;
+      }
+      if (total <= 0 && !opts.value) return;
+
+      const ctx = chart.ctx;
+      const chartArea = chart.chartArea;
+      if (!ctx || !chartArea) return;
+      const cx = (chartArea.left + chartArea.right) / 2;
+      const cy = (chartArea.top + chartArea.bottom) / 2;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const labelText = String(opts.label || 'Total');
+      let valueText;
+      try {
+        valueText = opts.formatter ? String(opts.formatter(total)) : Number(total).toLocaleString();
+      } catch (e) {
+        valueText = String(total);
+      }
+      ctx.font = "600 10px 'Sukhumvit Set', 'Inter', sans-serif";
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(labelText.toUpperCase(), cx, cy - 14);
+      ctx.font = "800 18px 'Sukhumvit Set', 'Inter', sans-serif";
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(valueText, cx, cy + 6);
+      ctx.restore();
+    } catch (e) {
+      // Never let the plugin break chart rendering
+      console.warn('DonutCenterPlugin error:', e);
+    }
   },
 };
 
