@@ -175,7 +175,9 @@
       document.querySelectorAll('.pipeline-row').forEach(row => {
         row.addEventListener('click', () => {
           const idx = parseInt(row.dataset.dealIdx);
-          openDealDetail(parsed.deals[idx]);
+          const d = parsed.deals[idx];
+          d._idx = idx;   // hint for stable comment key
+          App.UI.openDealDetail(d);
         });
       });
     }

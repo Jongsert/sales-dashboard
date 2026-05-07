@@ -33,7 +33,6 @@
 
     const deals = F().dashboardScope(F().apply(parsed.deals));
     renderKPIs(deals);
-    renderInsights(deals);
     renderStatusByMonth(deals);
     renderStatusByUser(deals);
     renderTopPerformers(deals);
@@ -61,7 +60,6 @@
         </span>
       </div>
       <div class="hero-grid" id="kpiHero"></div>
-      <div class="insights-strip" id="insightsStrip"></div>
       <div class="kpi-grid" id="kpiGrid" style="margin-top:14px;"></div>
 
       <div class="section-title">Trend by Month — All deals (Won/Commit/Upside/Open/Lost)</div>

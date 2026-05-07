@@ -309,7 +309,137 @@
     return localDateISO(new Date());
   }
 
-  /* ----- Drill-down modal: show a list of deals matching a chart segment ----- */
+  /* ----- Deal Detail Modal — full info card for one deal ----- */
+  function openDealDetail(deal) {
+    if (!deal) return;
+    const fmt = { THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact, date: fmtDate };
+    const raw = (col) => (deal._raw && deal._raw[col] !== undefined && deal._raw[col] !== null ? deal._raw[col] : '');
+    const dRaw = (col) => {
+      const v = raw(col);
+      if (v instanceof Date) return fmt.date(v);
+      if (v === '' || v == null) return '—';
+      return escapeHtml(String(v));
+    };
+    const moneyVal = (n) => {
+      const num = Number(n);
+      return isFinite(num) ? `<span class="num-tip" title="${fmt.THBExact(num).replace(/"/g, '&quot;')}">${fmt.THBFull(num)}</span>` : '—';
+    };
+    function rawAny(...cols) {
+      for (const c of cols) {
+        const v = deal._raw ? deal._raw[c] : undefined;
+        if (v !== undefined && v !== null && v !== '') return v;
+      }
+      return '';
+    }
+    const dealKey = deal.id || deal.dealName || `row_${(deal.company || '')}_${(deal.income || 0)}`;
+    const comment = (App.Settings && App.Settings.getDealComment) ? App.Settings.getDealComment(dealKey) : '';
+    const statusColor = (App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status] || {}).fill || '#94a3b8';
+    const saleOrderNo = rawAny('Sale Order No. (Dynamic365)', 'Sale Order No.', 'Dynamic365', 'SO No.');
+    const zoomAccount = rawAny('Zoom Account Number', 'Zoom Account No.');
+    const zoomLicense = rawAny('Detail Zoom License Activation', 'Zoom License Activation');
+
+    const body = document.createElement('div');
+    body.innerHTML = `
+      <div class="deal-header">
+        <div class="deal-header-main">
+          <div class="deal-name-text">${escapeHtml(deal.dealName || deal.company || ('Deal #' + deal.id))}</div>
+          <div class="deal-meta-line">${escapeHtml(deal.company || '—')} · ID #${escapeHtml(String(deal.id || '—'))}</div>
+        </div>
+        <div class="deal-status-badge" style="background:${statusColor}20; color:${statusColor}; border:1.5px solid ${statusColor};">
+          ${deal.status || '—'}
+        </div>
+      </div>
+
+      <div class="deal-section">
+        <div class="deal-section-title">Key Metrics</div>
+        <div class="deal-metrics">
+          <div class="deal-metric income">
+            <div class="metric-label">Income</div>
+            <div class="metric-value">${moneyVal(deal.income)}</div>
+          </div>
+          <div class="deal-metric gp">
+            <div class="metric-label">Gross Profit</div>
+            <div class="metric-value">${moneyVal(deal.grossProfit)}</div>
+          </div>
+          <div class="deal-metric np">
+            <div class="metric-label">Net Profit</div>
+            <div class="metric-value">${moneyVal(deal.netProfit)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="deal-grid-2">
+        <div class="deal-section">
+          <div class="deal-section-title">Deal Info</div>
+          <table class="deal-tbl">
+            <tr><th>Pipeline</th><td>${escapeHtml(deal.pipeline || '—')}</td></tr>
+            <tr><th>Stage</th><td>${escapeHtml(deal.stage || '—')}</td></tr>
+            <tr><th>Deal Type</th><td>${escapeHtml(deal.dealType || '—')}</td></tr>
+            <tr><th>Billing Type</th><td>${dRaw('Billing Type')}</td></tr>
+            <tr><th>Product Type</th><td>${escapeHtml(deal.productType || '—')}</td></tr>
+          </table>
+        </div>
+        <div class="deal-section">
+          <div class="deal-section-title">Ownership &amp; Customer</div>
+          <table class="deal-tbl">
+            <tr><th>Responsible</th><td><strong>${escapeHtml(deal.responsible || '—')}</strong></td></tr>
+            <tr><th>Team</th><td>${escapeHtml(deal.team || '—')}</td></tr>
+            <tr><th>Company</th><td><strong>${escapeHtml(deal.company || '—')}</strong></td></tr>
+            <tr><th>End Customer</th><td>${escapeHtml(deal.endCustomer || '—')}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="deal-section">
+        <div class="deal-section-title">Renewal &amp; Contract</div>
+        <table class="deal-tbl deal-tbl-wide">
+          <tr>
+            <th>Renew Target</th><td>${moneyVal(deal.renewTarget)}</td>
+            <th>Sale Order No. (Dynamic365)</th><td>${escapeHtml(String(saleOrderNo || '—'))}</td>
+          </tr>
+          <tr>
+            <th>Contract Start Date</th><td>${fmt.date(deal.contractStartDate)}</td>
+            <th>Contract End Date</th><td>${fmt.date(deal.contractEndDate)}</td>
+          </tr>
+          <tr>
+            <th>Expected Close Date</th><td colspan="3">${fmt.date(deal.expectedClose)}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="deal-section">
+        <div class="deal-section-title">Zoom</div>
+        <table class="deal-tbl deal-tbl-wide">
+          <tr>
+            <th>Account Number</th><td>${escapeHtml(String(zoomAccount || '—'))}</td>
+            <th>License Activation</th><td>${escapeHtml(String(zoomLicense || '—'))}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="deal-section">
+        <div class="deal-section-title">💬 Comments <span style="font-weight:400; color:var(--text-faint); font-size:11px;">— saved locally on this device</span></div>
+        <textarea id="dealCommentInput" placeholder="Add notes about this deal..." class="deal-comment">${escapeHtml(comment)}</textarea>
+      </div>
+    `;
+    const m = modal({
+      title: deal.dealName || deal.company || ('Deal #' + deal.id),
+      body, footer: ' ', width: '900px',
+    });
+    const f = m.el.querySelector('.modal-footer');
+    f.innerHTML = '';
+    const close = document.createElement('button'); close.className = 'btn'; close.textContent = 'Close';
+    close.addEventListener('click', () => {
+      const txt = m.el.querySelector('#dealCommentInput').value;
+      if (App.Settings && App.Settings.setDealComment) App.Settings.setDealComment(dealKey, txt);
+      m.close();
+      if (txt !== comment) toast('Comment saved', 'success');
+    });
+    f.appendChild(close);
+  }
+
+  /* ----- Drill-down modal: show a list of deals matching a chart segment.
+     Sortable columns + clickable Deal Name → opens full deal detail. ----- */
   function drillModal({ title, subtitle, deals }) {
     if (!deals || deals.length === 0) {
       toast('No deals to show for this segment', '');
@@ -318,43 +448,91 @@
     const total = deals.reduce((s, d) => s + (d.income || 0), 0);
     const COLORS = (window.App && App.StatusMapping && App.StatusMapping.COLORS) || {};
 
+    const STATE = { sortKey: 'income', sortDir: -1 };
+
+    function compare(a, b) {
+      const k = STATE.sortKey;
+      let va = a[k], vb = b[k];
+      if (va == null) va = '';
+      if (vb == null) vb = '';
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * STATE.sortDir;
+      if (va instanceof Date && vb instanceof Date) return ((va.getTime() - vb.getTime())) * STATE.sortDir;
+      return String(va).localeCompare(String(vb)) * STATE.sortDir;
+    }
+    function sortInd(key) {
+      if (STATE.sortKey !== key) return '';
+      return STATE.sortDir === 1 ? ' ▲' : ' ▼';
+    }
+    function buildBodyHtml() {
+      const sorted = deals.slice().sort(compare);
+      return `
+        ${subtitle ? `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${subtitle}</div>` : ''}
+        <div style="margin-bottom:10px; padding:10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); display:flex; gap:18px; flex-wrap:wrap; font-size:12px;">
+          <span><strong style="font-size:16px;">${deals.length.toLocaleString()}</strong> deal${deals.length>1?'s':''}</span>
+          <span>·</span>
+          <span>Total: <strong style="font-size:14px;" title="${fmtTHBExact(total)}">${fmtTHBFull(total)}</strong></span>
+          <span style="margin-left:auto; color:var(--text-faint); font-size:11px;">Click column header to sort · Click Deal Name to view detail</span>
+        </div>
+        <div class="drill-scroll" style="max-height:60vh; overflow:auto; overscroll-behavior: contain; border:1px solid var(--border); border-radius: var(--radius-sm);">
+          <table class="tbl">
+            <thead><tr>
+              <th class="wrap drill-th" data-sort="dealName">Deal Name${sortInd('dealName')}</th>
+              <th class="wrap-sm drill-th" data-sort="company">Company${sortInd('company')}</th>
+              <th class="drill-th" data-sort="responsible">Responsible${sortInd('responsible')}</th>
+              <th class="drill-th" data-sort="stage">Stage${sortInd('stage')}</th>
+              <th class="drill-th" data-sort="status">Status${sortInd('status')}</th>
+              <th class="num drill-th" data-sort="income">Income${sortInd('income')}</th>
+              <th class="drill-th" data-sort="expectedClose">Expected close${sortInd('expectedClose')}</th>
+            </tr></thead>
+            <tbody>
+              ${sorted.map((d, i) => {
+                const sc = (COLORS[d.status] || {}).fill || 'var(--text-muted)';
+                return `<tr>
+                  <td class="wrap"><a href="javascript:void(0)" class="drill-deal-link" data-i="${i}"><strong>${escapeHtml(d.dealName || '—')}</strong></a></td>
+                  <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
+                  <td>${escapeHtml(d.responsible || '—')}</td>
+                  <td>${escapeHtml(d.stage || '—')}</td>
+                  <td><span style="color:${sc}; font-weight:600;">${d.status || '—'}</span></td>
+                  <td class="num" title="${fmtTHBExact(d.income||0)}">${fmtTHBFull(d.income || 0)}</td>
+                  <td>${fmtDate(d.expectedClose)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
     const body = document.createElement('div');
-    body.innerHTML = `
-      ${subtitle ? `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${subtitle}</div>` : ''}
-      <div style="margin-bottom:10px; padding:10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); display:flex; gap:18px; flex-wrap:wrap; font-size:12px;">
-        <span><strong style="font-size:16px;">${deals.length.toLocaleString()}</strong> deal${deals.length>1?'s':''}</span>
-        <span>·</span>
-        <span>Total: <strong style="font-size:14px;" title="${fmtTHBExact(total)}">${fmtTHBFull(total)}</strong></span>
-      </div>
-      <div style="max-height:60vh; overflow:auto; border:1px solid var(--border); border-radius: var(--radius-sm);">
-        <table class="tbl">
-          <thead><tr>
-            <th class="wrap">Deal Name</th>
-            <th class="wrap-sm">Company</th>
-            <th>Responsible</th>
-            <th>Stage</th>
-            <th>Status</th>
-            <th class="num">Income</th>
-            <th>Expected close</th>
-          </tr></thead>
-          <tbody>
-            ${deals.slice().sort((a,b) => (b.income||0) - (a.income||0)).map(d => {
-              const sc = (COLORS[d.status] || {}).fill || 'var(--text-muted)';
-              return `<tr>
-                <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-                <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
-                <td>${escapeHtml(d.responsible || '—')}</td>
-                <td>${escapeHtml(d.stage || '—')}</td>
-                <td><span style="color:${sc}; font-weight:600;">${d.status || '—'}</span></td>
-                <td class="num" title="${fmtTHBExact(d.income||0)}">${fmtTHBFull(d.income || 0)}</td>
-                <td>${fmtDate(d.expectedClose)}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+    body.innerHTML = buildBodyHtml();
     const m = modal({ title, body, footer: ' ', width: '1100px' });
+
+    function rebind() {
+      // Sort headers
+      m.el.querySelectorAll('.drill-th').forEach(th => {
+        th.style.cursor = 'pointer';
+        th.style.userSelect = 'none';
+        th.addEventListener('click', () => {
+          const k = th.dataset.sort;
+          if (STATE.sortKey === k) STATE.sortDir = -STATE.sortDir;
+          else { STATE.sortKey = k; STATE.sortDir = 1; }
+          m.el.querySelector('.modal-body').innerHTML = buildBodyHtml();
+          rebind();
+        });
+      });
+      // Deal name link
+      m.el.querySelectorAll('.drill-deal-link').forEach(a => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const sorted = deals.slice().sort(compare);
+          const idx = parseInt(a.dataset.i);
+          const d = sorted[idx];
+          if (d && App.UI.openDealDetail) App.UI.openDealDetail(d);
+        });
+      });
+    }
+    rebind();
+
     const f = m.el.querySelector('.modal-footer');
     f.innerHTML = '';
     const close = document.createElement('button'); close.className = 'btn'; close.textContent = 'Close';
@@ -363,6 +541,110 @@
     goAll.addEventListener('click', () => { m.close(); location.hash = '#/pipeline'; });
     f.appendChild(close);
     f.appendChild(goAll);
+  }
+
+  /* ----- Open full deal detail modal — shared by All Deals + drillModal ----- */
+  function openDealDetail(deal) {
+    if (!deal) return;
+    const fmt = { THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact, date: fmtDate };
+    const dRaw = (col) => {
+      const v = deal._raw && deal._raw[col];
+      if (v instanceof Date) return fmt.date(v);
+      if (v === '' || v == null) return '—';
+      return escapeHtml(String(v));
+    };
+    const moneyVal = (n) => {
+      const num = Number(n);
+      return isFinite(num) ? `<span class="num-tip" title="${fmt.THBExact(num).replace(/"/g, '&quot;')}">${fmt.THBFull(num)}</span>` : '—';
+    };
+    const dealKey = deal.id || deal.dealName || ('row_' + (deal._idx != null ? deal._idx : Math.random().toString(36).slice(2, 8)));
+    const comment = (App.Settings && App.Settings.getDealComment) ? App.Settings.getDealComment(dealKey) : '';
+    const statusColor = ((App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status]) || {}).fill || '#94a3b8';
+
+    function rawAny(...cols) {
+      for (const c of cols) {
+        const v = deal._raw ? deal._raw[c] : undefined;
+        if (v !== undefined && v !== null && v !== '') return v;
+      }
+      return '';
+    }
+    const saleOrderNo = rawAny('Sale Order No. (Dynamic365)', 'Sale Order No.', 'Dynamic365', 'SO No.');
+    const zoomAccount = rawAny('Zoom Account Number', 'Zoom Account No.');
+    const zoomLicense = rawAny('Detail Zoom License Activation', 'Zoom License Activation');
+
+    const body = document.createElement('div');
+    body.innerHTML = `
+      <div class="deal-header">
+        <div class="deal-header-main">
+          <div class="deal-name-text">${escapeHtml(deal.dealName || deal.company || ('Deal #' + deal.id))}</div>
+          <div class="deal-meta-line">${escapeHtml(deal.company || '—')} · ID #${escapeHtml(String(deal.id || '—'))}</div>
+        </div>
+        <div class="deal-status-badge" style="background:${statusColor}20; color:${statusColor}; border:1.5px solid ${statusColor};">
+          ${deal.status || '—'}
+        </div>
+      </div>
+      <div class="deal-section">
+        <div class="deal-section-title">Key Metrics</div>
+        <div class="deal-metrics">
+          <div class="deal-metric income"><div class="metric-label">Income</div><div class="metric-value">${moneyVal(deal.income)}</div></div>
+          <div class="deal-metric gp"><div class="metric-label">Gross Profit</div><div class="metric-value">${moneyVal(deal.grossProfit)}</div></div>
+          <div class="deal-metric np"><div class="metric-label">Net Profit</div><div class="metric-value">${moneyVal(deal.netProfit)}</div></div>
+        </div>
+      </div>
+      <div class="deal-grid-2">
+        <div class="deal-section">
+          <div class="deal-section-title">Deal Info</div>
+          <table class="deal-tbl">
+            <tr><th>Pipeline</th><td>${escapeHtml(deal.pipeline || '—')}</td></tr>
+            <tr><th>Stage</th><td>${escapeHtml(deal.stage || '—')}</td></tr>
+            <tr><th>Deal Type</th><td>${escapeHtml(deal.dealType || '—')}</td></tr>
+            <tr><th>Billing Type</th><td>${dRaw('Billing Type')}</td></tr>
+            <tr><th>Product Type</th><td>${escapeHtml(deal.productType || '—')}</td></tr>
+          </table>
+        </div>
+        <div class="deal-section">
+          <div class="deal-section-title">Ownership &amp; Customer</div>
+          <table class="deal-tbl">
+            <tr><th>Responsible</th><td><strong>${escapeHtml(deal.responsible || '—')}</strong></td></tr>
+            <tr><th>Team</th><td>${escapeHtml(deal.team || '—')}</td></tr>
+            <tr><th>Company</th><td><strong>${escapeHtml(deal.company || '—')}</strong></td></tr>
+            <tr><th>End Customer</th><td>${escapeHtml(deal.endCustomer || '—')}</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="deal-section">
+        <div class="deal-section-title">Renewal &amp; Contract</div>
+        <table class="deal-tbl deal-tbl-wide">
+          <tr><th>Renew Target</th><td>${moneyVal(deal.renewTarget)}</td><th>Sale Order No. (Dynamic365)</th><td>${escapeHtml(String(saleOrderNo || '—'))}</td></tr>
+          <tr><th>Contract Start Date</th><td>${fmt.date(deal.contractStartDate)}</td><th>Contract End Date</th><td>${fmt.date(deal.contractEndDate)}</td></tr>
+          <tr><th>Expected Close Date</th><td colspan="3">${fmt.date(deal.expectedClose)}</td></tr>
+        </table>
+      </div>
+      <div class="deal-section">
+        <div class="deal-section-title">Zoom</div>
+        <table class="deal-tbl deal-tbl-wide">
+          <tr><th>Account Number</th><td>${escapeHtml(String(zoomAccount || '—'))}</td><th>License Activation</th><td>${escapeHtml(String(zoomLicense || '—'))}</td></tr>
+        </table>
+      </div>
+      <div class="deal-section">
+        <div class="deal-section-title">💬 Comments <span style="font-weight:400; color:var(--text-faint); font-size:11px;">— saved locally on this device</span></div>
+        <textarea id="dealCommentInput" placeholder="Add notes about this deal..." class="deal-comment">${escapeHtml(comment)}</textarea>
+      </div>
+    `;
+    const m = modal({
+      title: deal.dealName || deal.company || ('Deal #' + deal.id),
+      body, footer: ' ', width: '900px',
+    });
+    const f = m.el.querySelector('.modal-footer');
+    f.innerHTML = '';
+    const close = document.createElement('button'); close.className = 'btn'; close.textContent = 'Close';
+    close.addEventListener('click', () => {
+      const txt = m.el.querySelector('#dealCommentInput').value;
+      if (App.Settings && App.Settings.setDealComment) App.Settings.setDealComment(dealKey, txt);
+      m.close();
+      if (txt !== comment) toast('Comment saved', 'success');
+    });
+    f.appendChild(close);
   }
 
   function escapeHtml(s) {
@@ -422,6 +704,7 @@
     confirm,
     donutOptions,
     drillModal,
+    openDealDetail,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       THBTip: fmtTHBTip, THBShortTip: fmtTHBShortTip, commaTip: fmtCommaTip,
