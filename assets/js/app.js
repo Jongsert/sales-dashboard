@@ -7,7 +7,7 @@
     { id: 'renew',     label: '🔄 Renew',           ready: false, phase: 'Phase 4', needsFilter: true },
     { id: 'newsell',   label: '✨ New Sell',         ready: false, phase: 'Phase 4', needsFilter: true },
     { id: 'combined',  label: '📈 Combined',        ready: false, phase: 'Phase 4', needsFilter: true },
-    { id: 'forecast',  label: '🎯 Forecast',         ready: false, phase: 'Phase 3', star: true, needsFilter: true },
+    { id: 'forecast',  label: '🎯 Forecast',         ready: true,  star: true, needsFilter: true },
     { id: 'pipeline',  label: '📄 Pipeline Detail', ready: true,  needsFilter: true },
     { id: 'targets',   label: '🎯 Targets',         ready: true,  needsFilter: false },
     { id: 'teams',     label: '👥 Teams',           ready: true,  hideFromNav: true, needsFilter: false },
