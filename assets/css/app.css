@@ -1813,13 +1813,21 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     padding-right: 1px !important;
   }
 
-  /* Common: all wide tables fixed-layout + full width */
+  /* Common: all wide tables full width.
+     Pipeline + Targets use fixed layout (predictable column distribution).
+     Forecast Detail uses auto layout — see its block below — because its
+     22 columns vary wildly in width (single-digit % vs 9-digit THB) and
+     auto-fit packs them more efficiently than equal-share fixed. */
   body[data-print-orient="landscape"] .pipeline-tbl,
-  body[data-print-orient="landscape"] .forecast-detail-tbl,
   body[data-print-orient="landscape"] .targets-tbl {
     width: 100% !important;
     max-width: 100% !important;
     table-layout: fixed;
+    border-collapse: collapse;
+  }
+  body[data-print-orient="landscape"] .forecast-detail-tbl {
+    width: 100% !important;
+    max-width: 100% !important;
     border-collapse: collapse;
   }
 
@@ -1864,27 +1872,24 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     font-size: inherit !important;
   }
 
-  /* ---- Forecast Detail (22 cols — densest) ---- */
+  /* ---- Forecast Detail (22 cols — densest) ----
+     Use table-layout: auto so browser sizes each column to its content
+     instead of forcing equal share. With 22 columns where some are 1-2
+     chars (%) and others are 9 chars (THB millions), auto packing fits
+     where fixed layout would either overflow or waste empty cells.
+     This is print-scoped only (body[data-print-orient="landscape"]) —
+     on-screen the table keeps its normal layout. */
   body[data-print-orient="landscape"] .forecast-detail-tbl {
     font-size: 5pt;
-    letter-spacing: -0.04em;
-    /* Tabular numerals so column widths stay aligned + numbers don't drift */
+    letter-spacing: -0.05em;
     font-variant-numeric: tabular-nums;
-    /* 5% safety scale so even slight row overflow stays inside the page */
-    transform: scale(0.96);
-    transform-origin: top left;
-    width: 104.16% !important;
+    table-layout: auto !important;
   }
   body[data-print-orient="landscape"] .forecast-detail-tbl th,
   body[data-print-orient="landscape"] .forecast-detail-tbl td {
-    padding: 1px 1.5px;
+    padding: 0.5px 1.5px !important;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  body[data-print-orient="landscape"] .forecast-detail-tbl th:first-child,
-  body[data-print-orient="landscape"] .forecast-detail-tbl td:first-child {
-    width: 13mm;
+    /* No max-width — let the column shrink to its content width */
   }
   /* Reduce divider lines that take up pixels */
   body[data-print-orient="landscape"] .forecast-detail-tbl th.col-divider,
