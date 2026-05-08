@@ -69,6 +69,8 @@
             ${yearOptions.map(y => `<option value="${y}" ${y === STATE.year ? 'selected' : ''}>${y}</option>`).join('')}
           </select>
           <button class="btn btn-sm" id="forecastPrintBtn">${t('btn.print')}</button>
+          <button class="btn btn-sm" id="forecastShotBtn">📷 Screenshot</button>
+          <button class="btn btn-sm btn-ghost" id="forecastShotTblBtn">📷 Detail Table only</button>
         </span>
       </div>
 
@@ -175,6 +177,17 @@
       render(container, parsed);
     });
     document.getElementById('forecastPrintBtn').addEventListener('click', () => window.print());
+    const fShot = document.getElementById('forecastShotBtn');
+    if (fShot) fShot.addEventListener('click', () => {
+      const today = App.UI.fmt.todayLocalISO();
+      App.UI.screenshotElement(document.getElementById('main'), `forecast_${STATE.year}_${today}.png`);
+    });
+    const fShotTbl = document.getElementById('forecastShotTblBtn');
+    if (fShotTbl) fShotTbl.addEventListener('click', () => {
+      const today = App.UI.fmt.todayLocalISO();
+      const tbl = document.getElementById('forecastDetailTable');
+      App.UI.screenshotElement(tbl, `forecast-detail_${STATE.year}_${today}.png`);
+    });
     document.getElementById('renewMultiplier').addEventListener('change', e => {
       App.Settings.setRenewalEstimateMultiplier(STATE.year, (parseFloat(e.target.value) || 0) / 100);
       render(container, parsed);

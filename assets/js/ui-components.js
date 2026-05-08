@@ -495,6 +495,104 @@
     return true;
   }
 
+  /* ----- Screenshot helper — capture an element to PNG via html2canvas ----- */
+  /* Captures the FULL element (including content scrolled out of view in
+     overflow:auto wrappers) by temporarily relaxing ancestor overflow + max-height
+     during capture, then restoring. Action buttons inside the captured element
+     are hidden via the data-html2canvas-ignore attribute so they don't appear
+     in the PNG. */
+  function screenshotElement(element, filename, opts) {
+    if (typeof html2canvas === 'undefined') {
+      toast('Screenshot library not loaded', 'error');
+      return;
+    }
+    if (!element) {
+      toast('Nothing to capture', 'error');
+      return;
+    }
+    opts = opts || {};
+
+    // Walk up ancestors and temporarily remove overflow / max-height so the
+    // full element is laid out at its natural width × height before capture.
+    const restorations = [];
+    let p = element.parentElement;
+    while (p && p !== document.body) {
+      const cs = getComputedStyle(p);
+      if (cs.overflow !== 'visible' || cs.overflowX !== 'visible' ||
+          cs.overflowY !== 'visible' || cs.maxHeight !== 'none') {
+        restorations.push({
+          el: p,
+          overflow: p.style.overflow,
+          maxHeight: p.style.maxHeight,
+        });
+        p.style.overflow = 'visible';
+        p.style.maxHeight = 'none';
+      }
+      p = p.parentElement;
+    }
+
+    // Hide .actions / .topbar-actions (button rows) inside the capture so the
+    // PNG doesn't show "Print" / "Screenshot" / etc. buttons next to the data.
+    const ignored = [];
+    element.querySelectorAll('.actions, [data-i18n-aria-label="Toggle theme"], #copyUrlBtn, #langBtn').forEach(el => {
+      ignored.push({ el, prev: el.getAttribute('data-html2canvas-ignore') });
+      el.setAttribute('data-html2canvas-ignore', 'true');
+    });
+
+    function restore() {
+      restorations.forEach(r => {
+        r.el.style.overflow = r.overflow;
+        r.el.style.maxHeight = r.maxHeight;
+      });
+      ignored.forEach(({ el, prev }) => {
+        if (prev === null) el.removeAttribute('data-html2canvas-ignore');
+        else el.setAttribute('data-html2canvas-ignore', prev);
+      });
+    }
+
+    toast('Capturing screenshot…');
+    const bg = opts.backgroundColor
+      || getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+      || '#ffffff';
+
+    // Force a layout pass so scrollWidth / scrollHeight are accurate after
+    // we relaxed overflow on ancestors.
+    void element.offsetWidth;
+    const w = Math.max(element.scrollWidth, element.offsetWidth);
+    const h = Math.max(element.scrollHeight, element.offsetHeight);
+
+    html2canvas(element, {
+      scale: opts.scale || 2,
+      backgroundColor: bg,
+      useCORS: true,
+      logging: false,
+      width: w,
+      height: h,
+      windowWidth: w,
+      windowHeight: h,
+    }).then(canvas => {
+      restore();
+      canvas.toBlob(blob => {
+        if (!blob) { toast('Screenshot failed (empty image)', 'error'); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || 'screenshot.png';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+        toast('Screenshot saved: ' + (filename || 'screenshot.png'), 'success');
+      }, 'image/png');
+    }).catch(err => {
+      restore();
+      console.error('Screenshot failed:', err);
+      toast('Screenshot failed: ' + err.message, 'error');
+    });
+  }
+
   /* ----- CSV export helper — single sheet ----- */
   function exportToCSV(filename, rows) {
     const csv = (rows || []).map(r => (r || []).map(c => {
@@ -842,7 +940,7 @@
     donutOptions,
     drillModal,
     openDealDetail,
-    exportToExcel, exportToCSV,
+    exportToExcel, exportToCSV, screenshotElement,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       THBTip: fmtTHBTip, THBShortTip: fmtTHBShortTip, commaTip: fmtCommaTip,

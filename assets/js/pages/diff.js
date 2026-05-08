@@ -57,6 +57,7 @@
         ${tr('diff.title')}
         <span class="actions">
           <button class="btn btn-sm" id="diffPrintBtn">${tr('btn.print')}</button>
+          <button class="btn btn-sm" id="diffShotBtn">📷 Screenshot</button>
         </span>
       </div>
 
@@ -112,6 +113,11 @@
       render(container, parsed);
     });
     container.querySelector('#diffPrintBtn').addEventListener('click', () => window.print());
+    const dShot = container.querySelector('#diffShotBtn');
+    if (dShot) dShot.addEventListener('click', () => {
+      const today = App.UI.fmt.todayLocalISO();
+      App.UI.screenshotElement(document.getElementById('main'), `diff_${today}.png`);
+    });
   }
 
   function delta(from, to) {

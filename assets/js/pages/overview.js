@@ -43,6 +43,11 @@
     });
     const printBtn = container.querySelector('#overviewPrintBtn');
     if (printBtn) printBtn.addEventListener('click', () => window.print());
+    const shotBtn = container.querySelector('#overviewShotBtn');
+    if (shotBtn) shotBtn.addEventListener('click', () => {
+      const today = App.UI.fmt.todayLocalISO();
+      App.UI.screenshotElement(document.getElementById('main'), `overview_${today}.png`);
+    });
     const snapBtn = container.querySelector('#overviewSnapBtn');
     if (snapBtn) snapBtn.addEventListener('click', () => {
       const snap = App.Snapshot.capture();
@@ -57,6 +62,7 @@
         ${t('sec.keyMetrics')}
         <span class="actions">
           <button class="btn btn-sm" id="overviewPrintBtn">${t('btn.print')}</button>
+          <button class="btn btn-sm" id="overviewShotBtn">📷 Screenshot</button>
           <button class="btn btn-sm" id="overviewSnapBtn">${t('btn.snapshot')}</button>
         </span>
       </div>
