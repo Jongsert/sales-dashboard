@@ -35,6 +35,7 @@
     const orderedTeams = allTeamNames.filter(n => n !== 'Unassigned');
     if (users.some(u => !u.team || u.team === 'Unassigned')) orderedTeams.push('Unassigned');
 
+    const isAdmin = (window.App && App.MODE === 'admin');
     container.innerHTML = `
       <div class="section-title">
         New Sell Targets
@@ -46,11 +47,11 @@
             <option value="">All teams</option>
             ${orderedTeams.map(t => `<option value="${t}" ${t === STATE.teamFilter ? 'selected' : ''}>${t}</option>`).join('')}
           </select>
-          <button class="btn btn-sm" id="copyPrevBtn">Copy from prev year</button>
+          ${isAdmin ? `<button class="btn btn-sm" id="copyPrevBtn">Copy from prev year</button>
           <button class="btn btn-sm" id="bulkFillBtn">Bulk fill...</button>
           <button class="btn btn-sm" id="distributeBtn">Smart distribute...</button>
           <button class="btn btn-sm" id="exportTargetsBtn">⬇️ Export Excel</button>
-          <button class="btn btn-sm btn-ghost" id="exportTargetsCsvBtn">⬇️ CSV</button>
+          <button class="btn btn-sm btn-ghost" id="exportTargetsCsvBtn">⬇️ CSV</button>` : ''}
         </span>
       </div>
 
@@ -85,10 +86,14 @@
       STATE.teamFilter = e.target.value;
       renderTable();
     });
-    document.getElementById('copyPrevBtn').addEventListener('click', copyFromPrev);
-    document.getElementById('bulkFillBtn').addEventListener('click', bulkFill);
-    document.getElementById('distributeBtn').addEventListener('click', smartDistribute);
-    document.getElementById('exportTargetsBtn').addEventListener('click', exportXlsx);
+    const cpBtn = document.getElementById('copyPrevBtn');
+    if (cpBtn) cpBtn.addEventListener('click', copyFromPrev);
+    const bfBtn = document.getElementById('bulkFillBtn');
+    if (bfBtn) bfBtn.addEventListener('click', bulkFill);
+    const sdBtn = document.getElementById('distributeBtn');
+    if (sdBtn) sdBtn.addEventListener('click', smartDistribute);
+    const xlBtn = document.getElementById('exportTargetsBtn');
+    if (xlBtn) xlBtn.addEventListener('click', exportXlsx);
     const tCsv = document.getElementById('exportTargetsCsvBtn');
     if (tCsv) tCsv.addEventListener('click', exportCSV);
 
@@ -477,20 +482,9 @@
     }
     function exportCSV() {
       const { newSellRows, year } = buildExportData();
-      const csv = newSellRows.map(r => r.map(c => {
-        const s = String(c == null ? '' : c);
-        return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-      }).join(',')).join('\n');
       const today = App.UI.fmt.todayLocalISO();
-      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sales-dashboard-targets_${year}_${today}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-      App.UI.toast(`Exported targets for ${year} (CSV)`, 'success');
+      const ok = App.UI.exportToCSV(`sales-dashboard-targets_${year}_${today}.csv`, newSellRows);
+      if (ok) App.UI.toast(`Exported targets for ${year} (CSV)`, 'success');
     }
 
     renderTable();

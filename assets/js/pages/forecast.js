@@ -148,10 +148,10 @@
 
       <div class="section-title">
         Forecast Detail Table
-        <span class="actions">
+        ${(window.App && App.MODE === 'admin') ? `<span class="actions">
           <button class="btn btn-sm" id="exportForecastBtn">⬇️ Export Excel</button>
           <button class="btn btn-sm btn-ghost" id="exportForecastCsvBtn">⬇️ CSV</button>
-        </span>
+        </span>` : ''}
       </div>
       <div class="card">
         <div style="overflow:auto; max-height: 70vh; border:1px solid var(--border); border-radius: var(--radius-sm);">
@@ -191,7 +191,8 @@
       STATE.whatIf.enabled = e.target.checked;
       render(container, parsed);
     });
-    document.getElementById('exportForecastBtn').addEventListener('click', () => exportXlsx(monthly));
+    const fXl = document.getElementById('exportForecastBtn');
+    if (fXl) fXl.addEventListener('click', () => exportXlsx(monthly));
     const fCsv = document.getElementById('exportForecastCsvBtn');
     if (fCsv) fCsv.addEventListener('click', () => exportCSV(monthly));
   }
@@ -916,20 +917,9 @@
   }
   function exportCSV(monthly) {
     const rows = buildForecastRows(monthly);
-    const csv = rows.map(r => r.map(c => {
-      const s = String(c == null ? '' : c);
-      return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-    }).join(',')).join('\n');
     const today = App.UI.fmt.todayLocalISO();
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sales-dashboard-forecast_${STATE.year}_${today}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-    App.UI.toast(`Exported forecast for ${STATE.year} (CSV)`, 'success');
+    const ok = App.UI.exportToCSV(`sales-dashboard-forecast_${STATE.year}_${today}.csv`, rows);
+    if (ok) App.UI.toast(`Exported forecast for ${STATE.year} (CSV)`, 'success');
   }
 
   function escapeHtml(s) {

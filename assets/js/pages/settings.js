@@ -6,9 +6,15 @@
     const settings = App.Settings.load();
     const updatedAt = settings.updatedAt ? new Date(settings.updatedAt).toLocaleString() : '—';
     const exportedAt = settings.exportedAt ? new Date(settings.exportedAt).toLocaleString() : 'Never';
+    const isAdmin = (window.App && App.MODE === 'admin');
 
     container.innerHTML = `
-      <div class="section-title">Backup &amp; Restore</div>
+      ${!isAdmin ? `<div class="card" style="background: var(--tint-info); border-color: var(--primary-light); margin-bottom: 14px;">
+        <strong>👁️ Viewer mode</strong> · You are using a read-only build.
+        Admin features (export, settings backup, status mapping, access tokens) are not available.
+      </div>` : ''}
+
+      ${isAdmin ? `<div class="section-title">Backup &amp; Restore</div>
       <div class="card">
         <div class="card-header">
           <div>
@@ -67,7 +73,7 @@
           Snapshot capture KPIs ตอนนี้ — ใช้ tracking trend อาทิตย์ต่ออาทิตย์ (week-over-week)
         </div>
         <div id="snapshotsList"></div>
-      </div>
+      </div>` : ''}
 
       <div class="section-title">UI Preferences</div>
       <div class="card">
@@ -92,7 +98,7 @@
         </label>
       </div>
 
-      <div class="section-title">Access Control</div>
+      ${isAdmin ? `<div class="section-title">Access Control</div>
       <div class="card">
         <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">URL Access Token (casual barrier — not real auth)</div>
         <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
@@ -119,71 +125,74 @@
           </div>
           <button class="btn btn-danger btn-sm" id="resetAllBtn">Reset all settings</button>
         </div>
-      </div>
+      </div>` : ''}
     `;
 
-    renderStorageSize();
-    renderSnapshots();
+    if (isAdmin) {
+      renderStorageSize();
+      renderSnapshots();
 
-    // Wire snapshot actions
-    document.getElementById('takeSnapshotBtn').addEventListener('click', () => {
-      const snap = App.Snapshot.capture();
-      if (snap) {
-        App.UI.toast(`Snapshot taken — Achievement ${(snap.achievement * 100).toFixed(1)}%`, 'success');
-        render(container, parsed);
-      }
-    });
-    const clearBtn = document.getElementById('clearSnapshotsBtn');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
-        App.UI.confirm('Clear all snapshot history?', () => {
-          App.Snapshot.clearAll();
+      // Wire snapshot actions
+      document.getElementById('takeSnapshotBtn').addEventListener('click', () => {
+        const snap = App.Snapshot.capture();
+        if (snap) {
+          App.UI.toast(`Snapshot taken — Achievement ${(snap.achievement * 100).toFixed(1)}%`, 'success');
           render(container, parsed);
-          App.UI.toast('All snapshots cleared', 'success');
-        });
+        }
       });
+      const clearBtn = document.getElementById('clearSnapshotsBtn');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          App.UI.confirm('Clear all snapshot history?', () => {
+            App.Snapshot.clearAll();
+            render(container, parsed);
+            App.UI.toast('All snapshots cleared', 'success');
+          });
+        });
+      }
+
+      // Wire up backup/restore actions
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        if (App.STATE && App.STATE.parsed) {
+          App.Snapshot.capture('Auto on export');
+        }
+        const filename = App.Settings.exportToFile();
+        App.UI.toast('Exported: ' + filename, 'success');
+        render(container, parsed);
+      });
+      document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('importInput').click();
+      });
+      document.getElementById('importInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const obj = JSON.parse(text);
+          App.Settings.importFromObject(obj);
+          App.UI.toast('Settings imported successfully', 'success');
+          render(container, parsed);
+        } catch (err) {
+          App.UI.toast('Import failed: ' + err.message, 'error');
+        }
+      });
+      document.getElementById('copyBtn').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(App.Settings.load(), null, 2));
+          App.UI.toast('Copied to clipboard', 'success');
+        } catch (err) {
+          App.UI.toast('Copy failed: ' + err.message, 'error');
+        }
+      });
+      document.getElementById('openTeamsBtn').addEventListener('click', () => {
+        location.hash = '#/teams';
+      });
+      document.getElementById('openStatusMapBtn').addEventListener('click', () => {
+        location.hash = '#/statusmap';
+      });
+
     }
 
-    // Wire up actions
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      // Auto-capture snapshot on export so trend keeps building
-      if (App.STATE && App.STATE.parsed) {
-        App.Snapshot.capture('Auto on export');
-      }
-      const filename = App.Settings.exportToFile();
-      App.UI.toast('Exported: ' + filename, 'success');
-      render(container, parsed);
-    });
-    document.getElementById('importBtn').addEventListener('click', () => {
-      document.getElementById('importInput').click();
-    });
-    document.getElementById('importInput').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      try {
-        const text = await file.text();
-        const obj = JSON.parse(text);
-        App.Settings.importFromObject(obj);
-        App.UI.toast('Settings imported successfully', 'success');
-        render(container, parsed);
-      } catch (err) {
-        App.UI.toast('Import failed: ' + err.message, 'error');
-      }
-    });
-    document.getElementById('copyBtn').addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(JSON.stringify(App.Settings.load(), null, 2));
-        App.UI.toast('Copied to clipboard', 'success');
-      } catch (err) {
-        App.UI.toast('Copy failed: ' + err.message, 'error');
-      }
-    });
-    document.getElementById('openTeamsBtn').addEventListener('click', () => {
-      location.hash = '#/teams';
-    });
-    document.getElementById('openStatusMapBtn').addEventListener('click', () => {
-      location.hash = '#/statusmap';
-    });
     // Theme picker
     const curTheme = localStorage.getItem('salesDashboard.theme') || 'system';
     document.querySelectorAll('.theme-opt').forEach(btn => {
@@ -207,44 +216,47 @@
     document.getElementById('compactMode').addEventListener('change', (e) => {
       App.Settings.set('uiPreferences.compactMode', e.target.checked);
     });
-    // Access token
-    const accessSaveBtn = document.getElementById('saveAccessBtn');
-    if (accessSaveBtn) {
-      accessSaveBtn.addEventListener('click', () => {
-        const v = document.getElementById('accessTokenInput').value.trim();
-        App.Settings.set('accessToken', v);
-        if (v) {
-          localStorage.setItem('salesDashboard.access', v);   // grant self
-          App.UI.toast('Access token saved · Share link with team', 'success');
-        } else {
-          localStorage.removeItem('salesDashboard.access');
-          App.UI.toast('Access token cleared (open access)', 'success');
-        }
-        render(container, parsed);
-      });
-    }
-    const accessCopyBtn = document.getElementById('copyAccessLinkBtn');
-    if (accessCopyBtn) {
-      accessCopyBtn.addEventListener('click', async () => {
-        const token = (App.Settings.load().accessToken || '').trim();
-        if (!token) return;
-        const url = location.origin + location.pathname + '#/overview?token=' + encodeURIComponent(token);
-        try {
-          await navigator.clipboard.writeText(url);
-          App.UI.toast('Share link copied (with token)', 'success');
-        } catch (err) {
-          App.UI.toast('Copy failed: ' + err.message, 'error');
-        }
-      });
-    }
 
-    document.getElementById('resetAllBtn').addEventListener('click', () => {
-      App.UI.confirm('This will erase all targets, mappings, and preferences. Continue?', () => {
-        App.Settings.reset();
-        render(container, parsed);
-        App.UI.toast('All settings reset', 'success');
+    if (isAdmin) {
+      // Access token
+      const accessSaveBtn = document.getElementById('saveAccessBtn');
+      if (accessSaveBtn) {
+        accessSaveBtn.addEventListener('click', () => {
+          const v = document.getElementById('accessTokenInput').value.trim();
+          App.Settings.set('accessToken', v);
+          if (v) {
+            localStorage.setItem('salesDashboard.access', v);
+            App.UI.toast('Access token saved · Share link with team', 'success');
+          } else {
+            localStorage.removeItem('salesDashboard.access');
+            App.UI.toast('Access token cleared (open access)', 'success');
+          }
+          render(container, parsed);
+        });
+      }
+      const accessCopyBtn = document.getElementById('copyAccessLinkBtn');
+      if (accessCopyBtn) {
+        accessCopyBtn.addEventListener('click', async () => {
+          const token = (App.Settings.load().accessToken || '').trim();
+          if (!token) return;
+          const url = location.origin + location.pathname + '#/overview?token=' + encodeURIComponent(token);
+          try {
+            await navigator.clipboard.writeText(url);
+            App.UI.toast('Share link copied (with token)', 'success');
+          } catch (err) {
+            App.UI.toast('Copy failed: ' + err.message, 'error');
+          }
+        });
+      }
+
+      document.getElementById('resetAllBtn').addEventListener('click', () => {
+        App.UI.confirm('This will erase all targets, mappings, and preferences. Continue?', () => {
+          App.Settings.reset();
+          render(container, parsed);
+          App.UI.toast('All settings reset', 'success');
+        });
       });
-    });
+    }
   }
 
   function renderStorageSize() {

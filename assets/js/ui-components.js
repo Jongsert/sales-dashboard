@@ -464,7 +464,6 @@
     Object.entries(sheets).forEach(([name, data]) => {
       if (!data || !data.length) return;
       const ws = XLSX.utils.aoa_to_sheet(data);
-      // Auto-fit column widths (approximate)
       const cols = data[0] || [];
       ws['!cols'] = cols.map((_, i) => {
         let maxLen = 10;
@@ -477,11 +476,27 @@
         }
         return { wch: maxLen };
       });
-      // Sheet name max 31 chars + no special chars
       const safeName = String(name).slice(0, 31).replace(/[\\/?*:[\]]/g, '_');
       XLSX.utils.book_append_sheet(wb, ws, safeName);
     });
     XLSX.writeFile(wb, filename);
+    return true;
+  }
+
+  /* ----- CSV export helper — single sheet ----- */
+  function exportToCSV(filename, rows) {
+    const csv = (rows || []).map(r => (r || []).map(c => {
+      const s = String(c == null ? '' : c);
+      return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
     return true;
   }
 
@@ -815,7 +830,7 @@
     donutOptions,
     drillModal,
     openDealDetail,
-    exportToExcel,
+    exportToExcel, exportToCSV,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       THBTip: fmtTHBTip, THBShortTip: fmtTHBShortTip, commaTip: fmtCommaTip,

@@ -2,8 +2,16 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.5.0';
+  const VERSION = '1.6.1';
   const VERSION_DATE = '2026-05-08';
+
+  // Build mode: 'admin' = full features (export, edit settings)
+  //             'viewer' = read-only (no export buttons, no admin settings)
+  //
+  // Detected from window.APP_MODE if set by the loading page (viewer/index.html
+  // sets it to 'viewer' before this script loads). Defaults to 'admin'.
+  const MODE = (typeof window.APP_MODE === 'string' && window.APP_MODE === 'viewer')
+    ? 'viewer' : 'admin';
 
   const PAGES = [
     { id: 'overview',  label: '📊 Overview',        ready: true,  needsFilter: true },
@@ -310,16 +318,27 @@
       }
     });
 
-    // Copy current URL to clipboard
+    // Copy current URL to clipboard — with both toast + inline button feedback
     const copyBtn = document.getElementById('copyUrlBtn');
     if (copyBtn) {
+      const originalHTML = copyBtn.innerHTML;
+      let feedbackTimer = null;
       copyBtn.addEventListener('click', async () => {
         try {
           const q = App.Filters.encodeFilterState();
           const hash = location.hash.replace(/^#\/?/, '').split('?')[0] || 'overview';
           const fullUrl = location.origin + location.pathname + '#/' + hash + (q ? '?' + q : '');
           await navigator.clipboard.writeText(fullUrl);
-          App.UI.toast('View URL copied — paste to share filtered view', 'success');
+
+          // Inline button flash: ✓ Copied!
+          copyBtn.innerHTML = '<span style="color: var(--won); font-weight: 700;">✓ Copied!</span>';
+          copyBtn.style.background = 'var(--won-light)';
+          App.UI.toast('🔗 View URL copied — share with filters applied', 'success');
+          clearTimeout(feedbackTimer);
+          feedbackTimer = setTimeout(() => {
+            copyBtn.innerHTML = originalHTML;
+            copyBtn.style.background = '';
+          }, 1800);
         } catch (err) {
           App.UI.toast('Copy failed: ' + err.message, 'error');
         }
@@ -343,6 +362,7 @@
   window.App.STATE = APP_STATE;
   window.App.VERSION = VERSION;
   window.App.VERSION_DATE = VERSION_DATE;
+  window.App.MODE = MODE;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

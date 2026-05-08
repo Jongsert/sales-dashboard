@@ -1,0 +1,94 @@
+<!--
+  viewer/index.html — Read-only build of Sales Dashboard.
+
+  This file is a near-mirror of /index.html but:
+    1. Sets window.APP_MODE = 'viewer' before any app script loads.
+       app.js reads this flag and disables export buttons + admin
+       settings (Backup/Restore, Status Mapping, Teams, Snapshots,
+       Access Token, Reset).
+    2. Loads everything from ../assets/  (single source of truth — no
+       JS/CSS duplication; admin and viewer share the same scripts).
+
+  IMPORTANT: when you add/remove a <script> tag in /index.html, you must
+  mirror that change here. Body markup must also match the admin page.
+  Everything inside ../assets/ is auto-shared (no edit needed).
+-->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Dashboard (Viewer)</title>
+
+<!-- Mode flag — must run BEFORE any app script -->
+<script>window.APP_MODE = 'viewer';</script>
+
+<!-- Fallback web fonts (Apple devices use system Sukhumvit Set) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/css/app.css">
+
+<!-- Libraries (offline) -->
+<script src="../assets/lib/chart.umd.min.js"></script>
+<script src="../assets/lib/chartjs-plugin-datalabels.min.js"></script>
+<script src="../assets/lib/xlsx.full.min.js"></script>
+<script src="../assets/lib/papaparse.min.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="#/overview" class="brand" title="Back to Overview">
+    <div class="brand-icon">S</div>
+    <div class="brand-text">
+      <div class="brand-name">Sales Dashboard</div>
+      <div class="brand-meta">
+        <span id="liveClock" class="brand-clock">—</span>
+        <span class="brand-version" id="brandVersion">v1.1.0</span>
+      </div>
+    </div>
+  </a>
+  <div class="topbar-actions">
+    <span id="fileInfo" class="file-info"></span>
+    <button id="copyUrlBtn" class="btn btn-ghost btn-sm" title="Copy current view URL (with all filters applied)" aria-label="Copy URL">
+      🔗
+    </button>
+    <button id="themeBtn" class="btn btn-ghost btn-sm" title="Toggle theme (Light / Dark / System)" aria-label="Toggle theme">
+      <span id="themeIcon">☀️</span>
+    </button>
+    <button id="uploadBtn" class="btn btn-primary btn-sm">📥 Upload data</button>
+    <input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.json" style="display:none">
+  </div>
+</header>
+
+<nav id="tabnav" class="tabnav"></nav>
+
+<div id="filterBar" class="filter-bar hidden"></div>
+
+<main id="main" class="main"></main>
+
+<!-- App scripts (load order matters) -->
+<script src="../assets/js/status-mapping.js"></script>
+<script src="../assets/js/ui-components.js"></script>
+<script src="../assets/js/data-parser.js"></script>
+<script src="../assets/js/settings-store.js"></script>
+<script src="../assets/js/snapshot.js"></script>
+<script src="../assets/js/filters.js"></script>
+<script src="../assets/js/pages/overview.js"></script>
+<script src="../assets/js/pages/actions.js"></script>
+<script src="../assets/js/pages/renew.js"></script>
+<script src="../assets/js/pages/newsell.js"></script>
+<script src="../assets/js/pages/combined.js"></script>
+<script src="../assets/js/pages/teams.js"></script>
+<script src="../assets/js/pages/targets.js"></script>
+<script src="../assets/js/pages/pipeline.js"></script>
+<script src="../assets/js/pages/forecast.js"></script>
+<script src="../assets/js/pages/status-mapping.js"></script>
+<script src="../assets/js/pages/settings.js"></script>
+<script src="../assets/js/app.js"></script>
+
+<script src="../assets/js/donut-center-plugin.js"></script>
+
+</body>
+</html>
