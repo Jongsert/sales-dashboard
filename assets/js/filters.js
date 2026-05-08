@@ -305,9 +305,9 @@
         <div class="pp-section">
           <div class="pp-section-title">Custom range</div>
           <div class="pp-custom">
-            <input type="date" id="ppFrom" class="date-input" value="${fromVal}">
+            <input type="text" id="ppFrom" class="date-input" value="${fromVal}" placeholder="YYYY-MM-DD" autocomplete="off">
             <span class="pp-arrow">→</span>
-            <input type="date" id="ppTo" class="date-input" value="${toVal}">
+            <input type="text" id="ppTo" class="date-input" value="${toVal}" placeholder="YYYY-MM-DD" autocomplete="off">
           </div>
         </div>
       `;
@@ -351,6 +351,11 @@
       }
       fromEl.addEventListener('change', commitCustom);
       toEl.addEventListener('change', commitCustom);
+      // Attach custom calendar picker (replaces native date input)
+      if (App.UI && App.UI.attachDatePicker) {
+        App.UI.attachDatePicker(fromEl);
+        App.UI.attachDatePicker(toEl);
+      }
     }
 
     trigger.addEventListener('click', (e) => {

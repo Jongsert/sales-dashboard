@@ -1632,19 +1632,373 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
 /* ========================================================================
-   Print
+   Print — A4 friendly layout for management meetings (hardcopy)
    ======================================================================== */
+@page {
+  size: A4 portrait;
+  margin: 14mm 12mm 16mm 12mm;
+}
+
 @media print {
+  /* Hide chrome */
   .topbar, .tabnav, .filter-bar, .topbar-actions,
-  .section-title .actions, .modal-backdrop, .toast { display: none !important; }
-  body { background: white; }
-  .card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
-  .main { padding: 0; max-width: none; }
-  .kpi-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
-  .chart-canvas, .chart-canvas-md, .chart-canvas-tall { break-inside: avoid; height: 280px !important; }
-  .targets-wrap, .pipeline-tbl, .forecast-detail-tbl { max-height: none !important; }
-  .section-title { page-break-after: avoid; margin-top: 16px; }
+  .section-title .actions, .modal-backdrop, .toast,
+  .insights-strip { display: none !important; }
+
+  /* Reset background + remove fixed positioning */
+  html, body { background: white !important; padding: 0 !important; margin: 0 !important; }
+  body.has-filter, body { padding-top: 0 !important; }
+  .main { padding: 0; max-width: none; margin: 0; }
+
+  /* Show a print-only header at top of every printed page */
+  body::before {
+    content: "Sales Dashboard — Printed " attr(data-print-date);
+    display: block;
+    border-bottom: 1.5px solid #333;
+    padding: 0 0 6px;
+    margin: 0 0 12px;
+    font-size: 10pt;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: 0.02em;
+  }
+
+  /* Cards / KPIs */
+  .card, .kpi-card, .hero-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #bbb;
+    background: white !important;
+  }
+  .kpi-card { padding: 10px 12px; }
+  .kpi-value { font-size: 16pt; }
+  .hero-card { padding: 12px 14px; }
+  .hero-achieve { font-size: 22pt; }
+
+  /* Charts: cap height + avoid splitting */
+  .chart-canvas, .chart-canvas-md, .chart-canvas-tall {
+    break-inside: avoid;
+    height: 220px !important;
+    max-height: 220px !important;
+  }
+
+  /* Tables: remove scroll constraints */
+  .targets-wrap, .pipeline-tbl, .forecast-detail-tbl, .drill-scroll,
+  .card div[style*="overflow"], .card div[style*="max-height"] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  thead { display: table-header-group; }   /* repeat header per page */
+  tr, td, th { break-inside: avoid; }
+
+  /* Section title spacing */
+  .section-title {
+    page-break-after: avoid;
+    margin-top: 14px;
+    font-size: 12pt;
+  }
   .section-title:first-child { margin-top: 0; }
-  /* Print color: keep accents but switch to print-friendly */
+
+  /* Smaller body font for density */
+  body, .tbl, .deal-tbl { font-size: 9.5pt; }
+  .kpi-label, .card-subtitle { font-size: 8.5pt; }
+
+  /* Force color rendering */
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  /* Hide non-essential UI for print */
+  .num-tip[title]::after { display: none !important; }
+  button, .btn { display: none !important; }
+  /* …but show legend bullets which are <span class="legend-swatch"> */
+  .legend-row, .legend-swatch { display: inline-flex !important; }
+  .legend-item { display: inline-flex !important; align-items: center; }
+}
+
+/* ========================================================================
+   Calendar picker (custom date popup, AD only)
+   ======================================================================== */
+.cal-input {
+  cursor: pointer;
+  background: var(--surface);
+}
+.cal-input:focus { outline: 2px solid var(--primary-light); outline-offset: -2px; }
+
+.cal-panel {
+  position: absolute;
+  z-index: 1000;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.16));
+  padding: 10px;
+  width: 268px;
+  user-select: none;
+  font-size: 13px;
+  animation: fade-in-up 0.12s ease-out;
+}
+.cal-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.cal-nav {
+  width: 28px; height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  flex: 0 0 auto;
+}
+.cal-nav:hover { background: var(--surface-2); }
+.cal-title, .cal-title-static {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cal-title:hover { background: var(--surface-2); }
+.cal-title-static { cursor: default; }
+.cal-day-labels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cal-day-labels span { text-align: center; padding: 4px 0; }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.cal-cell {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 32px;
+  transition: background 0.1s ease;
+}
+.cal-cell:hover { background: var(--primary-light); color: var(--primary-dark); }
+.cal-muted { color: var(--text-faint); }
+.cal-weekend { color: var(--text-muted); }
+.cal-today {
+  font-weight: 800;
+  border: 1.5px solid var(--primary);
+}
+.cal-selected {
+  background: var(--primary) !important;
+  color: white !important;
+}
+.cal-month-grid, .cal-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.cal-month-cell, .cal-year-cell {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 12px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.cal-month-cell:hover, .cal-year-cell:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+.cal-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.cal-action {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.cal-action:hover { background: var(--surface-2); border-color: var(--border-strong); }
+
+/* ========================================================================
+   Diff view (Weekly comparison)
+   ======================================================================== */
+.diff-picker-row {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.diff-picker { flex: 1; min-width: 220px; }
+.diff-picker-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.diff-picker .select-input { width: 100%; padding: 9px 12px; }
+.diff-arrow {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 0 4px 8px;
+  user-select: none;
+}
+
+.diff-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.diff-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-faint);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.diff-card.diff-pos { border-left-color: var(--won); }
+.diff-card.diff-neg { border-left-color: var(--lost); }
+.diff-card.diff-zero { border-left-color: var(--text-faint); }
+.diff-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.diff-card-values {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.diff-card-from { color: var(--text-muted); }
+.diff-card-to { font-size: 14px; }
+.diff-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.diff-tag.pos { background: var(--won); color: white; }
+.diff-tag.neg { background: var(--lost); color: white; }
+.diff-card-delta {
+  font-size: 13px;
+  font-weight: 700;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.diff-card-delta.pos { color: var(--won); }
+.diff-card-delta.neg { color: var(--lost); }
+.diff-card-delta.zero { color: var(--text-muted); }
+.diff-card-pct {
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
+  opacity: 0.85;
+}
+
+.delta-pos { color: var(--won); font-weight: 700; }
+.delta-neg { color: var(--lost); font-weight: 700; }
+.delta-zero { color: var(--text-muted); }
+
+/* ========================================================================
+   Visual polish — skeletons + page transitions
+   ======================================================================== */
+/* Skeleton shimmer for loading states */
+@keyframes skel-shimmer {
+  0%   { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
+}
+.skel {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--border) 50%, var(--surface-2) 100%);
+  background-size: 600px 100%;
+  border-radius: 6px;
+  animation: skel-shimmer 1.4s infinite linear;
+  color: transparent !important;
+  user-select: none;
+  pointer-events: none;
+}
+.skel-text { height: 1em; min-width: 80px; vertical-align: middle; }
+.skel-block { display: block; height: 60px; width: 100%; }
+.skel-line { display: block; height: 14px; margin: 6px 0; }
+
+/* Fade-in for page content (each render swap) */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.main > * { animation: fade-in-up 0.18s ease-out both; }
+.main > *:nth-child(1) { animation-delay: 0.00s; }
+.main > *:nth-child(2) { animation-delay: 0.04s; }
+.main > *:nth-child(3) { animation-delay: 0.08s; }
+.main > *:nth-child(4) { animation-delay: 0.12s; }
+.main > *:nth-child(5) { animation-delay: 0.16s; }
+.main > *:nth-child(n+6) { animation-delay: 0.20s; }
+
+/* KPI/hero hover lift */
+.kpi-card, .hero-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.kpi-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08)); }
+.hero-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md, 0 6px 18px rgba(0,0,0,0.10)); }
+
+/* Smooth tab switching */
+.tab { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+
+/* Reduced motion: respect OS preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .main > * { animation: none !important; }
 }

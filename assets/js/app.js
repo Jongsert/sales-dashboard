@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.6.1';
+  const VERSION = '1.7.0';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -21,6 +21,7 @@
     { id: 'combined',  label: '📈 Combined',        ready: true,  needsFilter: true },
     { id: 'forecast',  label: '🎯 Forecast',         ready: true,  star: true, needsFilter: true },
     { id: 'pipeline',  label: '📄 All Deals',       ready: true,  needsFilter: true },
+    { id: 'diff',      label: '📊 Diff',            ready: true,  needsFilter: false },
     { id: 'targets',   label: '🎯 Targets',         ready: true,  needsFilter: false },
     { id: 'teams',     label: '👥 Teams',           ready: true,  hideFromNav: true, needsFilter: false },
     { id: 'statusmap', label: '🏷️ Status Mapping',  ready: true,  hideFromNav: true, needsFilter: false },
@@ -35,13 +36,16 @@
   /* ----- Render top tabs ----- */
   function renderTabs() {
     const nav = document.getElementById('tabnav');
-    nav.innerHTML = PAGES.filter(p => !p.hideFromNav).map(p => `
+    const t = (window.App && App.i18n) ? App.i18n.t : null;
+    nav.innerHTML = PAGES.filter(p => !p.hideFromNav).map(p => {
+      const label = t ? t('nav.' + p.id, p.label) : p.label;
+      return `
       <button class="tab" data-page="${p.id}">
-        ${p.label}
+        ${label}
         ${p.star ? '<span class="tab-badge">★</span>' : ''}
         ${!p.ready ? `<span class="tab-badge coming">${p.phase}</span>` : ''}
-      </button>
-    `).join('');
+      </button>`;
+    }).join('');
     nav.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         location.hash = '#/' + tab.dataset.page;
@@ -94,6 +98,9 @@
     } else {
       main.innerHTML = `<div class="placeholder-page"><div class="icon">⏳</div><h2>${page.label}</h2><p>Page module not loaded yet.</p></div>`;
     }
+
+    // Translate any [data-i18n] in the just-rendered content
+    if (App.i18n) App.i18n.apply();
 
     // Persist last page
     App.Settings.set('uiPreferences.lastPage', page.id);
@@ -291,6 +298,29 @@
     const tBtn = document.getElementById('themeBtn');
     if (tBtn) tBtn.addEventListener('click', cycleTheme);
 
+    // Language toggle (TH ↔ EN)
+    const langBtn = document.getElementById('langBtn');
+    const langIcon = document.getElementById('langIcon');
+    function applyLangIcon(lang) {
+      if (langIcon) langIcon.textContent = lang === 'th' ? '🇹🇭' : '🇬🇧';
+    }
+    if (App.i18n) {
+      applyLangIcon(App.i18n.getLang());
+      if (langBtn) {
+        langBtn.addEventListener('click', () => {
+          const next = App.i18n.getLang() === 'th' ? 'en' : 'th';
+          App.i18n.setLang(next);
+          applyLangIcon(next);
+          App.UI && App.UI.toast(next === 'th' ? 'ภาษาไทย' : 'English', 'success');
+        });
+      }
+      // On lang change, re-render nav + current route so all dynamic text refreshes
+      window.addEventListener('langchange', () => {
+        renderTabs();
+        renderRoute();
+      });
+    }
+
     renderTabs();
 
     // Wire up file upload buttons
@@ -346,6 +376,13 @@
     }
 
     setupDropZone();
+
+    // Stamp print date on body so @media print can show it in header
+    window.addEventListener('beforeprint', () => {
+      const now = new Date();
+      const d = now.toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' });
+      document.body.dataset.printDate = d + ' (Asia/Bangkok)';
+    });
 
     // Restore last page
     const lastPage = App.Settings.get('uiPreferences.lastPage') || 'overview';

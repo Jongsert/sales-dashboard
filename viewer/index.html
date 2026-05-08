@@ -51,13 +51,16 @@
   </a>
   <div class="topbar-actions">
     <span id="fileInfo" class="file-info"></span>
-    <button id="copyUrlBtn" class="btn btn-ghost btn-sm" title="Copy current view URL (with all filters applied)" aria-label="Copy URL">
+    <button id="copyUrlBtn" class="btn btn-ghost btn-sm" data-i18n-title="top.copyUrl.title" aria-label="Copy URL">
       🔗
     </button>
-    <button id="themeBtn" class="btn btn-ghost btn-sm" title="Toggle theme (Light / Dark / System)" aria-label="Toggle theme">
+    <button id="langBtn" class="btn btn-ghost btn-sm" data-i18n-title="top.lang.title" aria-label="Toggle language">
+      <span id="langIcon">🇹🇭</span>
+    </button>
+    <button id="themeBtn" class="btn btn-ghost btn-sm" data-i18n-title="top.theme.title" aria-label="Toggle theme">
       <span id="themeIcon">☀️</span>
     </button>
-    <button id="uploadBtn" class="btn btn-primary btn-sm">📥 Upload data</button>
+    <button id="uploadBtn" class="btn btn-primary btn-sm" data-i18n="top.upload">📥 Upload data</button>
     <input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.json" style="display:none">
   </div>
 </header>
@@ -69,8 +72,10 @@
 <main id="main" class="main"></main>
 
 <!-- App scripts (load order matters) -->
+<script src="../assets/js/i18n.js"></script>
 <script src="../assets/js/status-mapping.js"></script>
 <script src="../assets/js/ui-components.js"></script>
+<script src="../assets/js/calendar-picker.js"></script>
 <script src="../assets/js/data-parser.js"></script>
 <script src="../assets/js/settings-store.js"></script>
 <script src="../assets/js/snapshot.js"></script>
@@ -84,6 +89,7 @@
 <script src="../assets/js/pages/targets.js"></script>
 <script src="../assets/js/pages/pipeline.js"></script>
 <script src="../assets/js/pages/forecast.js"></script>
+<script src="../assets/js/pages/diff.js"></script>
 <script src="../assets/js/pages/status-mapping.js"></script>
 <script src="../assets/js/pages/settings.js"></script>
 <script src="../assets/js/app.js"></script>
