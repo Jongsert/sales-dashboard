@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.7.3';
+  const VERSION = '1.7.4';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -128,7 +128,6 @@
       if (result.missingRequired && result.missingRequired.length > 0) {
         const missing = result.missingRequired.join(', ');
         App.UI.toast('Missing required fields: ' + missing, 'error');
-        // Future: open column-mapping wizard here
       }
       APP_STATE.parsed = result;
       App.Filters.STATE.parsed = result;
@@ -140,11 +139,127 @@
       App.Filters.refreshMultiSelects(result.deals, renderRoute);
       renderRoute();
       App.UI.toast('Loaded ' + result.deals.length.toLocaleString() + ' deals', 'success');
+
+      // Offer to import settings after a successful deal upload — unless
+      // the user has dismissed this prompt permanently.
+      if (App.MODE === 'admin' && !App.Settings.get('uiPreferences.skipPostUploadPrompt')) {
+        showPostUploadPrompt(result);
+      }
     } catch (err) {
       console.error(err);
       App.UI.toast('Failed to parse: ' + err.message, 'error');
       document.getElementById('fileInfo').textContent = '';
     }
+  }
+
+  /* ----- Post-upload prompt: offer to import settings JSON ----- */
+  function showPostUploadPrompt(result) {
+    const settings = App.Settings.load();
+    const year = new Date().getFullYear();
+    const hasTargets = !!(settings.newSellTargets[year]
+      && Object.values(settings.newSellTargets[year]).some(arr => arr && arr.some(v => v > 0)));
+    const teamCount = (settings.teams || []).length;
+    const userCount = (settings.users || []).length;
+    const dealsCount = result.deals.length.toLocaleString();
+    const fileName = result.fileName || 'data file';
+
+    const t = (window.App && App.i18n && App.i18n.t)
+      ? App.i18n.t : (k, f) => f || k;
+
+    const body = document.createElement('div');
+    body.innerHTML = `
+      <div style="text-align:center; padding: 6px 4px 4px;">
+        <div style="font-size:36px; margin-bottom:8px;">✅</div>
+        <div style="font-size:15px; font-weight:700; color: var(--text); margin-bottom:4px;">
+          Loaded ${dealsCount} deals
+        </div>
+        <div style="font-size:12px; color: var(--text-muted); margin-bottom:18px;">
+          ${escapeHtml(fileName)}
+        </div>
+
+        <div style="text-align:left; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom:16px; font-size: 12px;">
+          <div style="font-weight:700; margin-bottom:8px; color: var(--text);">
+            📋 Want to import settings too?
+          </div>
+          <div style="color: var(--text-muted); line-height:1.55; margin-bottom:8px;">
+            Settings file (JSON) contains your <strong style="color: var(--text);">targets, team mappings, status mapping, and snapshot history</strong>. Useful when sharing the dashboard with teammates so everyone sees the same numbers.
+          </div>
+          <div style="color: var(--text-faint); font-size: 11px;">
+            Current state: ${userCount} users · ${teamCount} teams ·
+            ${hasTargets
+              ? `<span style="color: var(--won);">targets set for ${year}</span>`
+              : `<span style="color: var(--upside);">no targets for ${year} yet</span>`}
+          </div>
+        </div>
+
+        <label style="display:flex; align-items:center; gap:6px; justify-content:center; font-size:11px; color: var(--text-muted); user-select:none;">
+          <input type="checkbox" id="postUpDontShow"> Don't show again (you can re-enable in Settings)
+        </label>
+      </div>
+    `;
+
+    const m = App.UI.modal({
+      title: '🎉 Data uploaded',
+      body,
+      footer: ' ',
+      width: '480px',
+    });
+
+    const f = m.el.querySelector('.modal-footer');
+    f.innerHTML = '';
+    f.style.justifyContent = 'flex-end';
+
+    const skip = document.createElement('button');
+    skip.className = 'btn';
+    skip.textContent = 'Skip — go to dashboard';
+    skip.addEventListener('click', () => {
+      saveDontShowIfChecked(m);
+      m.close();
+    });
+
+    const importBtn = document.createElement('button');
+    importBtn.className = 'btn btn-primary';
+    importBtn.textContent = '📥 Import settings file';
+    importBtn.addEventListener('click', () => {
+      saveDontShowIfChecked(m);
+      m.close();
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.style.display = 'none';
+      input.addEventListener('change', async (e) => {
+        const f2 = e.target.files[0];
+        if (!f2) return;
+        try {
+          const text = await f2.text();
+          const obj = JSON.parse(text);
+          App.Settings.importFromObject(obj);
+          App.UI.toast('Settings imported successfully', 'success');
+          renderRoute();
+        } catch (err) {
+          App.UI.toast('Import failed: ' + err.message, 'error');
+        }
+      });
+      document.body.appendChild(input);
+      input.click();
+      setTimeout(() => input.remove(), 200);
+    });
+
+    f.appendChild(skip);
+    f.appendChild(importBtn);
+  }
+
+  function saveDontShowIfChecked(modalHandle) {
+    const cb = modalHandle.el.querySelector('#postUpDontShow');
+    if (cb && cb.checked) {
+      App.Settings.set('uiPreferences.skipPostUploadPrompt', true);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   /* ----- Drag and drop (body-level) ----- */
@@ -377,17 +492,29 @@
 
     setupDropZone();
 
-    // Stamp print date + auto-pick page orientation based on route
+    // Print preparation — runs BEFORE the print dialog opens
     window.addEventListener('beforeprint', () => {
       const now = new Date();
       const d = now.toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' });
       document.body.dataset.printDate = d + ' (Asia/Bangkok)';
 
-      // Pages with wide tables print better in landscape
+      // Wide-table routes need landscape A4. Inject an @page rule at runtime
+      // because named @page rules (e.g. body{page:landscape-page}) are NOT
+      // reliable across browsers — Safari ignores them entirely.
       const wideRoutes = ['/pipeline', '/targets', '/forecast'];
       const cur = location.hash.replace(/^#/, '').split('?')[0];
       const useLandscape = wideRoutes.some(r => cur.startsWith(r));
       document.body.dataset.printOrient = useLandscape ? 'landscape' : 'portrait';
+
+      let s = document.getElementById('print-orient-style');
+      if (!s) {
+        s = document.createElement('style');
+        s.id = 'print-orient-style';
+        document.head.appendChild(s);
+      }
+      s.textContent = useLandscape
+        ? '@page { size: A4 landscape; margin: 10mm 12mm 12mm 12mm; }'
+        : '@page { size: A4 portrait; margin: 14mm 12mm 16mm 12mm; }';
 
       // Print mode flag — read by DonutCenterPlugin to force readable colors
       window._isPrinting = true;
@@ -406,9 +533,12 @@
       window.dispatchEvent(new Event('resize'));
     });
     window.addEventListener('afterprint', () => {
-      // Reset so on-screen layout isn't affected by post-print state
       delete document.body.dataset.printOrient;
       window._isPrinting = false;
+
+      // Remove the dynamically-injected @page rule so on-screen state stays clean
+      const s = document.getElementById('print-orient-style');
+      if (s) s.remove();
 
       // Restore Chart.js color from current theme + redraw
       if (typeof Chart !== 'undefined' && Chart.getChart) {

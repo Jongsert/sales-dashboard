@@ -1647,13 +1647,14 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
    - Landscape: Pipeline (All Deals), Targets, Forecast — wide tables
    The body[data-print-orient] is set in app.js beforeprint handler.
    ======================================================================== */
-@page portrait-page {
+/* Default page = portrait. Landscape is injected dynamically by app.js for
+   wide-table routes (Pipeline / Targets / Forecast) before the print
+   dialog opens, then removed in afterprint. Named @page rules are NOT
+   reliable across browsers — Safari ignores them — so we use runtime
+   <style> injection instead. */
+@page {
   size: A4 portrait;
   margin: 14mm 12mm 16mm 12mm;
-}
-@page landscape-page {
-  size: A4 landscape;
-  margin: 10mm 12mm 12mm 12mm;
 }
 
 @media print {
@@ -1688,9 +1689,6 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     --tint-info: #eff6ff !important;
     --success: #259b24 !important;
   }
-
-  body { page: portrait-page; }
-  body[data-print-orient="landscape"] { page: landscape-page; }
 
   /* Hide chrome */
   .topbar, .tabnav, .filter-bar, .topbar-actions,
