@@ -359,10 +359,22 @@
       if (opening) {
         renderPanel();
         panel.classList.add('open');
+      } else {
+        trigger.blur();
       }
     });
     panel.addEventListener('click', e => e.stopPropagation());
-    document.addEventListener('click', () => panel.classList.remove('open'));
+    // Close on outside mousedown — capture phase so child stopPropagation doesn't block.
+    // Don't close if click is inside the calendar popup (which is appended to body, not panel).
+    document.addEventListener('mousedown', (e) => {
+      if (!panel.classList.contains('open')) return;
+      if (panel.contains(e.target)) return;
+      if (trigger.contains(e.target)) return;
+      const cal = document.querySelector('.cal-panel');
+      if (cal && cal.contains(e.target)) return;
+      panel.classList.remove('open');
+      trigger.blur();
+    }, true);
   }
 
   /* ----- Re-build multi-select option lists from current data ----- */

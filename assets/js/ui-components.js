@@ -102,12 +102,17 @@
 
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
-      document.querySelectorAll('.ms-panel.open').forEach(p => { if (p !== panel) p.classList.remove('open'); });
+      // Close any other dropdown panels (multi-select + period)
+      document.querySelectorAll('.ms-panel.open, .period-panel.open').forEach(p => {
+        if (p !== panel) p.classList.remove('open');
+      });
       panel.classList.toggle('open');
       if (panel.classList.contains('open')) {
         search.value = '';
         renderOptions();
         search.focus();
+      } else {
+        trigger.blur();
       }
     });
     search.addEventListener('input', () => renderOptions(search.value));
@@ -136,10 +141,16 @@
     };
   }
 
-  // Close any open dropdowns when clicking outside
-  document.addEventListener('click', () => {
-    document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
-  });
+  // Close any open dropdowns when clicking outside.
+  // Use mousedown + capture phase so inner panels with stopPropagation don't block us.
+  document.addEventListener('mousedown', (e) => {
+    document.querySelectorAll('.ms-panel.open').forEach(panel => {
+      const dropdown = panel.closest('.ms-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        panel.classList.remove('open');
+      }
+    });
+  }, true);
 
   /* ----- Modal — supports ESC to close + click backdrop + close button ----- */
   // Stack of currently-open modals (innermost last). ESC closes the topmost only.

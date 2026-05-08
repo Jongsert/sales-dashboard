@@ -234,7 +234,13 @@
     return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
   }
 
-  document.addEventListener('click', () => closeOpen());
+  // Close on outside mousedown — capture phase so child stopPropagation doesn't block us
+  document.addEventListener('mousedown', (e) => {
+    if (!openPanel) return;
+    if (openPanel.panel.contains(e.target)) return;
+    if (e.target === openPanel.inputEl) return;
+    closeOpen();
+  }, true);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOpen(); });
   // Close on scroll (so popup doesn't drift away from input)
   window.addEventListener('scroll', () => closeOpen(), true);

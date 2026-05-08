@@ -219,10 +219,10 @@
       'btn.save': 'บันทึก',
       'btn.cancel': 'ยกเลิก',
       'btn.confirm': 'ยืนยัน',
-      'btn.apply': 'ใช้งาน',
+      'btn.apply': 'Apply',
       'btn.close': 'ปิด',
-      'btn.reset': 'รีเซ็ต',
-      'btn.copy': 'คัดลอก',
+      'btn.reset': 'Reset',
+      'btn.copy': 'Copy',
       'btn.delete': 'ลบ',
       'btn.add': 'เพิ่ม',
       'btn.edit': 'แก้ไข',
@@ -230,34 +230,34 @@
       'btn.export.csv': '⬇️ CSV',
       'btn.print': '🖨️ Print',
       'btn.snapshot': '📸 Save snapshot',
-      'btn.takeSnapshot': '📸 บันทึก snapshot ตอนนี้',
+      'btn.takeSnapshot': '📸 Take snapshot now',
       'btn.import': '📥 Import Settings',
       'btn.export.settings': '⬇️ Export Settings',
-      'btn.upload': '📥 Upload data',
+      'btn.upload': '📥 Upload Data',
       'btn.copyJson': '📋 Copy JSON to clipboard',
       'btn.columns': '⚙️ Columns',
-      'btn.copyPrev': 'คัดลอกจากปีก่อน',
+      'btn.copyPrev': 'Copy จากปีก่อน',
       'btn.bulkFill': 'Bulk fill...',
       'btn.distribute': 'Smart distribute...',
       'btn.openTeams': '👥 จัดการ Teams & Users →',
       'btn.openStatusMap': '🏷️ จัดการ Status Mapping →',
-      'btn.clearAll': 'ล้างทั้งหมด',
-      'btn.resetAll': 'Reset การตั้งค่าทั้งหมด',
+      'btn.clearAll': 'Clear all',
+      'btn.resetAll': 'Reset settings ทั้งหมด',
       'btn.openAllDeals': '📄 ดู All Deals',
 
-      // Section titles
+      // Section titles — keep English for technical terms, Thai connectors only
       'sec.keyMetrics': 'KPI หลัก',
-      'sec.trendByMonth': 'Trend รายเดือน — ทุกดีล (Won/Commit/Upside/Open/Lost)',
+      'sec.trendByMonth': 'Trend รายเดือน — All deals (Won/Commit/Upside/Open/Lost)',
       'sec.perUserPipeline': 'Pipeline รายคน',
       'sec.performanceBreakdown': 'Performance Breakdown',
       'sec.topPerformers': 'Top Performers',
       'sec.stageFunnel': 'Stage Funnel',
-      'sec.allDeals': 'ดีลทั้งหมด',
+      'sec.allDeals': 'All Deals',
       'sec.newSellTargets': 'New Sell Targets',
-      'sec.renewTargetAuto': 'Renew Target — อัตโนมัติจากข้อมูล (Subscription Renew + Auto Renew)',
+      'sec.renewTargetAuto': 'Renew Target — auto จาก data (Subscription Renew + Auto Renew)',
       'sec.forecastDetail': 'Forecast Detail Table',
-      'sec.snapshotHistory': 'ประวัติ Snapshot',
-      'sec.uiPreferences': 'ตั้งค่า UI',
+      'sec.snapshotHistory': 'Snapshot History',
+      'sec.uiPreferences': 'UI Preferences',
       'sec.accessControl': 'Access Control',
       'sec.dangerZone': 'Danger Zone',
       'sec.backupRestore': 'Backup & Restore',
@@ -265,12 +265,12 @@
       'sec.usersTeams': 'Users & Teams',
       'sec.headlineKpis': 'Headline KPIs',
       'sec.statusBreakdown': 'Status Breakdown',
-      'sec.weeklyComparison': 'Diff View — เปรียบเทียบรายสัปดาห์',
-      'sec.diffTrend': 'Trend (12 snapshot ล่าสุด)',
-      'sec.monthlyTrajectory': 'Monthly Trajectory — Won + Pipeline Forecast เทียบ Target',
+      'sec.weeklyComparison': 'Diff View — Week-over-Week',
+      'sec.diffTrend': 'Trend — 12 snapshots ล่าสุด',
+      'sec.monthlyTrajectory': 'Monthly Trajectory — Won + Pipeline Forecast vs Target',
       'sec.cumulativeTrajectory': 'Cumulative Trajectory — สะสมทั้งปี',
       'sec.renewalEstimate': 'Renewal Estimate Settings',
-      'sec.salesForecast': 'Sales Forecast — กรอกรายคน × เดือน',
+      'sec.salesForecast': 'Sales Forecast — manual input รายคน × เดือน',
       'sec.whatIf': 'What-if Scenario Analysis',
       'sec.actionCenter': 'Action Center',
       'sec.renewSummary': 'Renew Summary',
@@ -278,20 +278,20 @@
       'sec.combinedSummary': 'Combined Summary',
 
       // Card titles & subtitles
-      'card.appearance': 'หน้าตา',
+      'card.appearance': 'Appearance',
       'card.systemNote': 'สลับด่วนได้ที่ topbar (Light → Dark → System)',
       'card.exportImport': '💾 Export / Import การตั้งค่าทั้งหมด',
-      'card.exportImportSub': 'บันทึกการตั้งค่าทุกอย่างเป็น JSON — แชร์ระหว่างคนในทีมได้',
+      'card.exportImportSub': 'บันทึก settings เป็นไฟล์ JSON — แชร์ในทีมได้',
       'card.stageStatus': 'Stage → Status mapping',
       'card.stageStatusSub': 'กำหนด stage แต่ละชนิดให้เข้ากลุ่ม Won / Commit / Upside / Open / Lost',
-      'card.snapshotSub': 'Snapshot capture KPI ปัจจุบัน — ใช้ track trend สัปดาห์ต่อสัปดาห์',
-      'card.resetTitle': '⚠️ Reset การตั้งค่าทั้งหมด',
-      'card.resetSub': 'ลบ preference, target, mapping ทั้งหมด (ไม่ลบ data ที่อัปโหลด)',
+      'card.snapshotSub': 'Snapshot จะ capture KPI ปัจจุบัน — ใช้ track trend แบบ week-over-week',
+      'card.resetTitle': '⚠️ Reset settings ทั้งหมด',
+      'card.resetSub': 'ลบ preferences, targets, mappings ทั้งหมด (ไม่ลบ data ที่ upload)',
       'card.allDealsTitle': 'All Deals',
-      'card.targetsTitle': 'ปี {year} · New Sell เท่านั้น',
-      'card.targetsSub': 'คลิก cell เพื่อแก้ไข · บันทึกอัตโนมัติ · Renew Target คำนวณอัตโนมัติด้านล่าง',
-      'card.diffPicker': 'เลือก 2 snapshot เพื่อเปรียบเทียบ',
-      'card.viewerNote': '👁️ Viewer mode · กำลังใช้ build แบบ read-only — Admin features (export, backup, status mapping, access token) ถูกซ่อน',
+      'card.targetsTitle': 'Year {year} · New Sell only',
+      'card.targetsSub': 'Click cell เพื่อแก้ไข · auto-save · Renew Target คำนวณอัตโนมัติด้านล่าง',
+      'card.diffPicker': 'เลือก 2 snapshots เพื่อเปรียบเทียบ',
+      'card.viewerNote': '👁️ Viewer mode · กำลังใช้ build แบบ read-only — admin features (export, backup, status mapping, access token) ถูกซ่อน',
 
       // Filter labels
       'filter.period': 'Period',
@@ -328,15 +328,15 @@
       'period.placeholder': 'เลือกช่วงเวลา',
 
       // Diff view
-      'diff.from': 'จาก',
-      'diff.to': 'ถึง',
-      'diff.swap': '⇄ สลับ',
-      'diff.delta': 'Δ การเปลี่ยนแปลง',
-      'diff.title': 'Diff View — เปรียบเทียบรายสัปดาห์',
+      'diff.from': 'From',
+      'diff.to': 'To',
+      'diff.swap': '⇄ Swap',
+      'diff.delta': 'Δ Change',
+      'diff.title': 'Diff View — Week-over-Week',
       'diff.placeholderTitle': 'Diff View — ต้องมี snapshot อย่างน้อย 2 ตัว',
-      'diff.placeholderText': 'หน้านี้เปรียบเทียบ snapshot 2 ตัว เหมาะกับใช้ในประชุมสัปดาห์',
-      'diff.takeFirst': '📸 ถ่าย snapshot แรก',
-      'diff.takeAnother': '📸 ถ่าย snapshot อีกตัวเพื่อเปรียบเทียบ',
+      'diff.placeholderText': 'หน้านี้เปรียบเทียบ snapshot 2 ตัว — เหมาะกับใช้ใน weekly review meeting',
+      'diff.takeFirst': '📸 Take first snapshot',
+      'diff.takeAnother': '📸 Take another snapshot to compare',
 
       // KPI labels — keep most English (technical terms)
       'kpi.total': 'Total',
@@ -391,20 +391,17 @@
 
   function apply(root) {
     const r = root || document;
-    r.querySelectorAll('[data-i18n]').forEach(el => {
-      el.textContent = t(el.dataset.i18n);
-    });
-    r.querySelectorAll('[data-i18n-html]').forEach(el => {
-      el.innerHTML = t(el.dataset.i18nHtml);
-    });
-    r.querySelectorAll('[data-i18n-title]').forEach(el => {
-      el.title = t(el.dataset.i18nTitle);
-    });
-    r.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      el.placeholder = t(el.dataset.i18nPlaceholder);
-    });
-    r.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
-      el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel));
+    // Single DOM scan covering all translatable attributes — faster than 5x scans
+    const els = r.querySelectorAll(
+      '[data-i18n], [data-i18n-html], [data-i18n-title], [data-i18n-placeholder], [data-i18n-aria-label]'
+    );
+    els.forEach(el => {
+      const ds = el.dataset;
+      if (ds.i18n) el.textContent = t(ds.i18n);
+      if (ds.i18nHtml) el.innerHTML = t(ds.i18nHtml);
+      if (ds.i18nTitle) el.title = t(ds.i18nTitle);
+      if (ds.i18nPlaceholder) el.placeholder = t(ds.i18nPlaceholder);
+      if (ds.i18nAriaLabel) el.setAttribute('aria-label', t(ds.i18nAriaLabel));
     });
   }
 

@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.7.1';
+  const VERSION = '1.7.2';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -189,16 +189,16 @@
     localStorage.setItem(THEME_KEY, theme);
     const icon = document.getElementById('themeIcon');
     if (icon) icon.textContent = THEME_ICON[theme] || '☀️';
-    // Update Chart.js text colors
+    // Update Chart.js global text color
     if (typeof Chart !== 'undefined') {
       const muted = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#64748b';
       Chart.defaults.color = muted;
-      // Re-render any charts that exist by triggering route re-render
-      if (App && App.STATE && App.STATE.parsed) {
-        // Soft re-render — only if a chart is visible
-        const ev = new Event('themechange');
-        window.dispatchEvent(ev);
-      }
+    }
+    // Re-render route so charts redraw with the new CSS-variable values they
+    // read at creation time (Chart.js bakes colors at chart() construction).
+    if (App && App.STATE && App.STATE.parsed && typeof renderRoute === 'function') {
+      // Defer a frame so CSS var changes propagate before getComputedStyle reads
+      requestAnimationFrame(() => renderRoute());
     }
   }
   function cycleTheme() {

@@ -561,7 +561,11 @@ a:hover { text-decoration: underline; }
   padding: 8px 12px;
   font-size: 13px;
   outline: none;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
 }
+.ms-search::placeholder { color: var(--text-faint); }
 .ms-options {
   overflow-y: auto;
   flex: 1;
@@ -1370,7 +1374,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   bottom: 24px;
   right: 24px;
   background: var(--text);
-  color: white;
+  color: var(--bg);   /* contrast inverse of text — always visible in both themes */
   padding: 10px 16px;
   border-radius: var(--radius-sm);
   font-size: 13px;
@@ -1383,8 +1387,8 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   max-width: 360px;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
-.toast.error { background: var(--danger); }
-.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); color: white; }
+.toast.success { background: var(--success); color: white; }
 
 /* ========================================================================
    Modal
@@ -1653,6 +1657,38 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
 @media print {
+  /* Force light theme during print — overrides current data-theme so dark mode
+     users still get readable hardcopy. On-screen view stays in chosen theme. */
+  :root,
+  [data-theme="dark"],
+  [data-theme="light"],
+  [data-theme="system"] {
+    --bg: #ffffff !important;
+    --surface: #ffffff !important;
+    --surface-2: #f8fafc !important;
+    --surface-3: #f1f5f9 !important;
+    --text: #0f172a !important;
+    --text-muted: #475569 !important;
+    --text-faint: #64748b !important;
+    --border: #e2e8f0 !important;
+    --border-strong: #cbd5e1 !important;
+    --primary: #2563eb !important;
+    --primary-light: #dbeafe !important;
+    --primary-dark: #1e40af !important;
+    --primary-50: #eff6ff !important;
+    --won: #259b24 !important;
+    --won-light: #d4edda !important;
+    --commit: #9ccc65 !important;
+    --upside: #f97316 !important;
+    --open: #3b82f6 !important;
+    --lost: #ef4444 !important;
+    --danger: #ef4444 !important;
+    --danger-light: #fecaca !important;
+    --tint-danger: #fef2f2 !important;
+    --tint-info: #eff6ff !important;
+    --success: #259b24 !important;
+  }
+
   body { page: portrait-page; }
   body[data-print-orient="landscape"] { page: landscape-page; }
 
@@ -1729,15 +1765,17 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   body, .tbl, .deal-tbl { font-size: 9.5pt; }
   .kpi-label, .card-subtitle { font-size: 8.5pt; }
 
-  /* Landscape: even more compact for wide tables */
+  /* Landscape: shrink wide tables to fit A4 landscape (~270mm usable width) */
   body[data-print-orient="landscape"] {
-    font-size: 8.5pt;
+    font-size: 8pt;
   }
   body[data-print-orient="landscape"] .pipeline-tbl,
   body[data-print-orient="landscape"] .forecast-detail-tbl,
   body[data-print-orient="landscape"] .targets-tbl {
-    font-size: 7.5pt;
+    font-size: 6.5pt;
     table-layout: auto;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   body[data-print-orient="landscape"] .pipeline-tbl th,
   body[data-print-orient="landscape"] .pipeline-tbl td,
@@ -1745,13 +1783,29 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   body[data-print-orient="landscape"] .forecast-detail-tbl td,
   body[data-print-orient="landscape"] .targets-tbl th,
   body[data-print-orient="landscape"] .targets-tbl td {
-    padding: 3px 5px;
+    padding: 2px 3px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 22mm;   /* prevent any single cell from blowing out the row */
   }
-  /* Allow table content to wrap if absolutely needed in landscape */
+  /* First column (Name/Month) gets more room and may wrap */
   body[data-print-orient="landscape"] .targets-tbl td:first-child,
-  body[data-print-orient="landscape"] .pipeline-tbl td:first-child {
+  body[data-print-orient="landscape"] .pipeline-tbl td:first-child,
+  body[data-print-orient="landscape"] .forecast-detail-tbl td:first-child {
     white-space: normal;
+    max-width: 32mm;
+  }
+  /* Targets table has 14 cols — force fixed equal width */
+  body[data-print-orient="landscape"] .targets-tbl colgroup col {
+    width: auto !important;
+  }
+  /* Print container: full width, no padding eats the page */
+  body[data-print-orient="landscape"] .targets-wrap,
+  body[data-print-orient="landscape"] .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 4px !important;
   }
 
   /* Force color rendering */
