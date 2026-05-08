@@ -1067,6 +1067,19 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .tbl tr:last-child td { border-bottom: none; }
 .tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
 
+/* Universal table footer alignment — keep label cell left, numbers right.
+   Without this, tfoot cells default to inheriting text-align: left and look
+   visually offset from the right-aligned data rows above. Applies to every
+   table in the app (.tbl, .targets-tbl, .forecast-detail-tbl, .pipeline-tbl
+   and any future table with tfoot). */
+table tfoot td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+table tfoot td:first-child {
+  text-align: left;
+}
+
 /* ========================================================================
    Targets table — sticky header (top) + sticky first column (left)
    ======================================================================== */
@@ -1185,8 +1198,14 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   padding: 10px 8px;
   font-size: 13px;
   font-weight: 800;
+  /* Match data alignment — total row numbers were left-aligned otherwise */
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
-.targets-tbl tfoot td:first-child { left: 0; z-index: 7; background: var(--surface-2); }
+.targets-tbl tfoot td:first-child {
+  left: 0; z-index: 7; background: var(--surface-2);
+  text-align: left;   /* the "All total" label stays left */
+}
 
 /* ========================================================================
    Forecast page — what-if + detail table
@@ -1314,10 +1333,13 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   font-weight: 800;
   border-top: 2px solid var(--primary);
   padding: 9px 8px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .forecast-detail-tbl tfoot tr.grand-total td:first-child {
   background: var(--primary);
   color: white;
+  text-align: left;
 }
 
 /* ========================================================================
