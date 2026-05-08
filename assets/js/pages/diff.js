@@ -13,17 +13,18 @@
     const settings = App.Settings.load();
     const snapshots = (settings.snapshots || []).slice().sort((a, b) => b.timestamp - a.timestamp);
 
+    const tr = App.i18n.t;
     if (snapshots.length < 2) {
       container.innerHTML = `
         <div class="placeholder-page">
           <div class="icon">📊</div>
-          <h2>Diff View — Need at least 2 snapshots</h2>
-          <p>This page compares two snapshots side-by-side, ideal for weekly review meetings.<br>
+          <h2>${tr('diff.placeholderTitle')}</h2>
+          <p>${tr('diff.placeholderText')}<br>
           Take snapshots over time (Settings → Snapshot History or 📸 Save snapshot in Overview).<br>
           Currently: <strong>${snapshots.length}</strong> snapshot${snapshots.length === 1 ? '' : 's'} captured.</p>
           ${snapshots.length === 0
-            ? `<button class="btn btn-primary btn-lg" id="diffSnapBtn">📸 Take first snapshot</button>`
-            : `<button class="btn btn-primary btn-lg" id="diffSnapBtn">📸 Take another snapshot to compare</button>`}
+            ? `<button class="btn btn-primary btn-lg" id="diffSnapBtn">${tr('diff.takeFirst')}</button>`
+            : `<button class="btn btn-primary btn-lg" id="diffSnapBtn">${tr('diff.takeAnother')}</button>`}
         </div>`;
       const b = container.querySelector('#diffSnapBtn');
       if (b) b.addEventListener('click', () => {
@@ -53,41 +54,41 @@
 
     container.innerHTML = `
       <div class="section-title">
-        Diff View — Week-over-Week
+        ${tr('diff.title')}
         <span class="actions">
-          <button class="btn btn-sm" id="diffPrintBtn">🖨️ Print</button>
+          <button class="btn btn-sm" id="diffPrintBtn">${tr('btn.print')}</button>
         </span>
       </div>
 
       <div class="card">
         <div class="diff-picker-row">
           <div class="diff-picker">
-            <div class="diff-picker-label">From</div>
+            <div class="diff-picker-label">${tr('diff.from')}</div>
             <select id="diffFrom" class="select-input">
               ${snapshots.map(s => `<option value="${s.timestamp}" ${s.timestamp === STATE.fromTs ? 'selected' : ''}>${s.date} ${s.time || ''}${s.label ? ' · ' + s.label : ''}</option>`).join('')}
             </select>
           </div>
           <div class="diff-arrow" aria-hidden="true">→</div>
           <div class="diff-picker">
-            <div class="diff-picker-label">To</div>
+            <div class="diff-picker-label">${tr('diff.to')}</div>
             <select id="diffTo" class="select-input">
               ${snapshots.map(s => `<option value="${s.timestamp}" ${s.timestamp === STATE.toTs ? 'selected' : ''}>${s.date} ${s.time || ''}${s.label ? ' · ' + s.label : ''}</option>`).join('')}
             </select>
           </div>
-          <button class="btn btn-sm" id="diffSwap" title="Swap From / To">⇄ Swap</button>
+          <button class="btn btn-sm" id="diffSwap" title="${tr('diff.swap')}">${tr('diff.swap')}</button>
         </div>
       </div>
 
-      <div class="section-title">Headline KPIs</div>
+      <div class="section-title">${tr('sec.headlineKpis')}</div>
       <div class="diff-kpi-grid" id="diffKpiGrid"></div>
 
-      <div class="section-title">Status Breakdown</div>
+      <div class="section-title">${tr('sec.statusBreakdown')}</div>
       <div class="card"><div id="diffStatusTable"></div></div>
 
-      <div class="section-title">Top Performers</div>
+      <div class="section-title">${tr('sec.topPerformers')}</div>
       <div class="card"><div id="diffPerformers"></div></div>
 
-      <div class="section-title">Trend (last ${Math.min(snapshots.length, 12)} snapshots)</div>
+      <div class="section-title">${tr('sec.diffTrend')}</div>
       <div class="card">
         <div style="height: 220px;"><canvas id="diffTrendChart"></canvas></div>
       </div>

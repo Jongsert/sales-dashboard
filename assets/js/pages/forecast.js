@@ -60,6 +60,7 @@
 
     const yearOptions = [STATE.year - 2, STATE.year - 1, STATE.year, STATE.year + 1, STATE.year + 2];
 
+    const t = App.i18n.t;
     container.innerHTML = `
       <div class="section-title">
         Forecast — Year ${STATE.year}
@@ -67,13 +68,13 @@
           <select id="forecastYear" class="select-input" style="font-weight:600;">
             ${yearOptions.map(y => `<option value="${y}" ${y === STATE.year ? 'selected' : ''}>${y}</option>`).join('')}
           </select>
-          <button class="btn btn-sm" id="forecastPrintBtn">🖨️ Print</button>
+          <button class="btn btn-sm" id="forecastPrintBtn">${t('btn.print')}</button>
         </span>
       </div>
 
       <div class="kpi-grid" id="forecastKpis"></div>
 
-      <div class="section-title">Monthly Trajectory — Won + Pipeline Forecast vs Target</div>
+      <div class="section-title">${t('sec.monthlyTrajectory')}</div>
       <div class="card">
         <div class="card-header">
           <div>
@@ -92,12 +93,12 @@
         <div class="chart-canvas-tall"><canvas id="forecastMonthlyChart"></canvas></div>
       </div>
 
-      <div class="section-title">Cumulative Trajectory — สะสมทั้งปี</div>
+      <div class="section-title">${t('sec.cumulativeTrajectory')}</div>
       <div class="card">
         <div class="chart-canvas-tall"><canvas id="forecastCumulativeChart"></canvas></div>
       </div>
 
-      <div class="section-title">Renewal Estimate Settings</div>
+      <div class="section-title">${t('sec.renewalEstimate')}</div>
       <div class="card">
         <div class="card-header">
           <div>
@@ -113,7 +114,7 @@
         <div id="renewEstTable"></div>
       </div>
 
-      <div class="section-title">Sales Forecast — manual input per user × month</div>
+      <div class="section-title">${t('sec.salesForecast')}</div>
       <div class="card">
         <div class="card-header">
           <div>
@@ -127,7 +128,7 @@
       </div>
 
       <div class="section-title">
-        What-if Scenario Analysis
+        ${t('sec.whatIf')}
         <span class="actions">
           <label class="toggle">
             <input type="checkbox" id="whatIfToggle" ${STATE.whatIf.enabled ? 'checked' : ''}>
@@ -147,10 +148,10 @@
       </div>
 
       <div class="section-title">
-        Forecast Detail Table
+        ${t('sec.forecastDetail')}
         ${(window.App && App.MODE === 'admin') ? `<span class="actions">
-          <button class="btn btn-sm" id="exportForecastBtn">⬇️ Export Excel</button>
-          <button class="btn btn-sm btn-ghost" id="exportForecastCsvBtn">⬇️ CSV</button>
+          <button class="btn btn-sm" id="exportForecastBtn">${t('btn.export.excel')}</button>
+          <button class="btn btn-sm btn-ghost" id="exportForecastCsvBtn">${t('btn.export.csv')}</button>
         </span>` : ''}
       </div>
       <div class="card">

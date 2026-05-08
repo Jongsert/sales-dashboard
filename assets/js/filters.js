@@ -152,43 +152,45 @@
 
   /* ----- Build the filter UI inside a container element ----- */
   function build(container, onChange) {
+    const tr = (App.i18n && App.i18n.t) ? App.i18n.t : (k, f) => f || k;
     container.innerHTML = `
       <div class="f-group">
-        <span class="f-label">Period</span>
+        <span class="f-label" data-i18n="filter.period">Period</span>
         <div class="period-picker">
           <button id="periodTrigger" class="ms-trigger has-value" type="button">📅 Period</button>
           <div class="period-panel" id="periodPanel"></div>
         </div>
       </div>
       <div class="f-group">
-        <span class="f-label">Team</span>
+        <span class="f-label" data-i18n="filter.team">Team</span>
         <div class="ms-dropdown" data-filter="team"></div>
       </div>
       <div class="f-group">
-        <span class="f-label">User</span>
+        <span class="f-label" data-i18n="filter.user">User</span>
         <div class="ms-dropdown" data-filter="user"></div>
       </div>
       <div class="f-group">
-        <span class="f-label">Pipeline</span>
+        <span class="f-label" data-i18n="filter.pipeline">Pipeline</span>
         <div class="ms-dropdown" data-filter="pipeline"></div>
       </div>
       <div class="f-group">
-        <span class="f-label">Deal Type</span>
+        <span class="f-label" data-i18n="filter.dealType">Deal Type</span>
         <div class="ms-dropdown" data-filter="dealType"></div>
       </div>
       <div class="f-group">
-        <span class="f-label">Product Type</span>
+        <span class="f-label" data-i18n="filter.productType">Product Type</span>
         <div class="ms-dropdown" data-filter="productType"></div>
       </div>
       <div class="f-group">
-        <span class="f-label">Status</span>
+        <span class="f-label" data-i18n="filter.status">Status</span>
         <div class="ms-dropdown" data-filter="status"></div>
       </div>
       <div class="f-group" style="margin-left:auto;">
         <span class="f-label">&nbsp;</span>
-        <button id="resetFiltersBtn" class="btn btn-ghost btn-sm">Reset</button>
+        <button id="resetFiltersBtn" class="btn btn-ghost btn-sm" data-i18n="btn.reset">Reset</button>
       </div>
     `;
+    if (App.i18n) App.i18n.apply(container);
 
     setupPeriodPicker(container, onChange);
 
@@ -248,21 +250,13 @@
       const selectedQuarter = isQuarterSelected ? STATE.period.sub : (isMonthSelected ? Math.ceil(STATE.period.sub / 3) : null);
       const isYearActive = STATE.period.preset === 'year';
 
+      const tr = (App.i18n && App.i18n.t) ? App.i18n.t : (k, f) => f || k;
       const presets = [
-        { key: 'thisMonth',   lbl: 'This month' },
-        { key: 'lastMonth',   lbl: 'Last month' },
-        { key: 'nextMonth',   lbl: 'Next month' },
-        { key: 'mtd',         lbl: 'Month to date' },
-        { key: 'thisQuarter', lbl: 'This quarter' },
-        { key: 'lastQuarter', lbl: 'Last quarter' },
-        { key: 'nextQuarter', lbl: 'Next quarter' },
-        { key: 'qtd',         lbl: 'Quarter to date' },
-        { key: 'thisYear',    lbl: 'This year' },
-        { key: 'lastYear',    lbl: 'Last year' },
-        { key: 'nextYear',    lbl: 'Next year' },
-        { key: 'ytd',         lbl: 'Year to date' },
-        { key: 'all',         lbl: 'All time' },
-      ];
+        'thisMonth', 'lastMonth', 'nextMonth', 'mtd',
+        'thisQuarter', 'lastQuarter', 'nextQuarter', 'qtd',
+        'thisYear', 'lastYear', 'nextYear', 'ytd',
+        'all',
+      ].map(key => ({ key, lbl: tr('period.' + key) }));
 
       const years = dataYears();
       const fromVal = STATE.period.from ? toLocalISODate(STATE.period.from) : '';
@@ -273,15 +267,15 @@
 
       panel.innerHTML = `
         <div class="pp-section">
-          <div class="pp-section-title">Quick preset</div>
+          <div class="pp-section-title">${tr('period.quickPreset')}</div>
           <select id="ppQuickSelect" class="pp-select">
-            <option value="">— select preset —</option>
+            <option value="">${tr('period.selectPreset')}</option>
             ${presets.map(p => `<option value="${p.key}" ${STATE.period.preset === p.key ? 'selected' : ''}>${p.lbl}</option>`).join('')}
           </select>
         </div>
 
         <div class="pp-section">
-          <div class="pp-section-title">By year</div>
+          <div class="pp-section-title">${tr('period.byYear')}</div>
           <div class="pp-years">
             ${years.length === 0
               ? '<span style="font-size:11px; color:var(--text-muted);">No data — upload a file first</span>'
@@ -303,7 +297,7 @@
         ` : ''}
 
         <div class="pp-section">
-          <div class="pp-section-title">Custom range</div>
+          <div class="pp-section-title">${tr('period.custom')}</div>
           <div class="pp-custom">
             <input type="text" id="ppFrom" class="date-input" value="${fromVal}" placeholder="YYYY-MM-DD" autocomplete="off">
             <span class="pp-arrow">→</span>

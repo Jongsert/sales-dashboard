@@ -451,16 +451,18 @@ a:hover { text-decoration: underline; }
 .pp-custom {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   background: var(--surface-2);
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
 .pp-custom .date-input {
-  flex: 1;
-  font-size: 13px;
-  padding: 7px 10px;
+  flex: 1 1 0;
+  min-width: 0;          /* allow flex shrink below content size */
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 8px;
   border-radius: var(--radius-sm);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -469,10 +471,11 @@ a:hover { text-decoration: underline; }
   font-weight: 500;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
 }
 .pp-custom .date-input:hover { border-color: var(--text-faint); }
 .pp-custom .date-input:focus { outline: none; border-color: var(--primary); background: var(--primary-50); }
-.pp-arrow { color: var(--text-muted); font-size: 16px; }
+.pp-arrow { color: var(--text-muted); font-size: 14px; flex: 0 0 auto; }
 .pp-select {
   width: 100%;
   padding: 8px 12px;
@@ -524,6 +527,9 @@ a:hover { text-decoration: underline; }
 }
 .ms-trigger:hover { background: var(--surface-2); }
 .ms-trigger.has-value { border-color: var(--primary); color: var(--primary); }
+/* Don't keep focus ring after mouse click — only show on keyboard focus */
+.ms-trigger:focus { outline: none; }
+.ms-trigger:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 1px; }
 .ms-trigger::after {
   content: "▾";
   position: absolute;
@@ -1632,14 +1638,24 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
 /* ========================================================================
-   Print — A4 friendly layout for management meetings (hardcopy)
+   Print — A4 friendly layout (auto picks portrait/landscape per route)
+   - Portrait: Overview, Renew, New Sell, Combined, Diff, Settings, Teams
+   - Landscape: Pipeline (All Deals), Targets, Forecast — wide tables
+   The body[data-print-orient] is set in app.js beforeprint handler.
    ======================================================================== */
-@page {
+@page portrait-page {
   size: A4 portrait;
   margin: 14mm 12mm 16mm 12mm;
 }
+@page landscape-page {
+  size: A4 landscape;
+  margin: 10mm 12mm 12mm 12mm;
+}
 
 @media print {
+  body { page: portrait-page; }
+  body[data-print-orient="landscape"] { page: landscape-page; }
+
   /* Hide chrome */
   .topbar, .tabnav, .filter-bar, .topbar-actions,
   .section-title .actions, .modal-backdrop, .toast,
@@ -1675,20 +1691,30 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .hero-card { padding: 12px 14px; }
   .hero-achieve { font-size: 22pt; }
 
-  /* Charts: cap height + avoid splitting */
+  /* Charts: lock both wrapper AND canvas dimensions so they render correctly */
   .chart-canvas, .chart-canvas-md, .chart-canvas-tall {
     break-inside: avoid;
-    height: 220px !important;
-    max-height: 220px !important;
+    height: 240px !important;
+    max-height: 240px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative;
+  }
+  .chart-canvas > canvas, .chart-canvas-md > canvas, .chart-canvas-tall > canvas {
+    width: 100% !important;
+    height: 240px !important;
+    max-width: 100% !important;
+    max-height: 240px !important;
   }
 
-  /* Tables: remove scroll constraints */
+  /* Tables: remove scroll constraints + repeat thead per page */
   .targets-wrap, .pipeline-tbl, .forecast-detail-tbl, .drill-scroll,
   .card div[style*="overflow"], .card div[style*="max-height"] {
     max-height: none !important;
     overflow: visible !important;
   }
-  thead { display: table-header-group; }   /* repeat header per page */
+  thead { display: table-header-group; }
+  tfoot { display: table-row-group; }
   tr, td, th { break-inside: avoid; }
 
   /* Section title spacing */
@@ -1702,6 +1728,31 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   /* Smaller body font for density */
   body, .tbl, .deal-tbl { font-size: 9.5pt; }
   .kpi-label, .card-subtitle { font-size: 8.5pt; }
+
+  /* Landscape: even more compact for wide tables */
+  body[data-print-orient="landscape"] {
+    font-size: 8.5pt;
+  }
+  body[data-print-orient="landscape"] .pipeline-tbl,
+  body[data-print-orient="landscape"] .forecast-detail-tbl,
+  body[data-print-orient="landscape"] .targets-tbl {
+    font-size: 7.5pt;
+    table-layout: auto;
+  }
+  body[data-print-orient="landscape"] .pipeline-tbl th,
+  body[data-print-orient="landscape"] .pipeline-tbl td,
+  body[data-print-orient="landscape"] .forecast-detail-tbl th,
+  body[data-print-orient="landscape"] .forecast-detail-tbl td,
+  body[data-print-orient="landscape"] .targets-tbl th,
+  body[data-print-orient="landscape"] .targets-tbl td {
+    padding: 3px 5px;
+    white-space: nowrap;
+  }
+  /* Allow table content to wrap if absolutely needed in landscape */
+  body[data-print-orient="landscape"] .targets-tbl td:first-child,
+  body[data-print-orient="landscape"] .pipeline-tbl td:first-child {
+    white-space: normal;
+  }
 
   /* Force color rendering */
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }

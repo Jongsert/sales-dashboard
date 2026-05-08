@@ -22,20 +22,21 @@
     container.innerHTML = '';
     container.classList.add('ms-dropdown');
 
+    const tr = (window.App && App.i18n && App.i18n.t) ? App.i18n.t : (k, f) => f || k;
     const trigger = document.createElement('button');
     trigger.className = 'ms-trigger';
     trigger.type = 'button';
-    trigger.textContent = 'All';
+    trigger.textContent = tr('filter.all');
     container.appendChild(trigger);
 
     const panel = document.createElement('div');
     panel.className = 'ms-panel';
     panel.innerHTML = `
-      <input type="text" class="ms-search" placeholder="Search...">
+      <input type="text" class="ms-search" placeholder="${tr('filter.search')}">
       <div class="ms-options"></div>
       <div class="ms-actions">
-        <button class="ms-link" type="button" data-act="all">Select all</button>
-        <button class="ms-link" type="button" data-act="none">Clear</button>
+        <button class="ms-link" type="button" data-act="all">${tr('filter.selectAll')}</button>
+        <button class="ms-link" type="button" data-act="none">${tr('filter.clear')}</button>
       </div>`;
     container.appendChild(panel);
 
@@ -88,7 +89,7 @@
 
     function updateTrigger() {
       if (selectedSet.size === 0) {
-        trigger.textContent = 'All';
+        trigger.textContent = tr('filter.all');
         trigger.classList.remove('has-value');
       } else if (selectedSet.size === 1) {
         trigger.textContent = Array.from(selectedSet)[0];

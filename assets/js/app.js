@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.7.0';
+  const VERSION = '1.7.1';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -377,11 +377,25 @@
 
     setupDropZone();
 
-    // Stamp print date on body so @media print can show it in header
+    // Stamp print date + auto-pick page orientation based on route
     window.addEventListener('beforeprint', () => {
       const now = new Date();
       const d = now.toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' });
       document.body.dataset.printDate = d + ' (Asia/Bangkok)';
+
+      // Pages with wide tables print better in landscape
+      const wideRoutes = ['/pipeline', '/targets', '/forecast'];
+      const cur = location.hash.replace(/^#/, '').split('?')[0];
+      const useLandscape = wideRoutes.some(r => cur.startsWith(r));
+      document.body.dataset.printOrient = useLandscape ? 'landscape' : 'portrait';
+
+      // Force chart canvases to reflow at print viewport size
+      window.dispatchEvent(new Event('resize'));
+    });
+    window.addEventListener('afterprint', () => {
+      // Reset so on-screen layout isn't affected by post-print state
+      delete document.body.dataset.printOrient;
+      window.dispatchEvent(new Event('resize'));
     });
 
     // Restore last page

@@ -33,7 +33,6 @@
 
     const deals = F().dashboardScope(F().apply(parsed.deals));
     renderKPIs(deals);
-    renderInsights(deals);
     renderStatusByMonth(deals);
     renderStatusByUser(deals);
     renderTopPerformers(deals);
@@ -52,20 +51,19 @@
   }
 
   function renderHTML() {
+    const t = App.i18n.t;
     return `
       <div class="section-title">
-        Key Metrics
+        ${t('sec.keyMetrics')}
         <span class="actions">
-          <button class="btn btn-sm" id="overviewPrintBtn">🖨️ Print</button>
-          <button class="btn btn-sm" id="overviewSnapBtn">📸 Save snapshot</button>
+          <button class="btn btn-sm" id="overviewPrintBtn">${t('btn.print')}</button>
+          <button class="btn btn-sm" id="overviewSnapBtn">${t('btn.snapshot')}</button>
         </span>
       </div>
       <div class="hero-grid" id="kpiHero"></div>
       <div class="kpi-grid" id="kpiGrid" style="margin-top:14px;"></div>
 
-      <div class="insights-strip" id="insightsStrip"></div>
-
-      <div class="section-title">Trend by Month — All deals (Won/Commit/Upside/Open/Lost)</div>
+      <div class="section-title">${t('sec.trendByMonth')}</div>
       <div class="card">
         <div class="card-header">
           <div>
@@ -83,7 +81,7 @@
         <div class="chart-canvas-md"><canvas id="chartStatusMonth"></canvas></div>
       </div>
 
-      <div class="section-title">Per-User Pipeline Snapshot</div>
+      <div class="section-title">${t('sec.perUserPipeline')}</div>
       <div class="card">
         <div class="card-header">
           <div>
@@ -94,12 +92,12 @@
         <div class="chart-canvas-md"><canvas id="chartStatusUser"></canvas></div>
       </div>
 
-      <div class="section-title">Performance Breakdown</div>
+      <div class="section-title">${t('sec.performanceBreakdown')}</div>
       <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:16px;">
         <div class="card">
           <div class="card-header">
             <div>
-              <div class="card-title">Top Performers</div>
+              <div class="card-title">${t('sec.topPerformers')}</div>
               <div class="card-subtitle">Sorted by Won value</div>
             </div>
             <select id="performerGroupBy" class="select-input">
@@ -124,7 +122,7 @@
         <div class="card">
           <div class="card-header">
             <div>
-              <div class="card-title">Stage Funnel</div>
+              <div class="card-title">${t('sec.stageFunnel')}</div>
               <div class="card-subtitle">Open deals by stage</div>
             </div>
           </div>

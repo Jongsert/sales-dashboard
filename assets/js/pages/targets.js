@@ -36,30 +36,31 @@
     if (users.some(u => !u.team || u.team === 'Unassigned')) orderedTeams.push('Unassigned');
 
     const isAdmin = (window.App && App.MODE === 'admin');
+    const tr = App.i18n.t;
     container.innerHTML = `
       <div class="section-title">
-        New Sell Targets
+        ${tr('sec.newSellTargets')}
         <span class="actions">
           <select id="yearPicker" class="select-input" style="font-weight:600;">
             ${yearOptions.map(y => `<option value="${y}" ${y === STATE.year ? 'selected' : ''}>${y}</option>`).join('')}
           </select>
           <select id="teamFilter" class="select-input">
-            <option value="">All teams</option>
+            <option value="">${tr('filter.all')} teams</option>
             ${orderedTeams.map(t => `<option value="${t}" ${t === STATE.teamFilter ? 'selected' : ''}>${t}</option>`).join('')}
           </select>
-          ${isAdmin ? `<button class="btn btn-sm" id="copyPrevBtn">Copy from prev year</button>
-          <button class="btn btn-sm" id="bulkFillBtn">Bulk fill...</button>
-          <button class="btn btn-sm" id="distributeBtn">Smart distribute...</button>
-          <button class="btn btn-sm" id="exportTargetsBtn">⬇️ Export Excel</button>
-          <button class="btn btn-sm btn-ghost" id="exportTargetsCsvBtn">⬇️ CSV</button>` : ''}
+          ${isAdmin ? `<button class="btn btn-sm" id="copyPrevBtn">${tr('btn.copyPrev')}</button>
+          <button class="btn btn-sm" id="bulkFillBtn">${tr('btn.bulkFill')}</button>
+          <button class="btn btn-sm" id="distributeBtn">${tr('btn.distribute')}</button>
+          <button class="btn btn-sm" id="exportTargetsBtn">${tr('btn.export.excel')}</button>
+          <button class="btn btn-sm btn-ghost" id="exportTargetsCsvBtn">${tr('btn.export.csv')}</button>` : ''}
         </span>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div>
-            <div class="card-title" id="targetTableTitle">Year ${STATE.year} · New Sell only</div>
-            <div class="card-subtitle">Click any cell to edit · Auto-saves on change · Renew Target is auto-computed below</div>
+            <div class="card-title" id="targetTableTitle">${tr('card.targetsTitle').replace('{year}', STATE.year)}</div>
+            <div class="card-subtitle">${tr('card.targetsSub')}</div>
           </div>
         </div>
         <div class="targets-wrap">
@@ -68,7 +69,7 @@
       </div>
 
       ${parsed ? `
-        <div class="section-title">Renew Target — auto from data (Subscription Renew + Auto Renew)</div>
+        <div class="section-title">${tr('sec.renewTargetAuto')}</div>
         <div class="card">
           <div class="targets-wrap">
             <table class="targets-tbl" id="renewTable"></table>

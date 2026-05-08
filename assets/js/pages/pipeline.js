@@ -36,19 +36,20 @@
     if (visibleCols.length === 0) visibleCols.push('Deal Name', 'Company', 'Income', 'Stage', 'Responsible');
 
     const isAdmin = (window.App && App.MODE === 'admin');
+    const t = App.i18n.t;
     container.innerHTML = `
       <div class="section-title">
-        All Deals
+        ${t('sec.allDeals')}
         <span class="actions">
-          <button class="btn btn-sm" id="customizeColsBtn">⚙️ Columns</button>
-          ${isAdmin ? `<button class="btn btn-sm" id="exportPipelineBtn">⬇️ Export Excel</button>
-          <button class="btn btn-sm btn-ghost" id="exportPipelineCsvBtn">⬇️ CSV</button>` : ''}
+          <button class="btn btn-sm" id="customizeColsBtn">${t('btn.columns')}</button>
+          ${isAdmin ? `<button class="btn btn-sm" id="exportPipelineBtn">${t('btn.export.excel')}</button>
+          <button class="btn btn-sm btn-ghost" id="exportPipelineCsvBtn">${t('btn.export.csv')}</button>` : ''}
         </span>
       </div>
 
       <div class="card">
         <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
-          <input type="text" id="pipelineSearch" placeholder="🔍 Search across all columns..." class="select-input" style="flex:1; min-width:280px; padding:8px 12px;" value="${STATE.search}">
+          <input type="text" id="pipelineSearch" placeholder="${t('filter.searchAllCols')}" class="select-input" style="flex:1; min-width:280px; padding:8px 12px;" value="${STATE.search}">
           <span style="font-size:12px; color: var(--text-muted);" id="resultCount"></span>
           <select id="pageSize" class="select-input" title="Rows per page">
             ${[25, 50, 100, 250, 500, 1000, 2000, 'all'].map(s => {

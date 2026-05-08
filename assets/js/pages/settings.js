@@ -7,26 +7,26 @@
     const updatedAt = settings.updatedAt ? new Date(settings.updatedAt).toLocaleString() : '—';
     const exportedAt = settings.exportedAt ? new Date(settings.exportedAt).toLocaleString() : 'Never';
     const isAdmin = (window.App && App.MODE === 'admin');
+    const tr = App.i18n.t;
 
     container.innerHTML = `
       ${!isAdmin ? `<div class="card" style="background: var(--tint-info); border-color: var(--primary-light); margin-bottom: 14px;">
-        <strong>👁️ Viewer mode</strong> · You are using a read-only build.
-        Admin features (export, settings backup, status mapping, access tokens) are not available.
+        ${tr('card.viewerNote')}
       </div>` : ''}
 
-      ${isAdmin ? `<div class="section-title">Backup &amp; Restore</div>
+      ${isAdmin ? `<div class="section-title">${tr('sec.backupRestore')}</div>
       <div class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">💾 Export / Import all settings</div>
-            <div class="card-subtitle">บันทึกการตั้งค่าทุกอย่างเป็น JSON ไฟล์ — share ได้ระหว่างคนในทีม</div>
+            <div class="card-title">${tr('card.exportImport')}</div>
+            <div class="card-subtitle">${tr('card.exportImportSub')}</div>
           </div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
-          <button class="btn btn-primary" id="exportBtn">⬇️ Export Settings</button>
-          <button class="btn" id="importBtn">📥 Import Settings</button>
+          <button class="btn btn-primary" id="exportBtn">${tr('btn.export.settings')}</button>
+          <button class="btn" id="importBtn">${tr('btn.import')}</button>
           <input type="file" id="importInput" accept=".json" style="display:none;">
-          <button class="btn btn-ghost" id="copyBtn">📋 Copy JSON to clipboard</button>
+          <button class="btn btn-ghost" id="copyBtn">${tr('btn.copyJson')}</button>
         </div>
         <div style="font-size:12px; color: var(--text-muted); display:grid; gap:4px;">
           <div>Last updated (local): <strong style="color:var(--text);">${updatedAt}</strong></div>
@@ -35,20 +35,20 @@
         </div>
       </div>
 
-      <div class="section-title">Status Mapping</div>
+      <div class="section-title">${tr('sec.statusMapping')}</div>
       <div class="card" style="background: var(--surface-2);">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div>
-            <strong>Stage → Status mapping</strong>
+            <strong>${tr('card.stageStatus')}</strong>
             <div style="color: var(--text-muted); font-size:12px; margin-top:4px;">
-              กำหนด stage แต่ละชนิดให้เข้ากลุ่ม Won / Commit / Upside / Open / Lost
+              ${tr('card.stageStatusSub')}
             </div>
           </div>
-          <button class="btn btn-primary" id="openStatusMapBtn">🏷️ Manage Status Mapping →</button>
+          <button class="btn btn-primary" id="openStatusMapBtn">${tr('btn.openStatusMap')}</button>
         </div>
       </div>
 
-      <div class="section-title">Users &amp; Teams</div>
+      <div class="section-title">${tr('sec.usersTeams')}</div>
       <div class="card" style="background: var(--surface-2);">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div>
@@ -57,25 +57,25 @@
               ระบบ auto-detect user จาก Bitrix file ที่ import มา · กดเปิดเพื่อ map team
             </div>
           </div>
-          <button class="btn btn-primary" id="openTeamsBtn">👥 Manage Teams &amp; Users →</button>
+          <button class="btn btn-primary" id="openTeamsBtn">${tr('btn.openTeams')}</button>
         </div>
       </div>
 
       <div class="section-title">
-        Snapshot History
+        ${tr('sec.snapshotHistory')}
         <span class="actions">
-          <button class="btn btn-sm btn-primary" id="takeSnapshotBtn">📸 Take snapshot now</button>
-          ${(settings.snapshots || []).length > 0 ? '<button class="btn btn-sm btn-ghost" id="clearSnapshotsBtn">Clear all</button>' : ''}
+          <button class="btn btn-sm btn-primary" id="takeSnapshotBtn">${tr('btn.takeSnapshot')}</button>
+          ${(settings.snapshots || []).length > 0 ? `<button class="btn btn-sm btn-ghost" id="clearSnapshotsBtn">${tr('btn.clearAll')}</button>` : ''}
         </span>
       </div>
       <div class="card">
         <div class="card-subtitle" style="margin-bottom: 12px;">
-          Snapshot capture KPIs ตอนนี้ — ใช้ tracking trend อาทิตย์ต่ออาทิตย์ (week-over-week)
+          ${tr('card.snapshotSub')}
         </div>
         <div id="snapshotsList"></div>
       </div>` : ''}
 
-      <div class="section-title">UI Preferences</div>
+      <div class="section-title">${tr('sec.uiPreferences')}</div>
       <div class="card">
         <div style="margin-bottom: 14px;">
           <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">Appearance</div>
@@ -98,7 +98,7 @@
         </label>
       </div>
 
-      ${isAdmin ? `<div class="section-title">Access Control</div>
+      ${isAdmin ? `<div class="section-title">${tr('sec.accessControl')}</div>
       <div class="card">
         <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">URL Access Token (casual barrier — not real auth)</div>
         <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
@@ -116,14 +116,14 @@
         </div>
       </div>
 
-      <div class="section-title">Danger Zone</div>
+      <div class="section-title">${tr('sec.dangerZone')}</div>
       <div class="card" style="border-color: var(--danger-light); background: var(--tint-danger);">
         <div class="card-header">
           <div>
-            <div class="card-title" style="color: var(--danger);">⚠️ Reset all settings</div>
-            <div class="card-subtitle">ลบทุก preference, target, mapping จะกลับเป็นค่าเริ่มต้น (ไม่ลบ data ที่อัปโหลด)</div>
+            <div class="card-title" style="color: var(--danger);">${tr('card.resetTitle')}</div>
+            <div class="card-subtitle">${tr('card.resetSub')}</div>
           </div>
-          <button class="btn btn-danger btn-sm" id="resetAllBtn">Reset all settings</button>
+          <button class="btn btn-danger btn-sm" id="resetAllBtn">${tr('btn.resetAll')}</button>
         </div>
       </div>` : ''}
     `;
