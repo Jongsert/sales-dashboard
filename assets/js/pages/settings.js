@@ -96,10 +96,6 @@
           <input type="checkbox" id="compactMode" ${settings.uiPreferences.compactMode ? 'checked' : ''}>
           <span>Compact mode</span>
         </label>
-        ${isAdmin ? `<label class="toggle" style="display:block; padding:8px 0;">
-          <input type="checkbox" id="showPostUpPrompt" ${!settings.uiPreferences.skipPostUploadPrompt ? 'checked' : ''}>
-          <span>Show "Import settings?" prompt after data upload</span>
-        </label>` : ''}
       </div>
 
       ${isAdmin ? `<div class="section-title">${tr('sec.accessControl')}</div>
@@ -220,12 +216,6 @@
     document.getElementById('compactMode').addEventListener('change', (e) => {
       App.Settings.set('uiPreferences.compactMode', e.target.checked);
     });
-    const postUpPrompt = document.getElementById('showPostUpPrompt');
-    if (postUpPrompt) {
-      postUpPrompt.addEventListener('change', (e) => {
-        App.Settings.set('uiPreferences.skipPostUploadPrompt', !e.target.checked);
-      });
-    }
 
     if (isAdmin) {
       // Access token

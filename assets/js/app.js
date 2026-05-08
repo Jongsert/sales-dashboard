@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.7.4';
+  const VERSION = '1.7.5';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -140,9 +140,8 @@
       renderRoute();
       App.UI.toast('Loaded ' + result.deals.length.toLocaleString() + ' deals', 'success');
 
-      // Offer to import settings after a successful deal upload — unless
-      // the user has dismissed this prompt permanently.
-      if (App.MODE === 'admin' && !App.Settings.get('uiPreferences.skipPostUploadPrompt')) {
+      // Offer to import settings after a successful deal upload (admin only)
+      if (App.MODE === 'admin') {
         showPostUploadPrompt(result);
       }
     } catch (err) {
@@ -163,9 +162,6 @@
     const dealsCount = result.deals.length.toLocaleString();
     const fileName = result.fileName || 'data file';
 
-    const t = (window.App && App.i18n && App.i18n.t)
-      ? App.i18n.t : (k, f) => f || k;
-
     const body = document.createElement('div');
     body.innerHTML = `
       <div style="text-align:center; padding: 6px 4px 4px;">
@@ -177,7 +173,7 @@
           ${escapeHtml(fileName)}
         </div>
 
-        <div style="text-align:left; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom:16px; font-size: 12px;">
+        <div style="text-align:left; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom:6px; font-size: 12px;">
           <div style="font-weight:700; margin-bottom:8px; color: var(--text);">
             📋 Want to import settings too?
           </div>
@@ -191,15 +187,11 @@
               : `<span style="color: var(--upside);">no targets for ${year} yet</span>`}
           </div>
         </div>
-
-        <label style="display:flex; align-items:center; gap:6px; justify-content:center; font-size:11px; color: var(--text-muted); user-select:none;">
-          <input type="checkbox" id="postUpDontShow"> Don't show again (you can re-enable in Settings)
-        </label>
       </div>
     `;
 
     const m = App.UI.modal({
-      title: '🎉 Data uploaded',
+      title: 'Data uploaded',
       body,
       footer: ' ',
       width: '480px',
@@ -212,48 +204,42 @@
     const skip = document.createElement('button');
     skip.className = 'btn';
     skip.textContent = 'Skip — go to dashboard';
-    skip.addEventListener('click', () => {
-      saveDontShowIfChecked(m);
-      m.close();
-    });
+    skip.addEventListener('click', () => m.close());
 
     const importBtn = document.createElement('button');
     importBtn.className = 'btn btn-primary';
     importBtn.textContent = '📥 Import settings file';
+    // Modal stays open until either: file is successfully imported (auto-close)
+    // or user clicks Skip / backdrop. Cancelling the OS file picker just leaves
+    // the modal open — no surprise navigation away.
     importBtn.addEventListener('click', () => {
-      saveDontShowIfChecked(m);
-      m.close();
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.json';
       input.style.display = 'none';
       input.addEventListener('change', async (e) => {
-        const f2 = e.target.files[0];
-        if (!f2) return;
+        const f2 = e.target.files && e.target.files[0];
+        if (!f2) return;   // user canceled — keep modal open
         try {
           const text = await f2.text();
           const obj = JSON.parse(text);
           App.Settings.importFromObject(obj);
           App.UI.toast('Settings imported successfully', 'success');
+          m.close();
           renderRoute();
         } catch (err) {
           App.UI.toast('Import failed: ' + err.message, 'error');
+          // Modal stays open so user can retry
+        } finally {
+          input.remove();
         }
       });
       document.body.appendChild(input);
       input.click();
-      setTimeout(() => input.remove(), 200);
     });
 
     f.appendChild(skip);
     f.appendChild(importBtn);
-  }
-
-  function saveDontShowIfChecked(modalHandle) {
-    const cb = modalHandle.el.querySelector('#postUpDontShow');
-    if (cb && cb.checked) {
-      App.Settings.set('uiPreferences.skipPostUploadPrompt', true);
-    }
   }
 
   function escapeHtml(s) {
@@ -513,7 +499,7 @@
         document.head.appendChild(s);
       }
       s.textContent = useLandscape
-        ? '@page { size: A4 landscape; margin: 10mm 12mm 12mm 12mm; }'
+        ? '@page { size: A4 landscape; margin: 8mm 8mm 10mm 8mm; }'
         : '@page { size: A4 portrait; margin: 14mm 12mm 16mm 12mm; }';
 
       // Print mode flag — read by DonutCenterPlugin to force readable colors

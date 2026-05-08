@@ -1783,23 +1783,40 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   }
   body[data-print-orient="landscape"] .card-header { display: none !important; }
 
+  /* Force every container in landscape to share the page's full usable width
+     and use border-box so padding/border don't push content past the edge. */
+  body[data-print-orient="landscape"],
+  body[data-print-orient="landscape"] .main,
+  body[data-print-orient="landscape"] .card,
+  body[data-print-orient="landscape"] .targets-wrap,
+  body[data-print-orient="landscape"] .card div[style*="overflow"],
+  body[data-print-orient="landscape"] .card div[style*="max-height"] {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  body[data-print-orient="landscape"] .main { padding: 0 !important; }
+
   /* Common: all wide tables fixed-layout + full width */
   body[data-print-orient="landscape"] .pipeline-tbl,
   body[data-print-orient="landscape"] .forecast-detail-tbl,
   body[data-print-orient="landscape"] .targets-tbl {
     width: 100% !important;
-    max-width: 270mm !important;
+    max-width: 100% !important;
     table-layout: fixed;
+    border-collapse: collapse;
   }
 
-  /* ---- Pipeline (~7 visible columns) ---- */
-  body[data-print-orient="landscape"] .pipeline-tbl { font-size: 7pt; }
+  /* ---- Pipeline (~7-10 visible columns) ---- */
+  body[data-print-orient="landscape"] .pipeline-tbl { font-size: 6pt; letter-spacing: -0.02em; }
   body[data-print-orient="landscape"] .pipeline-tbl th,
   body[data-print-orient="landscape"] .pipeline-tbl td {
-    padding: 2px 4px;
+    padding: 1.5px 3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    box-sizing: border-box;
   }
   body[data-print-orient="landscape"] .pipeline-tbl td:first-child {
     white-space: normal;

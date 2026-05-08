@@ -14,13 +14,31 @@
     const users = (settings.users || []).filter(u => u.active !== false);
     const teams = settings.teams || [];
 
+    // Require fresh data upload before showing the targets table.
+    // Without this check, cached users from a previous session leak through
+    // and the page looks "stuck" before any data is uploaded.
+    if (!parsed || !parsed.deals || !parsed.deals.length) {
+      container.innerHTML = `
+        <div class="placeholder-page">
+          <div class="icon">🎯</div>
+          <h2>Targets</h2>
+          <p>Upload Bitrix data first — users are auto-detected from the data,<br>
+          then you can configure New Sell targets per user × month.</p>
+          <button class="btn btn-primary btn-lg" data-action="upload">📥 Upload data</button>
+        </div>`;
+      container.querySelectorAll('[data-action="upload"]').forEach(b =>
+        b.addEventListener('click', () => document.getElementById('fileInput').click())
+      );
+      return;
+    }
+
     if (users.length === 0) {
       container.innerHTML = `
         <div class="placeholder-page">
           <div class="icon">🎯</div>
-          <h2>No users yet</h2>
-          <p>Upload Bitrix data first — users are auto-detected.<br>
-          You can map them to teams in <a href="#/teams">Teams</a>.</p>
+          <h2>No users detected</h2>
+          <p>The uploaded data has no Responsible field set on any deal.<br>
+          Map users to teams in <a href="#/teams">Teams</a> after fixing the data.</p>
         </div>`;
       return;
     }
