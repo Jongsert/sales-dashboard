@@ -454,6 +454,37 @@
     f.appendChild(close);
   }
 
+  /* ----- Excel export helper — multi-sheet .xlsx using SheetJS ----- */
+  function exportToExcel(filename, sheets) {
+    if (typeof XLSX === 'undefined') {
+      toast('Excel library not loaded — falling back to CSV', 'error');
+      return false;
+    }
+    const wb = XLSX.utils.book_new();
+    Object.entries(sheets).forEach(([name, data]) => {
+      if (!data || !data.length) return;
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      // Auto-fit column widths (approximate)
+      const cols = data[0] || [];
+      ws['!cols'] = cols.map((_, i) => {
+        let maxLen = 10;
+        for (let r = 0; r < Math.min(data.length, 100); r++) {
+          const cell = data[r][i];
+          if (cell != null) {
+            const len = String(cell).length;
+            if (len > maxLen) maxLen = Math.min(len, 60);
+          }
+        }
+        return { wch: maxLen };
+      });
+      // Sheet name max 31 chars + no special chars
+      const safeName = String(name).slice(0, 31).replace(/[\\/?*:[\]]/g, '_');
+      XLSX.utils.book_append_sheet(wb, ws, safeName);
+    });
+    XLSX.writeFile(wb, filename);
+    return true;
+  }
+
   /* ----- Drill-down modal: search + sortable columns + clickable Deal Name ----- */
   function drillModal({ title, subtitle, deals }) {
     if (!deals || deals.length === 0) {
@@ -784,6 +815,7 @@
     donutOptions,
     drillModal,
     openDealDetail,
+    exportToExcel,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       THBTip: fmtTHBTip, THBShortTip: fmtTHBShortTip, commaTip: fmtCommaTip,

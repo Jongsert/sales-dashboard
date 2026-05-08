@@ -585,6 +585,47 @@
     closed: (d) => d.status === 'Won' || d.status === 'Lost',
   };
 
+  /* ----- URL state encoding/decoding ----- */
+  function encodeFilterState() {
+    const params = new URLSearchParams();
+    if (STATE.period.preset && STATE.period.preset !== 'thisYear') {
+      params.set('p', STATE.period.preset);
+      if (STATE.period.year && STATE.period.preset !== 'thisYear') params.set('y', STATE.period.year);
+      if (STATE.period.sub) params.set('s', STATE.period.sub);
+      if (STATE.period.preset === 'custom') {
+        if (STATE.period.from) params.set('from', toLocalISODate(STATE.period.from));
+        if (STATE.period.to) params.set('to', toLocalISODate(STATE.period.to));
+      }
+    }
+    ['team', 'user', 'pipeline', 'dealType', 'productType', 'status'].forEach(key => {
+      if (STATE[key].size > 0) {
+        params.set(key, Array.from(STATE[key]).join('|'));   // pipe to allow commas in names
+      }
+    });
+    return params.toString();
+  }
+  function decodeFilterState(queryString) {
+    const params = new URLSearchParams(queryString);
+    const preset = params.get('p');
+    if (preset) {
+      const year = params.get('y') ? parseInt(params.get('y')) : undefined;
+      const sub = params.get('s') ? parseInt(params.get('s')) : undefined;
+      if (preset === 'custom') {
+        STATE.period.preset = 'custom';
+        STATE.period.from = params.get('from') ? new Date(params.get('from') + 'T00:00:00') : null;
+        STATE.period.to = params.get('to') ? new Date(params.get('to') + 'T23:59:59') : null;
+        STATE.period.label = (params.get('from') || '...') + ' → ' + (params.get('to') || '...');
+      } else {
+        applyPreset(preset, year, sub);
+      }
+    }
+    ['team', 'user', 'pipeline', 'dealType', 'productType', 'status'].forEach(key => {
+      STATE[key].clear();
+      const val = params.get(key);
+      if (val) val.split('|').forEach(v => STATE[key].add(v));
+    });
+  }
+
   window.App = window.App || {};
   window.App.Filters = {
     STATE,
@@ -595,6 +636,8 @@
     aggregateByMonth,
     aggregateByMonthMulti,
     applyPreset,
+    encodeFilterState,
+    decodeFilterState,
     Matchers,
     MONTH_NAMES,
     RENEW_PIPES, RENEW_TYPES, NEW_TYPES,

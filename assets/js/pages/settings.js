@@ -92,6 +92,24 @@
         </label>
       </div>
 
+      <div class="section-title">Access Control</div>
+      <div class="card">
+        <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">URL Access Token (casual barrier — not real auth)</div>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+          <input type="text" id="accessTokenInput" class="select-input" style="flex:1; min-width:240px; padding:8px 12px; font-family:monospace;" placeholder="leave empty = no token required" value="${escapeAttr(settings.accessToken || '')}">
+          <button class="btn btn-primary btn-sm" id="saveAccessBtn">Save</button>
+          ${settings.accessToken ? `<button class="btn btn-ghost btn-sm" id="copyAccessLinkBtn" title="Copy URL with ?token= for sharing">📋 Copy share link</button>` : ''}
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); line-height:1.6;">
+          <strong>How it works:</strong><br>
+          • Set token (e.g. <code>secret123</code>) → other users need it to view dashboard<br>
+          • Share URL: <code>https://...?token=secret123</code> — recipient bypasses prompt<br>
+          • Clear field + Save = remove token (open access)<br>
+          • <strong style="color: var(--lost);">⚠️ Not real security:</strong> token in URL is exposed if you share screen / commit URL to git.
+          Anyone with the token + URL can see all data.
+        </div>
+      </div>
+
       <div class="section-title">Danger Zone</div>
       <div class="card" style="border-color: var(--danger-light); background: var(--tint-danger);">
         <div class="card-header">
@@ -189,6 +207,37 @@
     document.getElementById('compactMode').addEventListener('change', (e) => {
       App.Settings.set('uiPreferences.compactMode', e.target.checked);
     });
+    // Access token
+    const accessSaveBtn = document.getElementById('saveAccessBtn');
+    if (accessSaveBtn) {
+      accessSaveBtn.addEventListener('click', () => {
+        const v = document.getElementById('accessTokenInput').value.trim();
+        App.Settings.set('accessToken', v);
+        if (v) {
+          localStorage.setItem('salesDashboard.access', v);   // grant self
+          App.UI.toast('Access token saved · Share link with team', 'success');
+        } else {
+          localStorage.removeItem('salesDashboard.access');
+          App.UI.toast('Access token cleared (open access)', 'success');
+        }
+        render(container, parsed);
+      });
+    }
+    const accessCopyBtn = document.getElementById('copyAccessLinkBtn');
+    if (accessCopyBtn) {
+      accessCopyBtn.addEventListener('click', async () => {
+        const token = (App.Settings.load().accessToken || '').trim();
+        if (!token) return;
+        const url = location.origin + location.pathname + '#/overview?token=' + encodeURIComponent(token);
+        try {
+          await navigator.clipboard.writeText(url);
+          App.UI.toast('Share link copied (with token)', 'success');
+        } catch (err) {
+          App.UI.toast('Copy failed: ' + err.message, 'error');
+        }
+      });
+    }
+
     document.getElementById('resetAllBtn').addEventListener('click', () => {
       App.UI.confirm('This will erase all targets, mappings, and preferences. Continue?', () => {
         App.Settings.reset();
@@ -422,6 +471,10 @@
     });
     footer.appendChild(cancel);
     footer.appendChild(ok);
+  }
+
+  function escapeAttr(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   window.App = window.App || {};

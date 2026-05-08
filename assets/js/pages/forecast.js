@@ -149,7 +149,8 @@
       <div class="section-title">
         Forecast Detail Table
         <span class="actions">
-          <button class="btn btn-sm" id="exportForecastBtn">⬇️ Export CSV</button>
+          <button class="btn btn-sm" id="exportForecastBtn">⬇️ Export Excel</button>
+          <button class="btn btn-sm btn-ghost" id="exportForecastCsvBtn">⬇️ CSV</button>
         </span>
       </div>
       <div class="card">
@@ -190,7 +191,9 @@
       STATE.whatIf.enabled = e.target.checked;
       render(container, parsed);
     });
-    document.getElementById('exportForecastBtn').addEventListener('click', () => exportCSV(monthly));
+    document.getElementById('exportForecastBtn').addEventListener('click', () => exportXlsx(monthly));
+    const fCsv = document.getElementById('exportForecastCsvBtn');
+    if (fCsv) fCsv.addEventListener('click', () => exportCSV(monthly));
   }
 
   /* ----- Data computation ----- */
@@ -873,7 +876,7 @@
     document.getElementById('forecastDetailTable').innerHTML = head + body + foot;
   }
 
-  function exportCSV(monthly) {
+  function buildForecastRows(monthly) {
     const totals = computeYearTotals(monthly);
     const accu = arr => arr.reduce((acc, v, i) => { acc.push((acc[i - 1] || 0) + v); return acc; }, []);
     const accuRev = accu(monthly.map(m => m.actualRevenue));
@@ -901,7 +904,18 @@
                totals.totalTarget > 0 ? (totals.actualRevenue / totals.totalTarget * 100).toFixed(1) + '%' : '',
                totals.totalTarget > 0 ? (totals.forecastRevenue / totals.totalTarget * 100).toFixed(1) + '%' : '',
                totals.actualRevenue - totals.lastYearActual]);
-
+    return rows;
+  }
+  function exportXlsx(monthly) {
+    const rows = buildForecastRows(monthly);
+    const today = App.UI.fmt.todayLocalISO();
+    const ok = App.UI.exportToExcel(`sales-dashboard-forecast_${STATE.year}_${today}.xlsx`, {
+      [`Forecast ${STATE.year}`]: rows,
+    });
+    if (ok) App.UI.toast(`Exported forecast for ${STATE.year} (Excel)`, 'success');
+  }
+  function exportCSV(monthly) {
+    const rows = buildForecastRows(monthly);
     const csv = rows.map(r => r.map(c => {
       const s = String(c == null ? '' : c);
       return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
@@ -915,7 +929,7 @@
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-    App.UI.toast(`Exported forecast for ${STATE.year}`, 'success');
+    App.UI.toast(`Exported forecast for ${STATE.year} (CSV)`, 'success');
   }
 
   function escapeHtml(s) {

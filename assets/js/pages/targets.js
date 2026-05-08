@@ -49,7 +49,8 @@
           <button class="btn btn-sm" id="copyPrevBtn">Copy from prev year</button>
           <button class="btn btn-sm" id="bulkFillBtn">Bulk fill...</button>
           <button class="btn btn-sm" id="distributeBtn">Smart distribute...</button>
-          <button class="btn btn-sm" id="exportTargetsBtn">⬇️ Export CSV</button>
+          <button class="btn btn-sm" id="exportTargetsBtn">⬇️ Export Excel</button>
+          <button class="btn btn-sm btn-ghost" id="exportTargetsCsvBtn">⬇️ CSV</button>
         </span>
       </div>
 
@@ -87,7 +88,9 @@
     document.getElementById('copyPrevBtn').addEventListener('click', copyFromPrev);
     document.getElementById('bulkFillBtn').addEventListener('click', bulkFill);
     document.getElementById('distributeBtn').addEventListener('click', smartDistribute);
-    document.getElementById('exportTargetsBtn').addEventListener('click', exportCSV);
+    document.getElementById('exportTargetsBtn').addEventListener('click', exportXlsx);
+    const tCsv = document.getElementById('exportTargetsCsvBtn');
+    if (tCsv) tCsv.addEventListener('click', exportCSV);
 
     function renderTable() {
       const year = STATE.year;
@@ -437,20 +440,48 @@
       f.appendChild(cancel); f.appendChild(ok);
     }
 
-    function exportCSV() {
+    function buildExportData() {
       const year = STATE.year;
-      const rows = [['User', 'Team', ...MONTHS, 'Year Total']];
+      const newSellRows = [['User', 'Team', ...MONTHS, 'Year Total']];
       users.forEach(u => {
         const arr = (App.Settings.load().newSellTargets[year] || {})[u.name] || new Array(12).fill(0);
         const total = arr.reduce((s, v) => s + v, 0);
-        rows.push([u.name, u.team || 'Unassigned', ...arr, total]);
+        newSellRows.push([u.name, u.team || 'Unassigned', ...arr, total]);
       });
-      const csv = rows.map(r => r.map(c => {
+      // Renew Target rows (auto from data)
+      const renewRows = [['User', 'Team', ...MONTHS, 'Year Total']];
+      if (parsed && parsed.deals) {
+        const userMonthly = {};
+        parsed.deals.forEach(d => {
+          if (!App.Filters.Matchers.isRenew(d)) return;
+          if (!d.expectedClose || d.expectedClose.getFullYear() !== year) return;
+          const name = d.responsible || 'Unassigned';
+          if (!userMonthly[name]) userMonthly[name] = { arr: new Array(12).fill(0), team: d.team || 'Unassigned' };
+          userMonthly[name].arr[d.expectedClose.getMonth()] += d.renewTarget || d.income || 0;
+        });
+        Object.entries(userMonthly).forEach(([name, info]) => {
+          const total = info.arr.reduce((s, v) => s + v, 0);
+          renewRows.push([name, info.team, ...info.arr, total]);
+        });
+      }
+      return { newSellRows, renewRows, year };
+    }
+    function exportXlsx() {
+      const { newSellRows, renewRows, year } = buildExportData();
+      const today = App.UI.fmt.todayLocalISO();
+      const ok = App.UI.exportToExcel(`sales-dashboard-targets_${year}_${today}.xlsx`, {
+        'New Sell Targets': newSellRows,
+        'Renew Target (auto)': renewRows,
+      });
+      if (ok) App.UI.toast(`Exported targets for ${year} (Excel)`, 'success');
+    }
+    function exportCSV() {
+      const { newSellRows, year } = buildExportData();
+      const csv = newSellRows.map(r => r.map(c => {
         const s = String(c == null ? '' : c);
         return /[,"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
       }).join(',')).join('\n');
       const today = App.UI.fmt.todayLocalISO();
-      // BOM for Excel UTF-8 compatibility (Thai names)
       const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -459,7 +490,7 @@
       document.body.appendChild(a);
       a.click();
       setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-      App.UI.toast(`Exported targets for ${year}`, 'success');
+      App.UI.toast(`Exported targets for ${year} (CSV)`, 'success');
     }
 
     renderTable();

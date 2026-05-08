@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.4.8';
+  const VERSION = '1.5.0';
   const VERSION_DATE = '2026-05-08';
 
   const PAGES = [
@@ -44,9 +44,14 @@
   /* ----- Render current page based on hash ----- */
   function renderRoute() {
     const hash = location.hash.replace(/^#\/?/, '') || 'overview';
-    const pageId = hash.split('?')[0];
+    const [pageId, queryString] = hash.split('?');
     const page = PAGES.find(p => p.id === pageId) || PAGES[0];
     APP_STATE.currentPage = page.id;
+
+    // Decode filter state from URL query string (only if data is loaded)
+    if (queryString && App.Filters && APP_STATE.parsed) {
+      try { App.Filters.decodeFilterState(queryString); } catch (e) { console.warn('Filter URL decode failed', e); }
+    }
 
     document.querySelectorAll('.tab').forEach(t => {
       t.classList.toggle('active', t.dataset.page === page.id);
@@ -196,9 +201,79 @@
     });
   }
 
+  /* ----- Access token gate ----- */
+  const ACCESS_KEY = 'salesDashboard.access';
+  function checkAccess() {
+    const settings = App.Settings.load();
+    const required = (settings && settings.accessToken || '').trim();
+    if (!required) return true;   // no token configured = open access
+
+    // Check URL ?token= first (one-time grant; saves to localStorage on success)
+    const hashStr = location.hash.replace(/^#\/?/, '');
+    const queryStr = hashStr.split('?')[1] || '';
+    const urlToken = new URLSearchParams(queryStr).get('token');
+    if (urlToken && urlToken === required) {
+      localStorage.setItem(ACCESS_KEY, required);
+      // Strip ?token= from URL for safety (don't leave it visible)
+      const cleanQ = new URLSearchParams(queryStr); cleanQ.delete('token');
+      const cleanQS = cleanQ.toString();
+      const pageId = hashStr.split('?')[0] || 'overview';
+      history.replaceState(null, '', '#/' + pageId + (cleanQS ? '?' + cleanQS : ''));
+      return true;
+    }
+
+    // Check cached
+    if (localStorage.getItem(ACCESS_KEY) === required) return true;
+
+    return false;
+  }
+  function showAccessGate() {
+    document.body.innerHTML = `
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--bg);">
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 40px; max-width: 440px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+          <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
+          <h2 style="margin-bottom: 8px; font-size: 20px; color: var(--text);">Access required</h2>
+          <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">This dashboard requires an access token. Enter it below to continue.</p>
+          <input type="password" id="accessInput" placeholder="Enter access token" autofocus
+                 style="width: 100%; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 8px; font-family: inherit; font-size: 14px; margin-bottom: 12px; box-sizing: border-box;">
+          <button id="accessSubmit" style="width: 100%; padding: 11px; background: var(--primary); color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;">Continue</button>
+          <div id="accessError" style="color: var(--lost); font-size: 12px; margin-top: 12px; min-height: 16px;"></div>
+          <div style="font-size: 11px; color: var(--text-faint); margin-top: 24px; line-height: 1.5;">
+            ⚠️ This is a casual access barrier, not real authentication.<br>
+            Anyone with the token can view all data.
+          </div>
+        </div>
+      </div>
+    `;
+    const settings = App.Settings.load();
+    const required = (settings.accessToken || '').trim();
+    const input = document.getElementById('accessInput');
+    const error = document.getElementById('accessError');
+    function tryLogin() {
+      const v = input.value.trim();
+      if (v === required) {
+        localStorage.setItem(ACCESS_KEY, required);
+        location.reload();
+      } else {
+        error.textContent = 'Incorrect token';
+        input.select();
+      }
+    }
+    document.getElementById('accessSubmit').addEventListener('click', tryLogin);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(); });
+  }
+
   /* ----- Bootstrap ----- */
   function init() {
     App.Settings.load();   // load from localStorage
+
+    // Access token gate — block if required token is set + not authenticated
+    if (!checkAccess()) {
+      applyTheme(getTheme());
+      showAccessGate();
+      return;
+    }
+
     applyTheme(getTheme());
     const v = document.getElementById('brandVersion');
     if (v) v.textContent = 'v' + VERSION;
@@ -223,9 +298,33 @@
 
     // Build filter bar
     App.Filters.build(document.getElementById('filterBar'), () => {
-      // Re-render current page
-      if (APP_STATE.parsed) renderRoute();
+      // Sync filter state to URL (replace, no history clutter)
+      if (APP_STATE.parsed) {
+        const q = App.Filters.encodeFilterState();
+        const hash = location.hash.replace(/^#\/?/, '').split('?')[0] || 'overview';
+        const newHash = '#/' + hash + (q ? '?' + q : '');
+        if (location.hash !== newHash) {
+          history.replaceState(null, '', newHash);
+        }
+        renderRoute();
+      }
     });
+
+    // Copy current URL to clipboard
+    const copyBtn = document.getElementById('copyUrlBtn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        try {
+          const q = App.Filters.encodeFilterState();
+          const hash = location.hash.replace(/^#\/?/, '').split('?')[0] || 'overview';
+          const fullUrl = location.origin + location.pathname + '#/' + hash + (q ? '?' + q : '');
+          await navigator.clipboard.writeText(fullUrl);
+          App.UI.toast('View URL copied — paste to share filtered view', 'success');
+        } catch (err) {
+          App.UI.toast('Copy failed: ' + err.message, 'error');
+        }
+      });
+    }
 
     setupDropZone();
 

@@ -40,7 +40,8 @@
         All Deals
         <span class="actions">
           <button class="btn btn-sm" id="customizeColsBtn">⚙️ Columns</button>
-          <button class="btn btn-sm" id="exportPipelineBtn">⬇️ Export CSV</button>
+          <button class="btn btn-sm" id="exportPipelineBtn">⬇️ Export Excel</button>
+          <button class="btn btn-sm btn-ghost" id="exportPipelineCsvBtn">⬇️ CSV</button>
         </span>
       </div>
 
@@ -402,7 +403,7 @@
       f.appendChild(cancel); f.appendChild(reset); f.appendChild(save);
     }
 
-    function exportCSV() {
+    function buildExportRows() {
       const filtered = getFilteredDeals();
       const cols = visibleCols;
       const rows = [cols];
@@ -414,6 +415,16 @@
           return v;
         }));
       });
+      return { rows, count: filtered.length };
+    }
+    function exportXlsx() {
+      const { rows, count } = buildExportRows();
+      const today = App.UI.fmt.todayLocalISO();
+      const ok = App.UI.exportToExcel(`sales-dashboard-deals_${today}.xlsx`, { 'All Deals': rows });
+      if (ok) App.UI.toast(`Exported ${count.toLocaleString()} deals to Excel`, 'success');
+    }
+    function exportCSV() {
+      const { rows, count } = buildExportRows();
       const csv = rows.map(r => r.map(c => {
         const s = String(c == null ? '' : c);
         return s.includes(',') || s.includes('"') || s.includes('\n')
@@ -424,11 +435,11 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `sales-dashboard-pipeline_${today}.csv`;
+      a.download = `sales-dashboard-deals_${today}.csv`;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-      App.UI.toast(`Exported ${filtered.length.toLocaleString()} deals`, 'success');
+      App.UI.toast(`Exported ${count.toLocaleString()} deals to CSV`, 'success');
     }
 
     // Wire up controls
@@ -448,7 +459,9 @@
     document.getElementById('nextPage').addEventListener('click', () => { STATE.page++; renderTable(); });
     document.getElementById('lastPage').addEventListener('click', () => { STATE.page = 999999; renderTable(); });
     document.getElementById('customizeColsBtn').addEventListener('click', customizeColumns);
-    document.getElementById('exportPipelineBtn').addEventListener('click', exportCSV);
+    document.getElementById('exportPipelineBtn').addEventListener('click', exportXlsx);
+    const csvBtn = document.getElementById('exportPipelineCsvBtn');
+    if (csvBtn) csvBtn.addEventListener('click', exportCSV);
 
     renderTable();
   }

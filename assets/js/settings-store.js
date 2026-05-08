@@ -67,6 +67,10 @@
         diffViewEnabled: true,
       },
 
+      // Optional access token (URL-based). Empty = no access control.
+      // Stored as plain text since this is "casual barrier" not real auth.
+      accessToken: '',
+
       // Snapshot history (auto-recorded on each export)
       snapshots: [],
 
