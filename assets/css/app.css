@@ -1826,7 +1826,11 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     border-collapse: collapse;
   }
   body[data-print-orient="landscape"] .forecast-detail-tbl {
-    width: 100% !important;
+    /* width: auto makes the table size to its content instead of 100% of the
+       container. Without this, table-layout: auto distributes leftover space
+       between columns -- which is what created the visible gaps in print
+       even though every cell's content was tight. */
+    width: auto !important;
     max-width: 100% !important;
     border-collapse: collapse;
   }
@@ -1873,23 +1877,25 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   }
 
   /* ---- Forecast Detail (22 cols — densest) ----
-     Use table-layout: auto so browser sizes each column to its content
-     instead of forcing equal share. With 22 columns where some are 1-2
-     chars (%) and others are 9 chars (THB millions), auto packing fits
-     where fixed layout would either overflow or waste empty cells.
-     This is print-scoped only (body[data-print-orient="landscape"]) —
-     on-screen the table keeps its normal layout. */
+     Tight pack: table-layout: auto + width: auto so each column is exactly
+     content-wide and the whole table is exactly the sum of those columns.
+     No leftover space gets distributed. Print-scoped only — on-screen the
+     table keeps its normal layout. */
   body[data-print-orient="landscape"] .forecast-detail-tbl {
     font-size: 5pt;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.06em;
     font-variant-numeric: tabular-nums;
     table-layout: auto !important;
   }
   body[data-print-orient="landscape"] .forecast-detail-tbl th,
   body[data-print-orient="landscape"] .forecast-detail-tbl td {
-    padding: 0.5px 1.5px !important;
+    padding: 0.5px 1px !important;
     white-space: nowrap;
-    /* No max-width — let the column shrink to its content width */
+  }
+  /* Headers slightly less padding (still bold for readability but pack tight) */
+  body[data-print-orient="landscape"] .forecast-detail-tbl th {
+    padding: 0.5px 0.5px !important;
+    font-weight: 600 !important;   /* lighter weight reads ~5% narrower */
   }
   /* Reduce divider lines that take up pixels */
   body[data-print-orient="landscape"] .forecast-detail-tbl th.col-divider,
