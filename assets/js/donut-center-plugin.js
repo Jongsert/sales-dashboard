@@ -50,11 +50,31 @@ const DonutCenterPlugin = {
       } catch (e) {
         valueText = safeFormat(total);
       }
+      // Detect print mode: force readable colors (in case print CSS hasn't
+      // propagated to canvas via getComputedStyle yet)
+      const isPrint = !!(window._isPrinting);
+      const labelColor = isPrint ? '#475569' : '#94a3b8';
+      const textColor = isPrint
+        ? '#0f172a'
+        : (getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#0f172a');
+      const haloColor = isPrint ? '#ffffff'
+        : (getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff');
+
+      // Label text ("TOTAL" small caps above)
       ctx.font = "600 10px 'Sukhumvit Set', 'Inter', sans-serif";
-      ctx.fillStyle = '#94a3b8';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = haloColor;
+      ctx.strokeText(labelText.toUpperCase(), cx, cy - 14);
+      ctx.fillStyle = labelColor;
       ctx.fillText(labelText.toUpperCase(), cx, cy - 14);
-      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#0f172a';
+
+      // Value text (main number) — paint a halo first so text is readable
+      // against any background (light/dark theme + white print paper)
       ctx.font = "800 18px 'Sukhumvit Set', 'Inter', sans-serif";
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = haloColor;
+      ctx.strokeText(valueText, cx, cy + 6);
       ctx.fillStyle = textColor;
       ctx.fillText(valueText, cx, cy + 6);
       ctx.restore();

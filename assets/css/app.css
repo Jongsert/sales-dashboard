@@ -1765,47 +1765,87 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   body, .tbl, .deal-tbl { font-size: 9.5pt; }
   .kpi-label, .card-subtitle { font-size: 8.5pt; }
 
-  /* Landscape: shrink wide tables to fit A4 landscape (~270mm usable width) */
+  /* Landscape: shrink wide tables to fit A4 landscape (~270mm usable width).
+     Per-table widths are tuned for typical column counts:
+       - Pipeline: ~7 cols → 35mm per cell, 50mm for Deal Name
+       - Targets: 14 cols (User + 12 months + Total) → fixed equal share
+       - Forecast Detail: 22 cols (densest) → 11mm + 5.5pt font           */
   body[data-print-orient="landscape"] {
-    font-size: 8pt;
+    font-size: 7.5pt;
   }
-  body[data-print-orient="landscape"] .pipeline-tbl,
-  body[data-print-orient="landscape"] .forecast-detail-tbl,
-  body[data-print-orient="landscape"] .targets-tbl {
-    font-size: 6.5pt;
-    table-layout: auto;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-  body[data-print-orient="landscape"] .pipeline-tbl th,
-  body[data-print-orient="landscape"] .pipeline-tbl td,
-  body[data-print-orient="landscape"] .forecast-detail-tbl th,
-  body[data-print-orient="landscape"] .forecast-detail-tbl td,
-  body[data-print-orient="landscape"] .targets-tbl th,
-  body[data-print-orient="landscape"] .targets-tbl td {
-    padding: 2px 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 22mm;   /* prevent any single cell from blowing out the row */
-  }
-  /* First column (Name/Month) gets more room and may wrap */
-  body[data-print-orient="landscape"] .targets-tbl td:first-child,
-  body[data-print-orient="landscape"] .pipeline-tbl td:first-child,
-  body[data-print-orient="landscape"] .forecast-detail-tbl td:first-child {
-    white-space: normal;
-    max-width: 32mm;
-  }
-  /* Targets table has 14 cols — force fixed equal width */
-  body[data-print-orient="landscape"] .targets-tbl colgroup col {
-    width: auto !important;
-  }
+
   /* Print container: full width, no padding eats the page */
   body[data-print-orient="landscape"] .targets-wrap,
   body[data-print-orient="landscape"] .card {
     width: 100% !important;
     max-width: 100% !important;
-    padding: 4px !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  body[data-print-orient="landscape"] .card-header { display: none !important; }
+
+  /* Common: all wide tables fixed-layout + full width */
+  body[data-print-orient="landscape"] .pipeline-tbl,
+  body[data-print-orient="landscape"] .forecast-detail-tbl,
+  body[data-print-orient="landscape"] .targets-tbl {
+    width: 100% !important;
+    max-width: 270mm !important;
+    table-layout: fixed;
+  }
+
+  /* ---- Pipeline (~7 visible columns) ---- */
+  body[data-print-orient="landscape"] .pipeline-tbl { font-size: 7pt; }
+  body[data-print-orient="landscape"] .pipeline-tbl th,
+  body[data-print-orient="landscape"] .pipeline-tbl td {
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body[data-print-orient="landscape"] .pipeline-tbl td:first-child {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* ---- Targets (14 cols: User + 12 months + Year Total) ---- */
+  body[data-print-orient="landscape"] .targets-tbl { font-size: 6.5pt; }
+  body[data-print-orient="landscape"] .targets-tbl colgroup col { width: auto !important; }
+  body[data-print-orient="landscape"] .targets-tbl th,
+  body[data-print-orient="landscape"] .targets-tbl td {
+    padding: 1.5px 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body[data-print-orient="landscape"] .targets-tbl th:first-child,
+  body[data-print-orient="landscape"] .targets-tbl td:first-child {
+    width: 30mm;
+    white-space: normal;
+    word-break: break-word;
+  }
+  /* Hide editable input borders, keep just text in print */
+  body[data-print-orient="landscape"] .targets-tbl input.target-cell {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 100% !important;
+    text-align: right;
+    font-size: inherit !important;
+  }
+
+  /* ---- Forecast Detail (22 cols — densest) ---- */
+  body[data-print-orient="landscape"] .forecast-detail-tbl { font-size: 5.5pt; letter-spacing: -0.02em; }
+  body[data-print-orient="landscape"] .forecast-detail-tbl th,
+  body[data-print-orient="landscape"] .forecast-detail-tbl td {
+    padding: 1px 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body[data-print-orient="landscape"] .forecast-detail-tbl th:first-child,
+  body[data-print-orient="landscape"] .forecast-detail-tbl td:first-child {
+    width: 14mm;
   }
 
   /* Force color rendering */

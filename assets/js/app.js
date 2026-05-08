@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.7.2';
+  const VERSION = '1.7.3';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -389,12 +389,36 @@
       const useLandscape = wideRoutes.some(r => cur.startsWith(r));
       document.body.dataset.printOrient = useLandscape ? 'landscape' : 'portrait';
 
-      // Force chart canvases to reflow at print viewport size
+      // Print mode flag — read by DonutCenterPlugin to force readable colors
+      window._isPrinting = true;
+
+      // Force every Chart.js instance to redraw so canvases pick up the
+      // print-overridden CSS variables (light theme regardless of on-screen).
+      if (typeof Chart !== 'undefined' && Chart.getChart) {
+        Chart.defaults.color = '#475569';
+        document.querySelectorAll('canvas').forEach(canvas => {
+          const c = Chart.getChart(canvas);
+          if (c) c.update('none');
+        });
+      }
+
+      // Reflow charts to print viewport size
       window.dispatchEvent(new Event('resize'));
     });
     window.addEventListener('afterprint', () => {
       // Reset so on-screen layout isn't affected by post-print state
       delete document.body.dataset.printOrient;
+      window._isPrinting = false;
+
+      // Restore Chart.js color from current theme + redraw
+      if (typeof Chart !== 'undefined' && Chart.getChart) {
+        const muted = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#64748b';
+        Chart.defaults.color = muted;
+        document.querySelectorAll('canvas').forEach(canvas => {
+          const c = Chart.getChart(canvas);
+          if (c) c.update('none');
+        });
+      }
       window.dispatchEvent(new Event('resize'));
     });
 
