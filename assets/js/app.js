@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.7.5';
+  const VERSION = '1.7.6';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -499,7 +499,7 @@
         document.head.appendChild(s);
       }
       s.textContent = useLandscape
-        ? '@page { size: A4 landscape; margin: 8mm 8mm 10mm 8mm; }'
+        ? '@page { size: A4 landscape; margin: 7mm 5mm 8mm 5mm; }'
         : '@page { size: A4 portrait; margin: 14mm 12mm 16mm 12mm; }';
 
       // Print mode flag — read by DonutCenterPlugin to force readable colors

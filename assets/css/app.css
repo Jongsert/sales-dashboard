@@ -1784,19 +1784,34 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   body[data-print-orient="landscape"] .card-header { display: none !important; }
 
   /* Force every container in landscape to share the page's full usable width
-     and use border-box so padding/border don't push content past the edge. */
+     and use border-box everywhere so padding/border can't push content past
+     the page edge. The * selector is broad but scoped to landscape print. */
+  body[data-print-orient="landscape"] *,
+  body[data-print-orient="landscape"] *::before,
+  body[data-print-orient="landscape"] *::after {
+    box-sizing: border-box !important;
+  }
   body[data-print-orient="landscape"],
   body[data-print-orient="landscape"] .main,
   body[data-print-orient="landscape"] .card,
   body[data-print-orient="landscape"] .targets-wrap,
   body[data-print-orient="landscape"] .card div[style*="overflow"],
   body[data-print-orient="landscape"] .card div[style*="max-height"] {
-    box-sizing: border-box !important;
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
   }
   body[data-print-orient="landscape"] .main { padding: 0 !important; }
+  /* Last column always has nothing pushing it further right */
+  body[data-print-orient="landscape"] .pipeline-tbl th:last-child,
+  body[data-print-orient="landscape"] .pipeline-tbl td:last-child,
+  body[data-print-orient="landscape"] .targets-tbl th:last-child,
+  body[data-print-orient="landscape"] .targets-tbl td:last-child,
+  body[data-print-orient="landscape"] .forecast-detail-tbl th:last-child,
+  body[data-print-orient="landscape"] .forecast-detail-tbl td:last-child {
+    border-right: none !important;
+    padding-right: 1px !important;
+  }
 
   /* Common: all wide tables fixed-layout + full width */
   body[data-print-orient="landscape"] .pipeline-tbl,
@@ -1850,17 +1865,31 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   }
 
   /* ---- Forecast Detail (22 cols — densest) ---- */
-  body[data-print-orient="landscape"] .forecast-detail-tbl { font-size: 5.5pt; letter-spacing: -0.02em; }
+  body[data-print-orient="landscape"] .forecast-detail-tbl {
+    font-size: 5pt;
+    letter-spacing: -0.04em;
+    /* Tabular numerals so column widths stay aligned + numbers don't drift */
+    font-variant-numeric: tabular-nums;
+    /* 5% safety scale so even slight row overflow stays inside the page */
+    transform: scale(0.96);
+    transform-origin: top left;
+    width: 104.16% !important;
+  }
   body[data-print-orient="landscape"] .forecast-detail-tbl th,
   body[data-print-orient="landscape"] .forecast-detail-tbl td {
-    padding: 1px 2px;
+    padding: 1px 1.5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   body[data-print-orient="landscape"] .forecast-detail-tbl th:first-child,
   body[data-print-orient="landscape"] .forecast-detail-tbl td:first-child {
-    width: 14mm;
+    width: 13mm;
+  }
+  /* Reduce divider lines that take up pixels */
+  body[data-print-orient="landscape"] .forecast-detail-tbl th.col-divider,
+  body[data-print-orient="landscape"] .forecast-detail-tbl td.col-divider {
+    border-left-width: 0.5pt !important;
   }
 
   /* Force color rendering */
@@ -2133,18 +2162,12 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .skel-block { display: block; height: 60px; width: 100%; }
 .skel-line { display: block; height: 14px; margin: 6px 0; }
 
-/* Fade-in for page content (each render swap) */
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.main > * { animation: fade-in-up 0.18s ease-out both; }
-.main > *:nth-child(1) { animation-delay: 0.00s; }
-.main > *:nth-child(2) { animation-delay: 0.04s; }
-.main > *:nth-child(3) { animation-delay: 0.08s; }
-.main > *:nth-child(4) { animation-delay: 0.12s; }
-.main > *:nth-child(5) { animation-delay: 0.16s; }
-.main > *:nth-child(n+6) { animation-delay: 0.20s; }
+/* Fade-in animation removed — earlier staggered fade-in-up animation was
+   causing intermittent blank chart canvases on first render. Browsers can
+   skip canvas painting while the parent element is at opacity:0 (animation
+   start state with fill-mode: both), so charts that finished drawing
+   during the animation could end up invisible. Visual polish wasn't worth
+   the bug. */
 
 /* KPI/hero hover lift */
 .kpi-card, .hero-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
