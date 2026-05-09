@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.9.6';
+  const VERSION = '1.9.7';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)

@@ -370,8 +370,6 @@
       }
       return '';
     }
-    const dealKey = deal.id || deal.dealName || `row_${(deal.company || '')}_${(deal.income || 0)}`;
-    const comment = (App.Settings && App.Settings.getDealComment) ? App.Settings.getDealComment(dealKey) : '';
     const statusColor = safeColor((App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status] || {}).fill, '#94a3b8');
     const saleOrderNo = rawAny('Sale Order No. (Dynamic365)', 'Sale Order No.', 'Dynamic365', 'SO No.');
     const zoomAccount = rawAny('Zoom Account Number', 'Zoom Account No.');
@@ -456,10 +454,6 @@
         </table>
       </div>
 
-      <div class="deal-section">
-        <div class="deal-section-title">💬 Comments <span style="font-weight:400; color:var(--text-faint); font-size:11px;">— saved locally on this device</span></div>
-        <textarea id="dealCommentInput" placeholder="Add notes about this deal..." class="deal-comment">${escapeHtml(comment)}</textarea>
-      </div>
     `;
     const m = modal({
       title: deal.dealName || deal.company || ('Deal #' + deal.id),
@@ -468,12 +462,7 @@
     const f = m.el.querySelector('.modal-footer');
     f.innerHTML = '';
     const close = document.createElement('button'); close.className = 'btn'; close.textContent = 'Close';
-    close.addEventListener('click', () => {
-      const txt = m.el.querySelector('#dealCommentInput').value;
-      if (App.Settings && App.Settings.setDealComment) App.Settings.setDealComment(dealKey, txt);
-      m.close();
-      if (txt !== comment) toast('Comment saved', 'success');
-    });
+    close.addEventListener('click', () => m.close());
     f.appendChild(close);
   }
 
@@ -803,8 +792,6 @@
       const num = Number(n);
       return isFinite(num) ? `<span class="num-tip" title="${fmt.THBExact(num).replace(/"/g, '&quot;')}">${fmt.THBFull(num)}</span>` : '—';
     };
-    const dealKey = deal.id || deal.dealName || ('row_' + (deal._idx != null ? deal._idx : Math.random().toString(36).slice(2, 8)));
-    const comment = (App.Settings && App.Settings.getDealComment) ? App.Settings.getDealComment(dealKey) : '';
     const statusColor = safeColor(((App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status]) || {}).fill, '#94a3b8');
 
     function rawAny(...cols) {
@@ -872,10 +859,6 @@
           <tr><th>Account Number</th><td>${escapeHtml(String(zoomAccount || '—'))}</td><th>License Activation</th><td>${escapeHtml(String(zoomLicense || '—'))}</td></tr>
         </table>
       </div>
-      <div class="deal-section">
-        <div class="deal-section-title">💬 Comments <span style="font-weight:400; color:var(--text-faint); font-size:11px;">— saved locally on this device</span></div>
-        <textarea id="dealCommentInput" placeholder="Add notes about this deal..." class="deal-comment">${escapeHtml(comment)}</textarea>
-      </div>
     `;
     // No outer modal title — the inner .deal-header is the visual title
     // (deal name + company + ID + status badge). Removes the redundant
@@ -887,12 +870,7 @@
     const f = m.el.querySelector('.modal-footer');
     f.innerHTML = '';
     const close = document.createElement('button'); close.className = 'btn'; close.textContent = 'Close';
-    close.addEventListener('click', () => {
-      const txt = m.el.querySelector('#dealCommentInput').value;
-      if (App.Settings && App.Settings.setDealComment) App.Settings.setDealComment(dealKey, txt);
-      m.close();
-      if (txt !== comment) toast('Comment saved', 'success');
-    });
+    close.addEventListener('click', () => m.close());
     f.appendChild(close);
   }
 

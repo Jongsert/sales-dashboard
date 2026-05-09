@@ -198,8 +198,6 @@
         const num = Number(n);
         return isFinite(num) ? `<span class="num-tip" title="${fmt.THBExact(num).replace(/"/g, '&quot;')}">${fmt.THBFull(num)}</span>` : '—';
       };
-      const dealKey = deal.id || deal.dealName || ('row_' + parsed.deals.indexOf(deal));
-      const comment = App.Settings.getDealComment(dealKey);
       const statusColor = App.UI.safeColor((App.StatusMapping.COLORS[deal.status] || {}).fill, '#94a3b8');
 
       // Helper to read a raw column with multiple possible names
@@ -298,11 +296,6 @@
           </table>
         </div>
 
-        <!-- Comments -->
-        <div class="deal-section">
-          <div class="deal-section-title">💬 Comments <span style="font-weight:400; color:var(--text-faint); font-size:11px;">— saved locally on this device</span></div>
-          <textarea id="dealCommentInput" placeholder="Add notes about this deal..." class="deal-comment">${escapeHtml(comment)}</textarea>
-        </div>
       `;
       const m = App.UI.modal({
         title: deal.dealName || deal.company || ('Deal #' + deal.id),
@@ -313,13 +306,7 @@
       const f = m.el.querySelector('.modal-footer');
       f.innerHTML = '';
       const close = document.createElement('button'); close.className = 'btn'; close.textContent = 'Close';
-      close.addEventListener('click', () => {
-        // Save comment on close
-        const txt = m.el.querySelector('#dealCommentInput').value;
-        App.Settings.setDealComment(dealKey, txt);
-        m.close();
-        if (txt !== comment) App.UI.toast('Comment saved', 'success');
-      });
+      close.addEventListener('click', () => m.close());
       f.appendChild(close);
     }
 

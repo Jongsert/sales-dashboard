@@ -1,7 +1,16 @@
 /* ========================================================================
-   Settings Store — localStorage persistence + Export/Import JSON
+   Settings Store — sessionStorage persistence + Export/Import JSON
    Single source of truth for: targets, status/team mappings, column prefs,
-   filter presets, snapshot history, deal comments.
+   snapshot history.
+
+   STORAGE STRATEGY (intentional):
+   - sessionStorage for the data state (this STORAGE_KEY) — survives F5
+     refresh, dies on tab close. Forces a "fresh start" each new session
+     so cached state from a previous session never silently leaks into a
+     new one. The settings export JSON is the long-term record.
+   - localStorage is reserved for pure UI prefs the user wouldn't want
+     to re-set on every visit: theme, language, access-token cache.
+     Those keys are managed elsewhere (app.js, i18n.js).
    ======================================================================== */
 (function () {
   const STORAGE_KEY = 'salesDashboard.settings.v1';
@@ -65,28 +74,19 @@
 
       // Snapshot history (auto-recorded on each export)
       snapshots: [],
-
-      // Per-deal comments (Deal ID → comment text)
-      dealComments: {},
     };
   }
 
   let _state = null;
 
-  // Cross-tab sync: when another tab in the same browser writes settings,
-  // invalidate our cached state so the next read pulls fresh data. Without
-  // this, two tabs editing the same dashboard would silently overwrite each
-  // other based on whichever saved last.
-  if (typeof window !== 'undefined' && window.addEventListener) {
-    window.addEventListener('storage', (e) => {
-      if (e.key === STORAGE_KEY) _state = null;
-    });
-  }
+  // sessionStorage is per-tab, so cross-tab sync doesn't apply. Two tabs
+  // edit independently and each commits to its own sessionStorage. Closing
+  // either tab discards its state — no silent merge / overwrite race.
 
   function load() {
     if (_state) return _state;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = sessionStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         _state = mergeWithDefaults(parsed);
@@ -113,7 +113,7 @@
     if (!_state) return;
     _state.updatedAt = new Date().toISOString();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(_state));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(_state));
     } catch (e) {
       console.warn('Settings save failed', e);
       App.UI && App.UI.toast('Failed to save settings: ' + e.message, 'error');
@@ -294,14 +294,8 @@
         .slice(-52);
     }
 
-    // Deal comments: dealId → string
-    if (obj.dealComments && typeof obj.dealComments === 'object') {
-      const dc = {};
-      Object.entries(obj.dealComments).forEach(([k, v]) => {
-        if (isStr(v)) dc[String(k)] = v;
-      });
-      out.dealComments = dc;
-    }
+    // Deal comments removed in v1.9.7 — silently ignore the field on
+    // import so older settings JSONs still load cleanly.
 
     return out;
   }
@@ -469,17 +463,6 @@
     save();
   }
 
-  /* ----- Comments ----- */
-  function getDealComment(dealId) {
-    return load().dealComments[String(dealId)] || '';
-  }
-  function setDealComment(dealId, text) {
-    const s = load();
-    if (text) s.dealComments[String(dealId)] = text;
-    else delete s.dealComments[String(dealId)];
-    save();
-  }
-
   window.App = window.App || {};
   window.App.Settings = {
     load, save, get, set, update, reset,
@@ -490,7 +473,6 @@
     getNewSellTarget, setNewSellTarget,
     getSalesForecast, setSalesForecast,
     getRenewalEstimate, setRenewalEstimateMultiplier, setRenewalEstimateMonthOverride,
-    getDealComment, setDealComment,
     VERSION, STORAGE_KEY,
   };
 })();
