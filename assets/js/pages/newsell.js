@@ -62,16 +62,7 @@
         <div class="chart-canvas-md"><canvas id="newMonthChart"></canvas></div>
       </div>
 
-      <div class="section-title">
-        ⚠️ New deals at risk
-        <span class="actions">
-          <div class="seg-toggle" id="newRiskToggle" role="group">
-            <button class="seg-opt active" data-risk="overdue">Overdue</button>
-            <button class="seg-opt" data-risk="due">Due in 15 days</button>
-            <button class="seg-opt" data-risk="all">Both</button>
-          </div>
-        </span>
-      </div>
+      <div class="section-title">⚠️ New deals at risk</div>
       <div class="card">
         <div id="newOverdueWrap"></div>
       </div>
@@ -195,17 +186,8 @@
       },
     });
 
-    // New deals at risk — overdue + due-soon, with toggle
-    let _newRiskMode = 'overdue';
-    renderOverdue(newDeals, _newRiskMode);
-    document.querySelectorAll('#newRiskToggle .seg-opt').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#newRiskToggle .seg-opt').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        _newRiskMode = btn.dataset.risk;
-        renderOverdue(newDeals, _newRiskMode);
-      });
-    });
+    // New deals at risk — chips wired inside renderOverdue
+    renderOverdue(newDeals, 'all');
 
     // Win rate by Responsible (top 10)
     const userStats = {};
@@ -288,45 +270,56 @@
     const overdueValue = overdue.reduce((s, x) => s + (x.d.income || 0), 0);
     const dueValue = dueSoon.reduce((s, x) => s + (x.d.income || 0), 0);
 
-    const summaryHtml = `
-      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
-        <div style="padding:6px 12px; background: var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
+    const overdueActive = mode === 'overdue' || mode === 'all';
+    const dueActive = mode === 'due' || mode === 'all';
+    const chipsHtml = `
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
+        <button class="risk-chip ${overdueActive ? 'risk-chip-active risk-chip-danger' : 'risk-chip-dim'}"
+          data-risk-toggle="overdue" type="button">
           <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} overdue · ${fmt.THBFull(overdueValue)}
-        </div>
-        <div style="padding:6px 12px; background: var(--tint-warning); border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
+        </button>
+        <button class="risk-chip ${dueActive ? 'risk-chip-active risk-chip-upside' : 'risk-chip-dim'}"
+          data-risk-toggle="due" type="button">
           <span class="status-dot" style="background: var(--upside);"></span>${dueSoon.length} due in 15 days · ${fmt.THBFull(dueValue)}
-        </div>
+        </button>
       </div>`;
 
-    if (rows.length === 0) {
-      document.getElementById('newOverdueWrap').innerHTML = summaryHtml +
-        `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No deals in this view 🎉</div>`;
-      return;
-    }
+    const rowsHtml = rows.length === 0
+      ? `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No deals in this view 🎉</div>`
+      : `<div style="max-height:480px; overflow:auto;">
+          <table class="tbl">
+            <thead><tr>
+              <th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Stage</th>
+              <th class="num">Income</th><th>Expected close</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(({ d, info }) => `
+                <tr style="${info.isOverdue ? 'background: var(--tint-danger);' : ''}">
+                  <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+                  <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
+                  <td>${escapeHtml(d.responsible || '—')}</td>
+                  <td>${escapeHtml(d.stage || '—')}</td>
+                  <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
+                  <td>${fmt.date(d.expectedClose)}</td>
+                  <td>${info.html}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
 
-    document.getElementById('newOverdueWrap').innerHTML = summaryHtml + `
-      <div style="max-height:480px; overflow:auto;">
-        <table class="tbl">
-          <thead><tr>
-            <th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Stage</th>
-            <th class="num">Income</th><th>Expected close</th><th>Status</th>
-          </tr></thead>
-          <tbody>
-            ${rows.map(({ d, info }) => `
-              <tr style="${info.isOverdue ? 'background: var(--tint-danger);' : ''}">
-                <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-                <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
-                <td>${escapeHtml(d.responsible || '—')}</td>
-                <td>${escapeHtml(d.stage || '—')}</td>
-                <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
-                <td>${fmt.date(d.expectedClose)}</td>
-                <td>${info.html}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+    const wrap = document.getElementById('newOverdueWrap');
+    wrap.innerHTML = chipsHtml + rowsHtml;
+    wrap.querySelectorAll('[data-risk-toggle]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const k = chip.dataset.riskToggle;
+        let next;
+        if (mode === 'all') next = k;
+        else if (mode === k) next = 'all';
+        else next = k;
+        renderOverdue(newDeals, next);
+      });
+    });
   }
 
   function computeNewSellTargetSum(settings) {

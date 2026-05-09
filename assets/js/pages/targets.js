@@ -414,7 +414,7 @@
         ...users.map(u => ({ value: 'user:' + u.name, label: 'User: ' + u.name })),
       ];
       const scopeEl = App.UI.buildSearchableSelect({
-        items: scopeItems, defaultValue: 'all', placeholder: 'Search team or user...',
+        items: scopeItems, placeholder: 'Search team or user, or click ▾ to browse...',
       });
 
       const body = document.createElement('div');
@@ -473,8 +473,7 @@
       ];
       const scopeEl = App.UI.buildSearchableSelect({
         items: sdScopeItems,
-        defaultValue: sdScopeItems[0] && sdScopeItems[0].value,
-        placeholder: 'Search team or user...',
+        placeholder: 'Search team or user, or click ▾ to browse...',
       });
 
       const body = document.createElement('div');

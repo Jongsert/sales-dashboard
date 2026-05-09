@@ -77,16 +77,7 @@
         </div>
       </div>
 
-      <div class="section-title">
-        ⚠️ Customers at Risk
-        <span class="actions">
-          <div class="seg-toggle" id="atRiskToggle" role="group">
-            <button class="seg-opt active" data-risk="overdue">Overdue</button>
-            <button class="seg-opt" data-risk="due">Due in 15 days</button>
-            <button class="seg-opt" data-risk="all">Both</button>
-          </div>
-        </span>
-      </div>
+      <div class="section-title">⚠️ Customers at Risk</div>
       <div class="card">
         <div id="atRiskWrap"></div>
       </div>
@@ -176,16 +167,9 @@
     });
 
     // ===== Customers at Risk =====
-    let _riskMode = 'overdue';
-    renderAtRisk(renewDeals, _riskMode);
-    document.querySelectorAll('#atRiskToggle .seg-opt').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#atRiskToggle .seg-opt').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        _riskMode = btn.dataset.risk;
-        renderAtRisk(renewDeals, _riskMode);
-      });
-    });
+    // Mode toggling is wired inside renderAtRisk so the click handlers stay
+    // attached after each re-render. Default mode = 'all' (both buckets).
+    renderAtRisk(renewDeals, 'all');
 
     // ===== Top Renewals to Win =====
     const topRenew = renewDeals
@@ -253,51 +237,61 @@
     const overdueValue = overdue.reduce((s, x) => s + (x.d.income || 0), 0);
     const dueValue = dueSoon.reduce((s, x) => s + (x.d.income || 0), 0);
 
-    if (rows.length === 0) {
-      document.getElementById('atRiskWrap').innerHTML = `
-        <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
-          <div style="padding:6px 12px; background: var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
-            <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} overdue · ${fmt.THBFull(overdueValue)}
-          </div>
-          <div style="padding:6px 12px; background: var(--tint-warning); border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
-            <span class="status-dot" style="background: var(--upside);"></span>${dueSoon.length} due in 15 days · ${fmt.THBFull(dueValue)}
-          </div>
-        </div>
-        <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No deals in this view 🎉</div>`;
-      return;
-    }
-
-    document.getElementById('atRiskWrap').innerHTML = `
-      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
-        <div style="padding:6px 12px; background: var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
+    // Filter chips — clickable badges that toggle the visible bucket.
+    // Active chip = solid fill; inactive = subtle outline.
+    const overdueActive = mode === 'overdue' || mode === 'all';
+    const dueActive = mode === 'due' || mode === 'all';
+    const chipsHtml = `
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
+        <button class="risk-chip ${overdueActive ? 'risk-chip-active risk-chip-danger' : 'risk-chip-dim'}"
+          data-risk-toggle="overdue" type="button">
           <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} overdue · ${fmt.THBFull(overdueValue)}
-        </div>
-        <div style="padding:6px 12px; background: var(--tint-warning); border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
+        </button>
+        <button class="risk-chip ${dueActive ? 'risk-chip-active risk-chip-upside' : 'risk-chip-dim'}"
+          data-risk-toggle="due" type="button">
           <span class="status-dot" style="background: var(--upside);"></span>${dueSoon.length} due in 15 days · ${fmt.THBFull(dueValue)}
-        </div>
-      </div>
-      <div style="max-height:520px; overflow:auto;">
-        <table class="tbl">
-          <thead><tr>
-            <th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Stage</th>
-            <th class="num">Income</th><th>Expected close</th><th>Status</th>
-          </tr></thead>
-          <tbody>
-            ${rows.map(({ d, info }) => `
-              <tr style="${info.isOverdue ? 'background: var(--tint-danger);' : ''}">
-                <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-                <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
-                <td>${escapeHtml(d.responsible || '—')}</td>
-                <td>${escapeHtml(d.stage || '—')}</td>
-                <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
-                <td>${fmt.date(d.expectedClose)}</td>
-                <td>${info.html}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+        </button>
+      </div>`;
+
+    const rowsHtml = rows.length === 0
+      ? `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No deals in this view 🎉</div>`
+      : `<div style="max-height:520px; overflow:auto;">
+          <table class="tbl">
+            <thead><tr>
+              <th class="wrap">Deal Name</th><th class="wrap-sm">Company</th><th>Responsible</th><th>Stage</th>
+              <th class="num">Income</th><th>Expected close</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(({ d, info }) => `
+                <tr style="${info.isOverdue ? 'background: var(--tint-danger);' : ''}">
+                  <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+                  <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
+                  <td>${escapeHtml(d.responsible || '—')}</td>
+                  <td>${escapeHtml(d.stage || '—')}</td>
+                  <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
+                  <td>${fmt.date(d.expectedClose)}</td>
+                  <td>${info.html}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+
+    const wrap = document.getElementById('atRiskWrap');
+    wrap.innerHTML = chipsHtml + rowsHtml;
+
+    // Click logic: clicking a chip filters to that bucket only. Clicking the
+    // currently-active chip while in single-bucket view returns to 'all'.
+    wrap.querySelectorAll('[data-risk-toggle]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const k = chip.dataset.riskToggle;   // 'overdue' | 'due'
+        let next;
+        if (mode === 'all') next = k;
+        else if (mode === k) next = 'all';
+        else next = k;
+        renderAtRisk(renewDeals, next);
+      });
+    });
   }
 
   function renderLostAnalysis(renewDeals) {

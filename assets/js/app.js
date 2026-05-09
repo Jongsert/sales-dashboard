@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.9.0';
+  const VERSION = '1.9.1';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -122,7 +122,12 @@
       if (result.kind === 'settings') {
         App.Settings.importFromObject(result.settings);
         App.UI.toast('Settings imported successfully', 'success');
-        renderRoute();
+        // Newly-imported settings carry user→team mapping. Re-apply it to
+        // any deal data already in memory so the Global filter Team list
+        // and dashboard tables reflect the new teams without requiring a
+        // re-upload of the deal file.
+        if (window.App.applyTeamConfigChange) App.applyTeamConfigChange();
+        else renderRoute();
         return;
       }
       if (result.missingRequired && result.missingRequired.length > 0) {
@@ -133,6 +138,10 @@
       App.Filters.STATE.parsed = result;
       App.Filters.STATE.deals = result.deals;
       App.Settings.syncUsersFromDeals(result.deals);
+      // Drop any selected filter values that don't exist in the new dataset —
+      // otherwise the dashboard could open with empty results because the
+      // user had e.g. selected a team that's not in the freshly-uploaded file.
+      clearStaleFilterSelections(result.deals);
       document.getElementById('fileInfo').textContent =
         result.fileName + ' · ' + result.deals.length.toLocaleString() + ' deals';
       document.getElementById('filterBar').classList.remove('hidden');
@@ -149,6 +158,30 @@
       App.UI.toast('Failed to parse: ' + err.message, 'error');
       document.getElementById('fileInfo').textContent = '';
     }
+  }
+
+  /* Drop any filter selections that are no longer represented in the deal
+     data the user just uploaded. Cache hygiene — without this, Global filter
+     state from a prior file silently filters the new dataset to nothing. */
+  function clearStaleFilterSelections(deals) {
+    if (!App.Filters || !App.Filters.STATE) return;
+    const F = App.Filters.STATE;
+    const available = {
+      team: new Set(deals.map(d => d.team).filter(Boolean)),
+      user: new Set(deals.map(d => d.responsible).filter(Boolean)),
+      pipeline: new Set(deals.map(d => d.pipeline).filter(Boolean)),
+      dealType: new Set(deals.map(d => d.dealType).filter(Boolean)),
+      productType: new Set(deals.map(d => d.productType).filter(Boolean)),
+      status: new Set(deals.map(d => d.status).filter(Boolean)),
+    };
+    Object.keys(available).forEach(k => {
+      const set = F[k];
+      if (set instanceof Set && set.size > 0) {
+        Array.from(set).forEach(v => {
+          if (!available[k].has(v)) set.delete(v);
+        });
+      }
+    });
   }
 
   /* ----- Post-upload prompt: offer to import settings JSON ----- */
@@ -226,7 +259,8 @@
           App.Settings.importFromObject(obj);
           App.UI.toast('Settings imported successfully', 'success');
           m.close();
-          renderRoute();
+          if (window.App.applyTeamConfigChange) App.applyTeamConfigChange();
+          else renderRoute();
         } catch (err) {
           App.UI.toast('Import failed: ' + err.message, 'error');
           // Modal stays open so user can retry

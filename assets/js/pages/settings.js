@@ -163,7 +163,11 @@
           const obj = JSON.parse(text);
           App.Settings.importFromObject(obj);
           App.UI.toast('Settings imported successfully', 'success');
-          render(container, parsed);
+          // Re-apply user→team mapping from the imported settings to the
+          // in-memory deal list and refresh the global filter, otherwise
+          // the Team filter dropdown stays stale.
+          if (App.applyTeamConfigChange) App.applyTeamConfigChange();
+          else render(container, parsed);
         } catch (err) {
           App.UI.toast('Import failed: ' + err.message, 'error');
         }
