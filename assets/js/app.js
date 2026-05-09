@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.9.7';
+  const VERSION = '1.9.8';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -148,6 +148,33 @@
       App.Filters.refreshMultiSelects(result.deals, renderRoute);
       renderRoute();
       App.UI.toast('Loaded ' + result.deals.length.toLocaleString() + ' deals', 'success');
+
+      // If the upload contains stages that aren't in the default 5-status
+      // map AND aren't covered by user's custom override, alert the user
+      // with a clickable toast. They can jump straight to Status Mapping
+      // to classify the new stages so the dashboard categorises them right.
+      try {
+        const settings = App.Settings.load();
+        const unmapped = (App.StatusMapping && App.StatusMapping.findUnmapped)
+          ? App.StatusMapping.findUnmapped(result.deals, settings.statusMapping || {})
+          : [];
+        if (unmapped.length > 0) {
+          // Defer slightly so it lands AFTER the "Loaded X deals" toast
+          setTimeout(() => {
+            App.UI.toast(
+              `⚠️ ${unmapped.length} new stage${unmapped.length > 1 ? 's' : ''} detected — needs classification`,
+              'error',
+              {
+                action: {
+                  label: 'Map now →',
+                  onClick: () => { location.hash = '#/statusmap'; },
+                },
+                duration: 12000,
+              }
+            );
+          }, 300);
+        }
+      } catch (_) {}
 
       // Offer to import settings after a successful deal upload (admin only)
       if (App.MODE === 'admin') {

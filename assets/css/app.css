@@ -1430,6 +1430,23 @@ table tfoot td:first-child {
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.error { background: var(--danger); color: white; }
 .toast.success { background: var(--success); color: white; }
+/* Layout when toast has an action button */
+.toast { display: inline-flex; align-items: center; gap: 12px; }
+.toast-msg { line-height: 1.3; }
+.toast-action {
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.toast-action:hover { background: rgba(255, 255, 255, 0.28); }
 
 /* ========================================================================
    Modal

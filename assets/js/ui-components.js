@@ -3,7 +3,12 @@
    ======================================================================== */
 (function () {
   /* ----- Toast ----- */
-  function toast(message, type = '') {
+  // toast(msg) → simple 2.8s fade
+  // toast(msg, type) → with success/error styling
+  // toast(msg, type, { action: { label, onClick } }) → adds a clickable
+  //   button to the right; auto-dismiss extended to 8s; clicking the action
+  //   runs the callback and dismisses.
+  function toast(message, type = '', opts = {}) {
     let el = document.getElementById('toast');
     if (!el) {
       el = document.createElement('div');
@@ -11,10 +16,34 @@
       el.className = 'toast';
       document.body.appendChild(el);
     }
-    el.textContent = message;
+    // Reset previous content
+    el.innerHTML = '';
+    el.onclick = null;
+
+    const msgEl = document.createElement('span');
+    msgEl.className = 'toast-msg';
+    msgEl.textContent = message;
+    el.appendChild(msgEl);
+
+    let duration = opts.duration || 2800;
+    if (opts.action && opts.action.onClick) {
+      const btn = document.createElement('button');
+      btn.className = 'toast-action';
+      btn.type = 'button';
+      btn.textContent = opts.action.label || 'Open';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        try { opts.action.onClick(); } catch (_) {}
+        el.className = 'toast ' + type;   // dismiss
+        clearTimeout(el._t);
+      });
+      el.appendChild(btn);
+      duration = opts.duration || 8000;   // longer dwell when there's a CTA
+    }
+
     el.className = 'toast show ' + type;
     clearTimeout(el._t);
-    el._t = setTimeout(() => { el.className = 'toast ' + type; }, 2800);
+    el._t = setTimeout(() => { el.className = 'toast ' + type; }, duration);
   }
 
   /* ----- Multi-select dropdown ----- */

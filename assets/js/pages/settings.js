@@ -35,16 +35,40 @@
         </div>
       </div>
 
+      ${(() => {
+        // Detect unmapped stages from the currently-loaded data, set a flag
+        // for the surrounding markup to show a warning + count badge.
+        const _parsed = (window.App && App.STATE && App.STATE.parsed) ? App.STATE.parsed : null;
+        const _unmapped = (_parsed && App.StatusMapping && App.StatusMapping.findUnmapped)
+          ? App.StatusMapping.findUnmapped(_parsed.deals, settings.statusMapping || {})
+          : [];
+        // expose to outer template via a closure-captured global on `window`
+        // (cheap, only used by this render)
+        window._settingsUnmapped = _unmapped;
+        return '';
+      })()}
+
       <div class="section-title">${tr('sec.statusMapping')}</div>
-      <div class="card" style="background: var(--surface-2);">
+      <div class="card" style="${(window._settingsUnmapped || []).length > 0 ? 'background: var(--tint-danger); border-color: var(--lost);' : 'background: var(--surface-2);'}">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-          <div>
+          <div style="flex:1; min-width:240px;">
             <strong>${tr('card.stageStatus')}</strong>
-            <div style="color: var(--text-muted); font-size:12px; margin-top:4px;">
-              ${tr('card.stageStatusSub')}
-            </div>
+            ${(window._settingsUnmapped || []).length > 0 ? `
+              <div style="color: var(--danger); font-size:12px; margin-top:6px; font-weight:600;">
+                ⚠️ ${window._settingsUnmapped.length} new stage${window._settingsUnmapped.length > 1 ? 's' : ''} from current data not yet classified
+              </div>
+              <div style="color: var(--text-muted); font-size:11px; margin-top:4px;">
+                ${window._settingsUnmapped.slice(0, 5).map(s => `<code style="background:var(--surface); padding:1px 6px; border-radius:3px; margin-right:4px;">${escapeAttr(s)}</code>`).join('')}${window._settingsUnmapped.length > 5 ? `<em>+${window._settingsUnmapped.length - 5} more</em>` : ''}
+              </div>
+            ` : `
+              <div style="color: var(--text-muted); font-size:12px; margin-top:4px;">
+                ${tr('card.stageStatusSub')}
+              </div>
+            `}
           </div>
-          <button class="btn btn-primary" id="openStatusMapBtn">${tr('btn.openStatusMap')}</button>
+          <button class="btn ${(window._settingsUnmapped || []).length > 0 ? 'btn-danger' : 'btn-primary'}" id="openStatusMapBtn">
+            ${(window._settingsUnmapped || []).length > 0 ? `🏷️ Classify ${window._settingsUnmapped.length} stage${window._settingsUnmapped.length > 1 ? 's' : ''} →` : tr('btn.openStatusMap')}
+          </button>
         </div>
       </div>
 

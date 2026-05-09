@@ -65,11 +65,28 @@
     return 'Open';
   }
 
+  // Return the stages found in `deals` that have no entry in DEFAULT_STATUS_MAP
+  // and no override in `customMap`. Used to alert the user there are new
+  // stages from a fresh data upload that need to be classified.
+  function findUnmapped(deals, customMap) {
+    if (!deals || !deals.length) return [];
+    const stages = new Set();
+    deals.forEach(d => { if (d.stage) stages.add(d.stage); });
+    const out = [];
+    stages.forEach(stage => {
+      if (stage in DEFAULT_STATUS_MAP) return;
+      if (customMap && stage in customMap) return;
+      out.push(stage);
+    });
+    return out.sort((a, b) => String(a).localeCompare(String(b)));
+  }
+
   window.App = window.App || {};
   window.App.StatusMapping = {
     DEFAULT: DEFAULT_STATUS_MAP,
     LIST: STATUS_LIST,
     COLORS: STATUS_COLORS,
     resolve,
+    findUnmapped,
   };
 })();
