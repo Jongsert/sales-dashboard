@@ -31,11 +31,12 @@
       ...teams.sort((a, b) => (a.order || 0) - (b.order || 0)).map(t => t.name),
       ...teamNamesFromUsers,
     ])];
-    // Make sure Unassigned is last
+    // teamOrder = real teams first, "Unassigned" always last.
+    // ALWAYS append Unassigned (even if no user is currently in it) so every
+    // user's move-team dropdown can offer "Unassigned" as a destination —
+    // otherwise an assigned user can't be unassigned via the UI.
     const teamOrder = allTeamNames.filter(n => n !== 'Unassigned');
-    if (allTeamNames.includes('Unassigned') || users.some(u => !u.team || u.team === 'Unassigned')) {
-      teamOrder.push('Unassigned');
-    }
+    teamOrder.push('Unassigned');
 
     // Group users by team
     const byTeam = {};
