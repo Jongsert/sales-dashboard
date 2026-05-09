@@ -279,26 +279,6 @@
     if (!isFinite(num)) return '—';
     return formatter2.format(num);
   }
-  // Wrap rounded display in a span with hover-tooltip showing exact 2-decimal value
-  function fmtTHBTip(n) {
-    const display = fmtTHBFull(n);
-    if (display === '—') return '—';
-    const exact = fmtTHBExact(n);
-    return `<span class="num-tip" title="${exact.replace(/"/g, '&quot;')}">${display}</span>`;
-  }
-  function fmtCommaTip(n) {
-    const display = fmtComma(n);
-    if (display === '—') return '—';
-    const exact = fmtComma2Pure(n);
-    return `<span class="num-tip" title="${exact.replace(/"/g, '&quot;')}">${display}</span>`;
-  }
-  // Wrap abbreviated (M/K) display with tooltip showing full exact value
-  function fmtTHBShortTip(n) {
-    const display = fmtTHB(n);
-    if (display === '—') return '—';
-    const exact = fmtTHBExact(n);
-    return `<span class="num-tip" title="${exact.replace(/"/g, '&quot;')}">${display}</span>`;
-  }
   function fmtComma(n) {
     const num = toNum(n);
     if (!isFinite(num)) return '—';
@@ -943,7 +923,6 @@
     exportToExcel, exportToCSV, screenshotElement,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
-      THBTip: fmtTHBTip, THBShortTip: fmtTHBShortTip, commaTip: fmtCommaTip,
       comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate,
       localDateISO, todayLocalISO,
     },

@@ -88,14 +88,6 @@
             Quick toggle also in topbar (cycles Light → Dark → System)
           </div>
         </div>
-        <label class="toggle" style="display:block; padding:8px 0;">
-          <input type="checkbox" id="diffEnabled" ${settings.uiPreferences.diffViewEnabled ? 'checked' : ''}>
-          <span>Enable Diff view (Weekly comparison)</span>
-        </label>
-        <label class="toggle" style="display:block; padding:8px 0;">
-          <input type="checkbox" id="compactMode" ${settings.uiPreferences.compactMode ? 'checked' : ''}>
-          <span>Compact mode</span>
-        </label>
       </div>
 
       ${isAdmin ? `<div class="section-title">${tr('sec.accessControl')}</div>
@@ -210,12 +202,6 @@
       });
     });
 
-    document.getElementById('diffEnabled').addEventListener('change', (e) => {
-      App.Settings.set('uiPreferences.diffViewEnabled', e.target.checked);
-    });
-    document.getElementById('compactMode').addEventListener('change', (e) => {
-      App.Settings.set('uiPreferences.compactMode', e.target.checked);
-    });
 
     if (isAdmin) {
       // Access token

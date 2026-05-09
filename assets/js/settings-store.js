@@ -12,7 +12,6 @@
       version: VERSION,
       updatedAt: new Date().toISOString(),
       exportedAt: null,
-      exportedBy: '',
 
       // Sales people (auto-populated from data + user-added)
       users: [],   // [{ name: 'Sutasinee', team: 'Inside', active: true }]
@@ -44,11 +43,6 @@
         ],
       },
 
-      // Last used filter preset
-      filterPresets: {
-        lastUsed: null,
-      },
-
       // Status mapping override (Stage → Won/Commit/Upside/Open/Lost)
       statusMapping: {},
 
@@ -63,8 +57,6 @@
         lastPage: 'overview',
         theme: 'light',
         language: 'th',
-        compactMode: false,
-        diffViewEnabled: true,
       },
 
       // Optional access token (URL-based). Empty = no access control.
@@ -104,7 +96,6 @@
     const merged = Object.assign({}, defaults, saved);
     merged.columnPreferences = Object.assign({}, defaults.columnPreferences, saved.columnPreferences || {});
     merged.uiPreferences = Object.assign({}, defaults.uiPreferences, saved.uiPreferences || {});
-    merged.filterPresets = Object.assign({}, defaults.filterPresets, saved.filterPresets || {});
     return merged;
   }
 
