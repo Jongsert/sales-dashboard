@@ -56,7 +56,7 @@
       uiPreferences: {
         lastPage: 'overview',
         theme: 'light',
-        language: 'th',
+        language: 'en',
       },
 
       // Optional access token (URL-based). Empty = no access control.
@@ -72,6 +72,16 @@
   }
 
   let _state = null;
+
+  // Cross-tab sync: when another tab in the same browser writes settings,
+  // invalidate our cached state so the next read pulls fresh data. Without
+  // this, two tabs editing the same dashboard would silently overwrite each
+  // other based on whichever saved last.
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) _state = null;
+    });
+  }
 
   function load() {
     if (_state) return _state;

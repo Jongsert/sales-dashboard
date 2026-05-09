@@ -21,7 +21,7 @@
    ======================================================================== */
 (function () {
   const STORAGE_KEY = 'salesDashboard.lang';
-  const DEFAULT_LANG = 'th';
+  const DEFAULT_LANG = 'en';
 
   const dict = {
     en: {
