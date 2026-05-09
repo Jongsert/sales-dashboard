@@ -537,7 +537,7 @@
           const wSum = weights.reduce((s, v) => s + v, 0) || 12;
           for (let mo = 0; mo < 12; mo++) {
             const v = (weights[mo] / wSum) * perUser;
-            App.Settings.setNewSellTarget(year, u.name, mo + 1, Math.round(v));
+            App.Settings.setNewSellTarget(year, u.name, mo + 1, v);
           }
         });
         m.close();

@@ -696,20 +696,20 @@
           userTotal += val;
           teamMonthTotals[m] += val;
           monthTotals[m] += val;
-          const display = val ? App.UI.fmt.comma(val) : '';
+          const display = val ? App.UI.fmt.comma2(val) : '';
           cells += `<td class="input-cell"><input type="text" class="target-cell sf-cell"
             data-user="${escapeAttr(u.name)}" data-month="${m + 1}" data-raw="${val}"
             value="${display}" placeholder="0" inputmode="decimal"></td>`;
         }
         teamSum += userTotal;
         grandTotal += userTotal;
-        body += `<tr><td>${escapeHtml(u.name)}</td>${cells}<td class="num user-total">${App.UI.fmt.comma(userTotal)}</td></tr>`;
+        body += `<tr><td>${escapeHtml(u.name)}</td>${cells}<td class="num user-total">${App.UI.fmt.comma2(userTotal)}</td></tr>`;
       });
 
       body += `<tr class="team-total">
         <td>${escapeHtml(teamName)} subtotal</td>
-        ${teamMonthTotals.map(v => `<td class="num">${App.UI.fmt.comma(v)}</td>`).join('')}
-        <td class="num" style="background:${App.UI.safeColor(teamColor)}30;">${App.UI.fmt.comma(teamSum)}</td>
+        ${teamMonthTotals.map(v => `<td class="num">${App.UI.fmt.comma2(v)}</td>`).join('')}
+        <td class="num" style="background:${App.UI.safeColor(teamColor)}30;">${App.UI.fmt.comma2(teamSum)}</td>
       </tr>`;
     });
 
@@ -723,8 +723,8 @@
     </tr></thead>`;
     const foot = `<tfoot><tr class="grand-total">
       <td>All total</td>
-      ${monthTotals.map(v => `<td class="num">${App.UI.fmt.comma(v)}</td>`).join('')}
-      <td class="num" style="background: var(--primary-light); color: var(--primary-dark);">${App.UI.fmt.comma(grandTotal)}</td>
+      ${monthTotals.map(v => `<td class="num">${App.UI.fmt.comma2(v)}</td>`).join('')}
+      <td class="num" style="background: var(--primary-light); color: var(--primary-dark);">${App.UI.fmt.comma2(grandTotal)}</td>
     </tr></tfoot>`;
 
     document.getElementById('salesForecastTable').innerHTML = colgroup + head + '<tbody>' + body + '</tbody>' + foot;
@@ -737,7 +737,7 @@
       inp.addEventListener('blur', () => {
         const v = parseFloat(inp.value.replace(/,/g, '')) || 0;
         inp.dataset.raw = v;
-        inp.value = v ? App.UI.fmt.comma(v) : '';
+        inp.value = v ? App.UI.fmt.comma2(v) : '';
       });
       inp.addEventListener('change', () => {
         const v = parseFloat(inp.value.replace(/,/g, '')) || 0;
@@ -761,7 +761,7 @@
   function recalcSalesForecastTotalsInPlace() {
     const tbl = document.getElementById('salesForecastTable');
     if (!tbl) return;
-    const fmt = App.UI.fmt.comma;
+    const fmt = App.UI.fmt.comma2;
 
     const monthGrand = new Array(12).fill(0);
     let grandTotal = 0;
