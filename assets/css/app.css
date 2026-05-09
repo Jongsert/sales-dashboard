@@ -1502,9 +1502,16 @@ table tfoot td:first-child {
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  padding-bottom: 16px;
+  padding: 16px 56px 16px 4px;   /* right padding leaves room for floating ✕ button */
   border-bottom: 2px solid var(--border);
-  margin-bottom: 16px;
+  margin: -20px -20px 16px -20px;   /* extend full-bleed across modal-body's padding */
+  background: var(--surface);
+  /* Sticky so header stays visible while user scrolls long deal info */
+  position: sticky;
+  top: -20px;   /* offset accounts for modal-body padding above */
+  z-index: 2;
+  padding-left: 20px;
+  padding-right: 76px;   /* 56 right pad + 20 to match left bleed */
 }
 .deal-header-main { flex: 1; min-width: 0; }
 .deal-name-text {

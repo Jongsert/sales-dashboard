@@ -200,7 +200,7 @@
       };
       const dealKey = deal.id || deal.dealName || ('row_' + parsed.deals.indexOf(deal));
       const comment = App.Settings.getDealComment(dealKey);
-      const statusColor = (App.StatusMapping.COLORS[deal.status] || {}).fill || '#94a3b8';
+      const statusColor = App.UI.safeColor((App.StatusMapping.COLORS[deal.status] || {}).fill, '#94a3b8');
 
       // Helper to read a raw column with multiple possible names
       function rawAny(...cols) {

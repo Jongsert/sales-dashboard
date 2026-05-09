@@ -132,7 +132,7 @@
       if (label === 'Open New')    return newDeals.filter(d => isOCU(d) && matchMonth(d));
       return [];
     }
-    new Chart(document.getElementById('combinedMonthChart').getContext('2d'), {
+    charts.combinedMonth = new Chart(document.getElementById('combinedMonthChart').getContext('2d'), {
       type: 'bar',
       data: {
         labels: monthAgg.labels,
@@ -199,7 +199,7 @@
       if (label === 'Open New')    return newDeals.filter(d => matchUser(d) && isOCU(d));
       return [];
     }
-    new Chart(document.getElementById('combinedUserChart').getContext('2d'), {
+    charts.combinedUser = new Chart(document.getElementById('combinedUserChart').getContext('2d'), {
       type: 'bar',
       data: {
         labels: arr.map(x => x.name),
@@ -243,7 +243,7 @@
       App.UI.drillModal({ title: `Won · ${lbl}`, subtitle: `Won ${lbl} deals`, deals: matched });
     };
     shareOpts.onHover = (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); };
-    new Chart(document.getElementById('renewNewShareChart').getContext('2d'), {
+    charts.renewNewShare = new Chart(document.getElementById('renewNewShareChart').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: ['Renew', 'New Sell'],
@@ -267,7 +267,7 @@
       App.UI.drillModal({ title: `Combined · ${status}`, subtitle: 'All Renew + New deals with this status', deals: matched });
     };
     pipelineOpts.onHover = (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); };
-    new Chart(document.getElementById('pipelineStatusChart').getContext('2d'), {
+    charts.pipelineStatus = new Chart(document.getElementById('pipelineStatusChart').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: STATUSES,
