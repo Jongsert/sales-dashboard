@@ -42,7 +42,6 @@
         ${t('sec.allDeals')}
         <span class="actions">
           <button class="btn btn-sm" id="customizeColsBtn">${t('btn.columns')}</button>
-          <button class="btn btn-sm" id="pipelineShotBtn">📷 Screenshot</button>
           ${isAdmin ? `<button class="btn btn-sm" id="exportPipelineBtn">${t('btn.export.excel')}</button>
           <button class="btn btn-sm btn-ghost" id="exportPipelineCsvBtn">${t('btn.export.csv')}</button>` : ''}
         </span>
@@ -450,12 +449,6 @@
     document.getElementById('nextPage').addEventListener('click', () => { STATE.page++; renderTable(); });
     document.getElementById('lastPage').addEventListener('click', () => { STATE.page = 999999; renderTable(); });
     document.getElementById('customizeColsBtn').addEventListener('click', customizeColumns);
-    const shotBtn = document.getElementById('pipelineShotBtn');
-    if (shotBtn) shotBtn.addEventListener('click', () => {
-      const today = App.UI.fmt.todayLocalISO();
-      const tbl = document.getElementById('pipelineTable');
-      App.UI.screenshotElement(tbl, `all-deals_${today}.png`);
-    });
     const xlBtn = document.getElementById('exportPipelineBtn');
     if (xlBtn) xlBtn.addEventListener('click', exportXlsx);
     const csvBtn = document.getElementById('exportPipelineCsvBtn');

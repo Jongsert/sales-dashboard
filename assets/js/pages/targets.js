@@ -66,7 +66,6 @@
             <option value="">${tr('filter.all')} teams</option>
             ${orderedTeams.map(t => `<option value="${t}" ${t === STATE.teamFilter ? 'selected' : ''}>${t}</option>`).join('')}
           </select>
-          <button class="btn btn-sm" id="targetsShotBtn">📷 Screenshot</button>
           ${isAdmin ? `<button class="btn btn-sm" id="copyPrevBtn">${tr('btn.copyPrev')}</button>
           <button class="btn btn-sm" id="bulkFillBtn">${tr('btn.bulkFill')}</button>
           <button class="btn btn-sm" id="distributeBtn">${tr('btn.distribute')}</button>
@@ -105,12 +104,6 @@
     document.getElementById('teamFilter').addEventListener('change', (e) => {
       STATE.teamFilter = e.target.value;
       renderTable();
-    });
-    const tShotBtn = document.getElementById('targetsShotBtn');
-    if (tShotBtn) tShotBtn.addEventListener('click', () => {
-      const today = App.UI.fmt.todayLocalISO();
-      const tbl = document.getElementById('targetsTable');
-      App.UI.screenshotElement(tbl, `targets_${STATE.year}_${today}.png`);
     });
     const cpBtn = document.getElementById('copyPrevBtn');
     if (cpBtn) cpBtn.addEventListener('click', copyFromPrev);
