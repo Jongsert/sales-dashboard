@@ -162,20 +162,27 @@
     }
   });
 
-  function modal({ title, body, footer, onClose, width }) {
-    let backdrop = document.getElementById('modalBackdrop');
-    if (!backdrop) {
-      backdrop = document.createElement('div');
-      backdrop.id = 'modalBackdrop';
-      backdrop.className = 'modal-backdrop';
-      document.body.appendChild(backdrop);
-    }
+  function modal({ title, body, footer, onClose, width, noTitle }) {
+    // Each modal gets its OWN backdrop element so multiple can stack — closing
+    // the topmost reveals the one underneath. The previous shared
+    // #modalBackdrop element overwrote earlier modals (drillModal disappeared
+    // when openDealDetail opened on top, then closing detail left no modal).
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    // Stack via z-index — each new modal sits above all prior ones
+    backdrop.style.zIndex = String(1000 + _openModals.length);
+    document.body.appendChild(backdrop);
+
     backdrop.innerHTML = `
       <div class="modal" style="${width ? 'width:' + width + ';' : ''}">
-        <div class="modal-header">
-          <div class="modal-title">${title || ''}</div>
-          <button class="modal-close" aria-label="Close" title="Close (ESC)">×</button>
-        </div>
+        ${noTitle ? `
+          <button class="modal-close modal-close-floating" aria-label="Close" title="Close (ESC)">×</button>
+        ` : `
+          <div class="modal-header">
+            <div class="modal-title">${title || ''}</div>
+            <button class="modal-close" aria-label="Close" title="Close (ESC)">×</button>
+          </div>
+        `}
         <div class="modal-body"></div>
         ${footer ? '<div class="modal-footer"></div>' : ''}
       </div>`;
@@ -196,6 +203,9 @@
       backdrop.classList.remove('open');
       const idx = _openModals.indexOf(handle);
       if (idx >= 0) _openModals.splice(idx, 1);
+      // Remove the backdrop after fade-out so it doesn't block interaction
+      // with the modal underneath (if any).
+      setTimeout(() => { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); }, 200);
       onClose && onClose();
     }
     backdrop.querySelector('.modal-close').addEventListener('click', close);
@@ -846,8 +856,11 @@
         <textarea id="dealCommentInput" placeholder="Add notes about this deal..." class="deal-comment">${escapeHtml(comment)}</textarea>
       </div>
     `;
+    // No outer modal title — the inner .deal-header is the visual title
+    // (deal name + company + ID + status badge). Removes the redundant
+    // duplicate header the user reported.
     const m = modal({
-      title: deal.dealName || deal.company || ('Deal #' + deal.id),
+      noTitle: true,
       body, footer: ' ', width: '900px',
     });
     const f = m.el.querySelector('.modal-footer');

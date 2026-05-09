@@ -1181,6 +1181,9 @@ table tfoot td:first-child {
   text-align: right;
   font-variant-numeric: tabular-nums;
   background: transparent;
+  /* Inherit text color from theme — without this the input falls back to
+     browser default (black), which is invisible on dark mode. */
+  color: var(--text);
   box-sizing: border-box;
   display: block;
 }
@@ -1460,6 +1463,28 @@ table tfoot td:first-child {
   border-radius: 4px;
 }
 .modal-close:hover { background: var(--surface-2); color: var(--text); }
+
+/* Floating close button — used when modal({ noTitle: true }), e.g. deal
+   detail where the inner .deal-header takes the place of a title bar. */
+.modal-close-floating {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--text-muted);
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-family: inherit;
+  box-shadow: var(--shadow-sm);
+}
+.modal-close-floating:hover { background: var(--surface-2); color: var(--text); }
+/* The .modal element needs position:relative so the floating close anchors */
+.modal { position: relative; }
 .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
 .modal-footer {
   padding: 12px 20px;

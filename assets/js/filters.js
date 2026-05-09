@@ -391,6 +391,22 @@
       return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
     }
 
+    // Team options: union of (teams present in deal data) + (teams configured
+    // in settings, even if empty/no users yet). Without this, a freshly-added
+    // empty team won't appear in the Team filter dropdown until a user is
+    // moved into it.
+    function teamOptions() {
+      const set = new Set();
+      deals.forEach(d => { if (d.team) set.add(d.team); });
+      try {
+        const settings = App.Settings && App.Settings.load && App.Settings.load();
+        if (settings && Array.isArray(settings.teams)) {
+          settings.teams.forEach(t => { if (t && t.name) set.add(t.name); });
+        }
+      } catch (_) {}
+      return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
+    }
+
     // User options depend on Team selection (cascade)
     function getUserOptions() {
       if (STATE.team.size === 0) return uniques(deals, 'responsible');
@@ -402,7 +418,7 @@
     const teamEl = document.querySelector('[data-filter="team"]');
     STATE.msHandles.team = App.UI.buildMultiSelect(
       teamEl,
-      uniques(deals, 'team'),
+      teamOptions(),
       STATE.team,
       () => {
         // Recompute User options based on selected teams
