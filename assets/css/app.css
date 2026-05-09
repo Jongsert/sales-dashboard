@@ -1419,15 +1419,19 @@ table tfoot td:first-child {
   padding: 10px 16px;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  z-index: 500;
+  /* z-index above modal stack (modal-backdrop = 1000+). Otherwise an open
+     modal-backdrop swallows clicks aimed at the toast's action button. */
+  z-index: 2000;
   box-shadow: var(--shadow-md);
   opacity: 0;
   transform: translateY(10px);
   transition: all 0.2s;
+  /* Hidden state ignores pointer events so the auto-dismissed toast can't
+     block clicks on UI underneath. Shown state allows interaction. */
   pointer-events: none;
   max-width: 360px;
 }
-.toast.show { opacity: 1; transform: translateY(0); }
+.toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .toast.error { background: var(--danger); color: white; }
 .toast.success { background: var(--success); color: white; }
 /* Layout when toast has an action button */

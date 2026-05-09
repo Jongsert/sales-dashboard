@@ -467,13 +467,15 @@
       );
     }
 
-    // Status (fixed list of 5 canonical statuses, with deal counts)
+    // Status (fixed canonical list, with deal counts).
+    // Source of truth = App.StatusMapping.LIST so adding a new status (e.g.
+    // 'Unmapped' added in v1.9.9) automatically propagates here.
     const statusEl = document.querySelector('[data-filter="status"]');
     if (statusEl) {
       const statusCounts = {};
       deals.forEach(d => { if (d.status) statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
-      const statusOpts = ['Won', 'Commit', 'Upside', 'Open', 'Lost']
-        .map(s => ({ value: s, count: statusCounts[s] || 0 }));
+      const statusList = (App.StatusMapping && App.StatusMapping.LIST) || ['Won', 'Commit', 'Upside', 'Open', 'Lost'];
+      const statusOpts = statusList.map(s => ({ value: s, count: statusCounts[s] || 0 }));
       STATE.msHandles.status = App.UI.buildMultiSelect(
         statusEl, statusOpts, STATE.status, () => onChange && onChange()
       );

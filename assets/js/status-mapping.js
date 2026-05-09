@@ -40,29 +40,32 @@
     'Site Survey & Solution Design': 'Open',
   };
 
-  const STATUS_LIST = ['Won', 'Commit', 'Upside', 'Open', 'Lost'];
+  // 6th status 'Unmapped' covers stages that aren't in the default map AND
+  // aren't covered by the user's custom override. Surfacing this as its own
+  // bucket (instead of silently lumping into 'Open') makes it obvious that
+  // some deals haven't been classified yet — both in charts and in the
+  // Status filter dropdown.
+  const STATUS_LIST = ['Won', 'Commit', 'Upside', 'Open', 'Lost', 'Unmapped'];
 
   const STATUS_COLORS = {
-    Won:    { fill: '#259b24', light: '#c5e1a5' },   // dark green — final positive
-    Commit: { fill: '#9ccc65', light: '#dcedc8' },   // light green — near-win
-    Upside: { fill: '#f97316', light: '#ffedd5' },   // orange — potential
-    Open:   { fill: '#3b82f6', light: '#dbeafe' },   // blue — neutral / in pipeline
-    Lost:   { fill: '#ef4444', light: '#fee2e2' },   // red — final negative
+    Won:      { fill: '#259b24', light: '#c5e1a5' },   // dark green — final positive
+    Commit:   { fill: '#9ccc65', light: '#dcedc8' },   // light green — near-win
+    Upside:   { fill: '#f97316', light: '#ffedd5' },   // orange — potential
+    Open:     { fill: '#3b82f6', light: '#dbeafe' },   // blue — neutral / in pipeline
+    Lost:     { fill: '#ef4444', light: '#fee2e2' },   // red — final negative
+    Unmapped: { fill: '#94a3b8', light: '#e2e8f0' },   // slate gray — needs classification
   };
 
-  // Resolve a stage to status, with substring fallback for unknown stages
+  // Resolve a stage to status. Stages without an explicit mapping (in the
+  // default map OR the user's custom override) become 'Unmapped' rather than
+  // silently defaulting to 'Open' — so the user notices and classifies them.
+  // Substring-guess heuristic removed for the same reason: every status
+  // assignment must come from an explicit entry.
   function resolve(stage, customMap) {
-    if (!stage) return 'Open';
-    const map = customMap || DEFAULT_STATUS_MAP;
-    if (map[stage]) return map[stage];
-
-    // Fallback: substring match (similar to index.html team's heuristic)
-    const s = String(stage).toLowerCase();
-    if (s.includes('lost') || s.includes('lose') || s.includes('cancel')) return 'Lost';
-    if (s.includes('won')) return 'Won';
-    if (s.includes('commit')) return 'Commit';
-    if (s.includes('upside')) return 'Upside';
-    return 'Open';
+    if (!stage) return 'Unmapped';
+    if (customMap && customMap[stage]) return customMap[stage];
+    if (DEFAULT_STATUS_MAP[stage]) return DEFAULT_STATUS_MAP[stage];
+    return 'Unmapped';
   }
 
   // Return the stages found in `deals` that have no entry in DEFAULT_STATUS_MAP
