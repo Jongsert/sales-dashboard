@@ -43,6 +43,17 @@
     const optsEl = panel.querySelector('.ms-options');
     const search = panel.querySelector('.ms-search');
 
+    // Each item in `options` may be one of three shapes:
+    //   - string                — plain option, value = label, no count
+    //   - { _group: 'New' }     — group header (not selectable)
+    //   - { value, count }      — option with a count badge (e.g. "Auto Renew · 516")
+    function valueOf(opt) {
+      return (opt && typeof opt === 'object' && 'value' in opt) ? opt.value : opt;
+    }
+    function countOf(opt) {
+      return (opt && typeof opt === 'object' && 'count' in opt) ? opt.count : null;
+    }
+
     function renderOptions(filterText = '') {
       const ft = filterText.toLowerCase();
       optsEl.innerHTML = '';
@@ -53,7 +64,8 @@
         if (typeof opt === 'object' && opt && opt._group) {
           pendingGroup = opt;
         } else {
-          const matches = !ft || String(opt).toLowerCase().includes(ft);
+          const v = valueOf(opt);
+          const matches = !ft || String(v).toLowerCase().includes(ft);
           if (matches) {
             if (pendingGroup) { filtered.push(pendingGroup); pendingGroup = null; }
             filtered.push(opt);
@@ -68,21 +80,30 @@
           optsEl.appendChild(hdr);
           return;
         }
+        const value = valueOf(opt);
+        const count = countOf(opt);
         const lbl = document.createElement('label');
         lbl.className = 'ms-option';
         const cb = document.createElement('input');
         cb.type = 'checkbox';
-        cb.checked = selectedSet.has(opt);
+        cb.checked = selectedSet.has(value);
         cb.addEventListener('change', () => {
-          if (cb.checked) selectedSet.add(opt);
-          else selectedSet.delete(opt);
+          if (cb.checked) selectedSet.add(value);
+          else selectedSet.delete(value);
           updateTrigger();
           onChange && onChange(selectedSet);
         });
         const span = document.createElement('span');
-        span.textContent = opt;
+        span.className = 'ms-option-label';
+        span.textContent = value;
         lbl.appendChild(cb);
         lbl.appendChild(span);
+        if (count !== null) {
+          const cnt = document.createElement('span');
+          cnt.className = 'ms-option-count';
+          cnt.textContent = Number(count).toLocaleString();
+          lbl.appendChild(cnt);
+        }
         optsEl.appendChild(lbl);
       });
     }

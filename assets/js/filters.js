@@ -385,33 +385,42 @@
   /* ----- Re-build multi-select option lists from current data ----- */
   function refreshMultiSelects(deals, onChange) {
     STATE.allDeals = deals;
-    function uniques(rows, key) {
-      const set = new Set();
-      rows.forEach(d => { if (d[key]) set.add(d[key]); });
-      return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
+
+    // Returns [{ value, count }] sorted alphabetically — drives count badges
+    // shown next to each filter option.
+    function uniquesWithCount(rows, key) {
+      const counts = {};
+      rows.forEach(d => {
+        const v = d[key];
+        if (v) counts[v] = (counts[v] || 0) + 1;
+      });
+      return Object.entries(counts)
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+        .map(([value, count]) => ({ value, count }));
     }
 
     // Team options: union of (teams present in deal data) + (teams configured
-    // in settings, even if empty/no users yet). Without this, a freshly-added
-    // empty team won't appear in the Team filter dropdown until a user is
-    // moved into it.
+    // in settings, even if empty/no users yet). Empty teams get count = 0.
     function teamOptions() {
-      const set = new Set();
-      deals.forEach(d => { if (d.team) set.add(d.team); });
+      const counts = {};
+      deals.forEach(d => { if (d.team) counts[d.team] = (counts[d.team] || 0) + 1; });
       try {
         const settings = App.Settings && App.Settings.load && App.Settings.load();
         if (settings && Array.isArray(settings.teams)) {
-          settings.teams.forEach(t => { if (t && t.name) set.add(t.name); });
+          settings.teams.forEach(t => {
+            if (t && t.name && !(t.name in counts)) counts[t.name] = 0;
+          });
         }
       } catch (_) {}
-      return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
+      return Object.entries(counts)
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+        .map(([value, count]) => ({ value, count }));
     }
 
-    // User options depend on Team selection (cascade)
+    // User options depend on Team selection (cascade), with deal counts.
     function getUserOptions() {
-      if (STATE.team.size === 0) return uniques(deals, 'responsible');
-      const inTeam = deals.filter(d => STATE.team.has(d.team));
-      return uniques(inTeam, 'responsible');
+      const scope = STATE.team.size === 0 ? deals : deals.filter(d => STATE.team.has(d.team));
+      return uniquesWithCount(scope, 'responsible');
     }
 
     // Team filter — special: also refresh User options on change
@@ -441,12 +450,12 @@
       userEl, getUserOptions(), STATE.user, () => onChange && onChange()
     );
 
-    // Pipeline / Product Type — flat, alphabetical
+    // Pipeline / Product Type — flat, alphabetical, with count badges
     [['pipeline', 'pipeline'], ['productType', 'productType']].forEach(([key, field]) => {
       const el = document.querySelector(`[data-filter="${key}"]`);
       if (!el) return;
       STATE.msHandles[key] = App.UI.buildMultiSelect(
-        el, uniques(deals, field), STATE[key], () => onChange && onChange()
+        el, uniquesWithCount(deals, field), STATE[key], () => onChange && onChange()
       );
     });
 
@@ -458,11 +467,15 @@
       );
     }
 
-    // Status (fixed list)
+    // Status (fixed list of 5 canonical statuses, with deal counts)
     const statusEl = document.querySelector('[data-filter="status"]');
     if (statusEl) {
+      const statusCounts = {};
+      deals.forEach(d => { if (d.status) statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
+      const statusOpts = ['Won', 'Commit', 'Upside', 'Open', 'Lost']
+        .map(s => ({ value: s, count: statusCounts[s] || 0 }));
       STATE.msHandles.status = App.UI.buildMultiSelect(
-        statusEl, ['Won', 'Commit', 'Upside', 'Open', 'Lost'], STATE.status, () => onChange && onChange()
+        statusEl, statusOpts, STATE.status, () => onChange && onChange()
       );
     }
   }
@@ -581,15 +594,17 @@
   const RENEW_TYPES = new Set(RENEW_TYPES_ORDER);
   const NEW_TYPES = new Set(NEW_TYPES_ORDER);
 
-  /* ----- Build grouped Deal Type options (preserves intentional order) ----- */
+  /* ----- Build grouped Deal Type options (preserves intentional order, with counts) ----- */
   function buildDealTypeOptions(deals) {
-    const present = new Set();
-    deals.forEach(d => { if (d.dealType) present.add(d.dealType); });
-    const newItems = NEW_TYPES_ORDER.filter(t => present.has(t));
-    const renewItems = RENEW_TYPES_ORDER.filter(t => present.has(t));
-    const otherItems = Array.from(present)
+    const counts = {};
+    deals.forEach(d => { if (d.dealType) counts[d.dealType] = (counts[d.dealType] || 0) + 1; });
+    function withCount(t) { return { value: t, count: counts[t] }; }
+    const newItems = NEW_TYPES_ORDER.filter(t => counts[t]).map(withCount);
+    const renewItems = RENEW_TYPES_ORDER.filter(t => counts[t]).map(withCount);
+    const otherItems = Object.keys(counts)
       .filter(t => !NEW_TYPES.has(t) && !RENEW_TYPES.has(t))
-      .sort((a, b) => String(a).localeCompare(String(b)));
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map(withCount);
     const result = [];
     if (newItems.length) {
       result.push({ _group: 'New' });
