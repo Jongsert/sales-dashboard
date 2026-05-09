@@ -237,8 +237,7 @@
     const isOpen = d => d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside';
 
     function statusInfo(d) {
-      const closeDay = new Date(d.expectedClose.getFullYear(), d.expectedClose.getMonth(), d.expectedClose.getDate());
-      const days = Math.floor((today - closeDay) / 86400000);
+      const days = App.UI.daysBetween(today, d.expectedClose);
       if (days > 0) {
         return {
           html: `<strong style="color: var(--danger);">Overdue<br>${days} day${days > 1 ? 's' : ''}</strong>`,

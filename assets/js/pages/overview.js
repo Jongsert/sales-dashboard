@@ -171,18 +171,31 @@
     }
 
     let total = 0;
+    // Cache per-year month boundaries so we don't allocate 12 Date objects
+    // per user inside the inner loop (overhead with many users in a wide period).
+    const boundsCache = {};
+    function getBounds(year) {
+      let arr = boundsCache[year];
+      if (arr) return arr;
+      arr = new Array(12);
+      for (let m = 0; m < 12; m++) {
+        arr[m] = { start: new Date(year, m, 1), end: new Date(year, m + 1, 0, 23, 59, 59) };
+      }
+      boundsCache[year] = arr;
+      return arr;
+    }
     Object.keys(targets).forEach(yearStr => {
       const year = parseInt(yearStr);
       if (from && year < from.getFullYear()) return;
       if (to && year > to.getFullYear()) return;
+      const bounds = getBounds(year);
       Object.entries(targets[yearStr]).forEach(([userName, arr]) => {
         if (!userPasses(userName)) return;
         if (!Array.isArray(arr)) return;
         arr.forEach((v, idx) => {
-          const monthStart = new Date(year, idx, 1);
-          const monthEnd = new Date(year, idx + 1, 0, 23, 59, 59);
-          if (from && monthEnd < from) return;
-          if (to && monthStart > to) return;
+          const b = bounds[idx];
+          if (from && b.end < from) return;
+          if (to && b.start > to) return;
           total += v || 0;
         });
       });
@@ -199,7 +212,7 @@
     const wonRenewSum = aggregate(deals, d => M.isRenew(d) && M.won(d), d => d.income);
     const wonNewSum = aggregate(deals, d => F().NEW_TYPES.has(d.dealType) && M.won(d), d => d.income);
     const wonAllSum = wonRenewSum + wonNewSum;
-    const openRenewSum = aggregate(deals, d => M.isRenew(d) && M.open(d), d => d.income);
+    const openRenewSum = aggregate(deals, d => M.isRenew(d) && M.inFlight(d), d => d.income);
     const wonCount = deals.filter(M.won).length;
     const closedCount = deals.filter(M.closed).length;
     const winRate = closedCount > 0 ? wonCount / closedCount : 0;
@@ -260,12 +273,14 @@
     }).join('');
 
     // Secondary metrics (smaller cards below)
-    const openNewSum = deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).reduce((s,d) => s + d.income, 0);
+    const openNewSum = aggregate(deals, d => F().NEW_TYPES.has(d.dealType) && M.inFlight(d), d => d.income);
+    const openRenewCount = deals.filter(d => M.isRenew(d) && M.inFlight(d)).length;
+    const openNewCount = deals.filter(d => F().NEW_TYPES.has(d.dealType) && M.inFlight(d)).length;
     const secondary = [
       { cls: 'pct', icon: '⚡', label: 'Win Rate', value: fmt().pct(winRate), tip: `${wonCount} won out of ${closedCount} closed`, sub: `${wonCount} won / ${closedCount} closed` },
       { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage', value: fmt().pct(renewCoverage), tip: `Open Renew ${fmt().THBExact(openRenewSum)} ÷ Renew Target ${fmt().THBExact(renewTargetSum)}`, sub: `Open ${fmt().THB(openRenewSum)} ÷ Renew Target` },
-      { cls: 'commit', icon: '🔄', label: 'Open Renew Pipeline', value: fmt().THBFull(openRenewSum), tip: fmt().THBExact(openRenewSum), sub: `${deals.filter(d => M.isRenew(d) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
-      { cls: 'upside', icon: '✨', label: 'Open New Pipeline', value: fmt().THBFull(openNewSum), tip: fmt().THBExact(openNewSum), sub: `${deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
+      { cls: 'commit', icon: '🔄', label: 'Open Renew Pipeline', value: fmt().THBFull(openRenewSum), tip: fmt().THBExact(openRenewSum), sub: `${openRenewCount.toLocaleString()} deals` },
+      { cls: 'upside', icon: '✨', label: 'Open New Pipeline', value: fmt().THBFull(openNewSum), tip: fmt().THBExact(openNewSum), sub: `${openNewCount.toLocaleString()} deals` },
     ];
     document.getElementById('kpiGrid').innerHTML = secondary.map(k => `
       <div class="kpi-card ${k.cls}">

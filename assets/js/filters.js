@@ -29,7 +29,12 @@
     msHandles: {},        // multi-select handles for re-render
   };
 
-  /* ----- Period preset application ----- */
+  /* ----- Period preset application -----
+     Boundary convention: from = 00:00:00 (start of day), to = 23:59:59 (end
+     of day). Both ends are INCLUSIVE — a deal whose expectedClose is exactly
+     `to` matches the period. The downstream filter uses
+       d.expectedClose >= from && d.expectedClose <= to
+     so this convention must hold for every preset below. */
   function applyPreset(preset, year, sub) {
     const today = new Date();
     const useYear = year || today.getFullYear();
@@ -591,9 +596,17 @@
     won: (d) => d.status === 'Won',
     commit: (d) => d.status === 'Commit',
     upside: (d) => d.status === 'Upside',
+    // open: NARROW — only deals literally at status 'Open'. Use inFlight() if
+    // you mean "any deal still in the pipeline (Open/Commit/Upside)".
     open: (d) => d.status === 'Open',
     lost: (d) => d.status === 'Lost',
+    // closed: deal reached a TERMINAL status (Won or Lost). Commit and Upside
+    // are NOT "closed" — they're still in flight, just at higher confidence.
     closed: (d) => d.status === 'Won' || d.status === 'Lost',
+    // inFlight: BROAD "open pipeline" — any deal not yet closed. This is what
+    // most KPI cards mean when they say "Open Renew Pipeline" / "Open New
+    // Pipeline". Use this instead of hardcoding the 3-status OR check.
+    inFlight: (d) => d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside',
   };
 
   /* ----- URL state encoding/decoding ----- */

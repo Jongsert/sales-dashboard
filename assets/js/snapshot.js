@@ -22,8 +22,12 @@
     const wonRenew = renewDeals.filter(M.won).reduce((s, d) => s + d.income, 0);
     const wonNew = newDeals.filter(M.won).reduce((s, d) => s + d.income, 0);
     const wonTotal = wonRenew + wonNew;
-    const openRenew = renewDeals.filter(d => d.status === 'Open').reduce((s, d) => s + d.income, 0);
-    const openNew = newDeals.filter(d => d.status === 'Open').reduce((s, d) => s + d.income, 0);
+    // openRenew / openNew use the BROAD definition (Open + Commit + Upside)
+    // so the snapshot matches what Overview KPI cards display. Previously
+    // this was only `status === 'Open'` which made Diff view show false
+    // drops because it compared narrow snapshot value vs broad current KPI.
+    const openRenew = renewDeals.filter(M.inFlight).reduce((s, d) => s + d.income, 0);
+    const openNew = newDeals.filter(M.inFlight).reduce((s, d) => s + d.income, 0);
     const commitTotal = all.filter(d => d.status === 'Commit').reduce((s, d) => s + d.income, 0);
     const upsideTotal = all.filter(d => d.status === 'Upside').reduce((s, d) => s + d.income, 0);
     const lostTotal = all.filter(d => d.status === 'Lost').reduce((s, d) => s + d.income, 0);
@@ -98,17 +102,29 @@
       return true;
     }
     let total = 0;
+    // Cache per-year month bounds (see overview.js for rationale)
+    const boundsCache = {};
+    function getBounds(year) {
+      let arr = boundsCache[year];
+      if (arr) return arr;
+      arr = new Array(12);
+      for (let m = 0; m < 12; m++) {
+        arr[m] = { start: new Date(year, m, 1), end: new Date(year, m + 1, 0, 23, 59, 59) };
+      }
+      boundsCache[year] = arr;
+      return arr;
+    }
     Object.keys(targets).forEach(yearStr => {
       const year = parseInt(yearStr);
       if (from && year < from.getFullYear()) return;
       if (to && year > to.getFullYear()) return;
+      const bounds = getBounds(year);
       Object.entries(targets[yearStr]).forEach(([userName, arr]) => {
         if (!userPasses(userName) || !Array.isArray(arr)) return;
         arr.forEach((v, idx) => {
-          const monthStart = new Date(year, idx, 1);
-          const monthEnd = new Date(year, idx + 1, 0, 23, 59, 59);
-          if (from && monthEnd < from) return;
-          if (to && monthStart > to) return;
+          const b = bounds[idx];
+          if (from && b.end < from) return;
+          if (to && b.start > to) return;
           total += v || 0;
         });
       });

@@ -19,17 +19,38 @@
     forecastTotal: '#8b5cf6',
   };
 
+  // Default what-if multipliers. STATE.whatIf is rehydrated from
+  // settings.uiPreferences.whatIf on first render so the user's last
+  // configured scenario survives a reload (D1).
+  const WHATIF_DEFAULTS = {
+    enabled: false,
+    openRenew: 0.80,
+    openNew: 0.40,
+    commitRenew: 0.95,   // M4: split — renewals at Commit are very likely to close
+    commitNew: 0.85,     // M4: split — new sales at Commit slightly less certain
+    upside: 0.50,
+    salesAdj: 1.00,
+  };
   const STATE = {
     year: new Date().getFullYear(),
-    whatIf: {
-      enabled: false,
-      openRenew: 0.80,
-      openNew: 0.40,
-      commit: 0.90,
-      upside: 0.50,
-      salesAdj: 1.00,
-    },
+    whatIf: Object.assign({}, WHATIF_DEFAULTS),
   };
+
+  function loadWhatIfFromSettings() {
+    try {
+      const saved = App.Settings.get('uiPreferences.whatIf');
+      if (saved && typeof saved === 'object') {
+        Object.keys(WHATIF_DEFAULTS).forEach(k => {
+          if (typeof saved[k] === typeof WHATIF_DEFAULTS[k]) {
+            STATE.whatIf[k] = saved[k];
+          }
+        });
+      }
+    } catch (_) {}
+  }
+  function saveWhatIfToSettings() {
+    try { App.Settings.set('uiPreferences.whatIf', STATE.whatIf); } catch (_) {}
+  }
 
   const charts = {};
   function destroyCharts() {
@@ -39,6 +60,7 @@
 
   function render(container, parsed) {
     destroyCharts();
+    loadWhatIfFromSettings();   // rehydrate user's last what-if config
     if (!parsed || !parsed.deals.length) {
       container.innerHTML = `
         <div class="placeholder-page">
@@ -203,6 +225,7 @@
     });
     document.getElementById('whatIfToggle').addEventListener('change', e => {
       STATE.whatIf.enabled = e.target.checked;
+      saveWhatIfToSettings();
       render(container, parsed);
     });
     const fXl = document.getElementById('exportForecastBtn');
@@ -289,21 +312,37 @@
     const defaultMult = renewEst.multiplier !== undefined ? renewEst.multiplier : 0.8;
     const overrides = renewEst.monthOverrides || {};
 
+    // Baseline renewal estimate (default multiplier or per-month override),
+    // honoring 'skip' flag. NEVER mutated — what-if computes a separate
+    // effective value below.
     months.forEach((m, i) => {
       const o = overrides[i + 1];
       const skipped = !!(o && o.skip);
       const mult = skipped ? 0 : (o && o.multiplier !== undefined ? o.multiplier : defaultMult);
       m.renewalMultiplier = mult;
       m.skipped = skipped;
-      m.renewalEstimate = m.openRenew * mult;
+      m.renewalEstimate = m.openRenew * mult;       // baseline
+      m.salesForecastInput = m.salesForecast;        // baseline (set above from settings)
     });
 
-    // What-if override
+    // What-if effective values — computed without mutating baseline so
+    // scenarioRevenue() can still read m.salesForecastInput cleanly and
+    // doesn't double-count openNew or salesAdj (H1 fix).
     if (STATE.whatIf.enabled) {
       const w = STATE.whatIf;
       months.forEach(m => {
-        m.renewalEstimate = m.openRenew * w.openRenew + m.commitRenew * w.commit + m.upsideRenew * w.upside;
-        m.salesForecast = m.salesForecast * w.salesAdj + (m.openNew * w.openNew);
+        // Renewal Estimate: respect user's skip flag even in what-if (M2 fix).
+        if (m.skipped) {
+          m.renewalEstimate = 0;
+        } else {
+          m.renewalEstimate = m.openRenew * w.openRenew
+                            + m.commitRenew * w.commitRenew     // M4: separate Renew multiplier
+                            + m.upsideRenew * w.upside;
+        }
+        // Sales Forecast effective: scaled manual input + open-new × prob.
+        // We replace m.salesForecast (the displayed value) but keep the
+        // original baseline in m.salesForecastInput for scenarioRevenue().
+        m.salesForecast = m.salesForecastInput * w.salesAdj + m.openNew * w.openNew;
       });
     }
 
@@ -794,11 +833,12 @@
   function renderWhatIf(monthly, settings) {
     const w = STATE.whatIf;
     const sliders = [
-      { key: 'openRenew', label: 'Open Renew → Won', sub: 'โอกาสปิดดีลที่อยู่ใน Renew pipeline', min: 0, max: 100, val: w.openRenew * 100 },
-      { key: 'openNew',   label: 'Open New → Won',   sub: 'โอกาสปิดดีลใหม่ที่กำลังคุย',         min: 0, max: 100, val: w.openNew * 100 },
-      { key: 'commit',    label: 'Commit → Won',     sub: 'Stage = Commit (ตกลงแล้วรอเซ็น)',  min: 0, max: 100, val: w.commit * 100 },
-      { key: 'upside',    label: 'Upside → Won',     sub: 'Stage = Upside (มีโอกาสแต่ยังไม่แน่)', min: 0, max: 100, val: w.upside * 100 },
-      { key: 'salesAdj',  label: 'Sales Forecast adj', sub: 'ปรับยอด New Sell ที่กรอกไว้',       min: 50, max: 150, val: w.salesAdj * 100 },
+      { key: 'openRenew',   label: 'Open Renew → Won',   sub: 'โอกาสปิดดีลที่อยู่ใน Renew pipeline',          min: 0, max: 100, val: w.openRenew * 100 },
+      { key: 'openNew',     label: 'Open New → Won',     sub: 'โอกาสปิดดีลใหม่ที่กำลังคุย',                  min: 0, max: 100, val: w.openNew * 100 },
+      { key: 'commitRenew', label: 'Commit Renew → Won', sub: 'Renew ที่อยู่ Commit (ตกลงแล้วรอเซ็น)',       min: 0, max: 100, val: w.commitRenew * 100 },
+      { key: 'commitNew',   label: 'Commit New → Won',   sub: 'ดีลใหม่ที่อยู่ Commit (ตกลงแล้วรอเซ็น)',       min: 0, max: 100, val: w.commitNew * 100 },
+      { key: 'upside',      label: 'Upside → Won',       sub: 'Stage = Upside (มีโอกาสแต่ยังไม่แน่)',         min: 0, max: 100, val: w.upside * 100 },
+      { key: 'salesAdj',    label: 'Sales Forecast adj', sub: 'ปรับยอด New Sell ที่กรอกไว้',                  min: 50, max: 150, val: w.salesAdj * 100 },
     ];
     document.getElementById('whatIfSliders').innerHTML = sliders.map(s => `
       <div class="slider-row">
@@ -812,12 +852,12 @@
     const totals = computeYearTotals(monthly);
     const target = totals.totalTarget || 1;
 
-    // Pessimistic: lower confidence
-    const pess = scenarioRevenue(monthly, settings, { openRenew: 0.5, openNew: 0.2, commit: 0.7, upside: 0.2, salesAdj: 0.7 });
-    // Likely: current settings
+    // Pessimistic: lower confidence (renew Commit slightly higher than new Commit)
+    const pess = scenarioRevenue(monthly, settings, { openRenew: 0.5, openNew: 0.2, commitRenew: 0.8, commitNew: 0.6, upside: 0.2, salesAdj: 0.7 });
+    // Likely: current user settings
     const likely = scenarioRevenue(monthly, settings, w);
     // Optimistic: high confidence
-    const opt = scenarioRevenue(monthly, settings, { openRenew: 1.0, openNew: 0.7, commit: 1.0, upside: 0.85, salesAdj: 1.2 });
+    const opt = scenarioRevenue(monthly, settings, { openRenew: 1.0, openNew: 0.7, commitRenew: 1.0, commitNew: 0.95, upside: 0.85, salesAdj: 1.2 });
 
     const grid = document.getElementById('scenarioGrid');
     const fmt = App.UI.fmt;
@@ -856,11 +896,12 @@
         const val = parseFloat(inp.value);
         document.querySelector(`[data-w-val="${key}"]`).textContent = Math.round(val) + '%';
         STATE.whatIf[key] = val / 100;
+        saveWhatIfToSettings();   // D1: persist immediately
         // Re-render scenarios live without full page re-render
         const settings = App.Settings.load();
-        const newPess = scenarioRevenue(monthly, settings, { openRenew: 0.5, openNew: 0.2, commit: 0.7, upside: 0.2, salesAdj: 0.7 });
+        const newPess = scenarioRevenue(monthly, settings, { openRenew: 0.5, openNew: 0.2, commitRenew: 0.8, commitNew: 0.6, upside: 0.2, salesAdj: 0.7 });
         const newLikely = scenarioRevenue(monthly, settings, STATE.whatIf);
-        const newOpt = scenarioRevenue(monthly, settings, { openRenew: 1.0, openNew: 0.7, commit: 1.0, upside: 0.85, salesAdj: 1.2 });
+        const newOpt = scenarioRevenue(monthly, settings, { openRenew: 1.0, openNew: 0.7, commitRenew: 1.0, commitNew: 0.95, upside: 0.85, salesAdj: 1.2 });
         const t = totals.totalTarget || 1;
         document.getElementById('scenarioGrid').innerHTML = `
           <div class="scenario-card"><div class="s-label">Pessimistic</div><div class="s-value">${fmt.THB(newPess)}</div><div class="s-pct">${fmt.pct(newPess / t)}</div></div>
@@ -881,11 +922,19 @@
   function scenarioRevenue(monthly, settings, w) {
     let total = 0;
     monthly.forEach(m => {
+      // actualRevenue = won deals so far (immutable)
       total += m.actualRevenue;
+      // Open buckets — bare value × scenario probability
       total += m.openRenew * w.openRenew + m.openNew * w.openNew;
-      total += m.commitRenew * w.commit + m.commitNew * w.commit;
+      // Commit — split between Renew (high confidence) and New (slightly lower)
+      total += m.commitRenew * w.commitRenew + m.commitNew * w.commitNew;
+      // Upside — uncertain
       total += m.upsideRenew * w.upside + m.upsideNew * w.upside;
-      total += m.salesForecast * w.salesAdj;
+      // Sales Forecast — read BASELINE (manual input from settings) and apply
+      // this scenario's adjustment. m.salesForecast might be the what-if
+      // effective value already, which would double-count.
+      const baseSales = (m.salesForecastInput !== undefined) ? m.salesForecastInput : m.salesForecast;
+      total += baseSales * w.salesAdj;
     });
     return total;
   }

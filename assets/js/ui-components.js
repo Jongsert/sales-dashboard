@@ -866,6 +866,17 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /* ----- daysBetween: whole-day diff between two Date objects.
+     Normalizes both dates to local midnight before subtracting so DST
+     transitions or different times of day on a/b can't shift the result
+     by ±1 day. Returns positive integer when a is after b. ----- */
+  function daysBetween(a, b) {
+    if (!(a instanceof Date) || !(b instanceof Date)) return 0;
+    const a0 = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+    const b0 = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+    return Math.round((a0 - b0) / 86400000);
+  }
+
   /* ----- buildSearchableSelect: type-to-filter single-select dropdown.
      Returned wrap element exposes .getValue() to read the selected value.
      opts: { items: [{value, label}], defaultValue, placeholder }       ----- */
@@ -1011,7 +1022,7 @@
     drillModal,
     openDealDetail,
     exportToExcel, exportToCSV, screenshotElement,
-    safeColor, escapeHtml, buildSearchableSelect,
+    safeColor, escapeHtml, buildSearchableSelect, daysBetween,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate,
