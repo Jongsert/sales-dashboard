@@ -341,7 +341,7 @@
     }
     const dealKey = deal.id || deal.dealName || `row_${(deal.company || '')}_${(deal.income || 0)}`;
     const comment = (App.Settings && App.Settings.getDealComment) ? App.Settings.getDealComment(dealKey) : '';
-    const statusColor = (App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status] || {}).fill || '#94a3b8';
+    const statusColor = safeColor((App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status] || {}).fill, '#94a3b8');
     const saleOrderNo = rawAny('Sale Order No. (Dynamic365)', 'Sale Order No.', 'Dynamic365', 'SO No.');
     const zoomAccount = rawAny('Zoom Account Number', 'Zoom Account No.');
     const zoomLicense = rawAny('Detail Zoom License Activation', 'Zoom License Activation');
@@ -674,7 +674,7 @@
                 : sorted.map((d, i) => {
                     const sc = (COLORS[d.status] || {}).fill || 'var(--text-muted)';
                     return `<tr>
-                      <td class="wrap"><a href="javascript:void(0)" class="drill-deal-link" data-i="${i}"><strong>${escapeHtml(d.dealName || '—')}</strong></a></td>
+                      <td class="wrap"><a href="#" class="drill-deal-link" data-i="${i}"><strong>${escapeHtml(d.dealName || '—')}</strong></a></td>
                       <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
                       <td>${escapeHtml(d.responsible || '—')}</td>
                       <td>${escapeHtml(d.stage || '—')}</td>
@@ -774,7 +774,7 @@
     };
     const dealKey = deal.id || deal.dealName || ('row_' + (deal._idx != null ? deal._idx : Math.random().toString(36).slice(2, 8)));
     const comment = (App.Settings && App.Settings.getDealComment) ? App.Settings.getDealComment(dealKey) : '';
-    const statusColor = ((App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status]) || {}).fill || '#94a3b8';
+    const statusColor = safeColor(((App.StatusMapping && App.StatusMapping.COLORS && App.StatusMapping.COLORS[deal.status]) || {}).fill, '#94a3b8');
 
     function rawAny(...cols) {
       for (const c of cols) {
@@ -866,6 +866,84 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /* ----- buildSearchableSelect: type-to-filter single-select dropdown.
+     Returned wrap element exposes .getValue() to read the selected value.
+     opts: { items: [{value, label}], defaultValue, placeholder }       ----- */
+  function buildSearchableSelect(opts) {
+    opts = opts || {};
+    const items = Array.isArray(opts.items) ? opts.items : [];
+    const wrap = document.createElement('div');
+    wrap.className = 'searchable-select';
+    wrap.style.cssText = 'position:relative;';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'select-input';
+    input.style.cssText = 'width:100%; padding:8px 30px 8px 12px;';
+    input.placeholder = opts.placeholder || 'Type to search...';
+    input.autocomplete = 'off';
+
+    const arrow = document.createElement('span');
+    arrow.textContent = '▾';
+    arrow.style.cssText = 'position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--text-faint); pointer-events:none; font-size:10px;';
+
+    const list = document.createElement('div');
+    list.className = 'searchable-list';
+    list.style.cssText = 'position:absolute; top:100%; left:0; right:0; max-height:240px; overflow-y:auto; background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-sm); z-index:100; display:none; margin-top:2px; box-shadow:var(--shadow-md);';
+
+    function render(filter) {
+      list.innerHTML = '';
+      const f = (filter || '').toLowerCase().trim();
+      const matched = f
+        ? items.filter(x => x.label.toLowerCase().includes(f))
+        : items;
+      matched.forEach(x => {
+        const div = document.createElement('div');
+        div.textContent = x.label;
+        div.dataset.value = x.value;
+        div.style.cssText = 'padding:7px 12px; cursor:pointer; font-size:12px; color:var(--text);';
+        div.addEventListener('mousedown', (e) => {
+          // mousedown preempts blur — prevents the list from closing before we
+          // commit the value
+          e.preventDefault();
+          wrap._currentValue = x.value;
+          input.value = x.label;
+          list.style.display = 'none';
+        });
+        div.addEventListener('mouseenter', () => { div.style.background = 'var(--surface-2)'; });
+        div.addEventListener('mouseleave', () => { div.style.background = ''; });
+        list.appendChild(div);
+      });
+      if (matched.length === 0) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No matches';
+        empty.style.cssText = 'padding:7px 12px; color:var(--text-faint); font-size:12px;';
+        list.appendChild(empty);
+      }
+    }
+
+    input.addEventListener('focus', () => { render(input.value); list.style.display = 'block'; });
+    input.addEventListener('input', () => { render(input.value); list.style.display = 'block'; });
+    input.addEventListener('blur', () => setTimeout(() => { list.style.display = 'none'; }, 150));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { list.style.display = 'none'; input.blur(); }
+    });
+
+    if (opts.defaultValue) {
+      const def = items.find(x => x.value === opts.defaultValue);
+      if (def) {
+        input.value = def.label;
+        wrap._currentValue = def.value;
+      }
+    }
+
+    wrap.appendChild(input);
+    wrap.appendChild(arrow);
+    wrap.appendChild(list);
+    wrap.getValue = () => wrap._currentValue;
+    return wrap;
+  }
+
   /* ----- safeColor: validate user-supplied color values before they're
      interpolated into inline style="" attributes. Without this guard a
      malicious team color like  "red; background: url(javascript:...)"
@@ -933,7 +1011,7 @@
     drillModal,
     openDealDetail,
     exportToExcel, exportToCSV, screenshotElement,
-    safeColor, escapeHtml,
+    safeColor, escapeHtml, buildSearchableSelect,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate,

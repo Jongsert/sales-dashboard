@@ -45,15 +45,15 @@
         <div class="kpi-card commit kpi-primary"><div class="kpi-label"><span>📋</span>Open Pipeline</div><div class="kpi-value" title="${fmt.THBExact(open.reduce((s, d) => s + d.income, 0))}">${fmt.THBFull(open.reduce((s, d) => s + d.income, 0))}</div><div class="kpi-meta"><span>${open.length.toLocaleString()} deals · O+C+U</span></div></div>
       </div>
 
-      <div class="section-title">Won breakdown &amp; Stage Funnel</div>
+      <div class="section-title">Won breakdown &amp; Status Funnel</div>
       <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:16px;">
         <div class="card">
           <div class="card-header"><div><div class="card-title">Won by Product Type</div><div class="card-subtitle">เห็นว่าสินค้าตัวไหนปิดได้เยอะ</div></div></div>
           <div class="chart-canvas-md"><canvas id="newProductChart"></canvas></div>
         </div>
         <div class="card">
-          <div class="card-header"><div><div class="card-title">Stage Funnel — open New deals</div><div class="card-subtitle">Count + value at each stage</div></div></div>
-          <div style="max-height:340px; overflow:auto"><table class="tbl" id="newFunnel"><thead><tr><th>Stage</th><th class="num">#</th><th class="num">Value</th><th>Bar</th></tr></thead><tbody></tbody></table></div>
+          <div class="card-header"><div><div class="card-title">Status Funnel — open New deals</div><div class="card-subtitle">Count + value at each status (Open / Commit / Upside)</div></div></div>
+          <div style="max-height:340px; overflow:auto"><table class="tbl" id="newFunnel"><thead><tr><th>Status</th><th class="num">#</th><th class="num">Value</th><th>Bar</th></tr></thead><tbody></tbody></table></div>
         </div>
       </div>
 
@@ -62,7 +62,16 @@
         <div class="chart-canvas-md"><canvas id="newMonthChart"></canvas></div>
       </div>
 
-      <div class="section-title">⚠️ New deals overdue — open + close date passed</div>
+      <div class="section-title">
+        ⚠️ New deals at risk
+        <span class="actions">
+          <div class="seg-toggle" id="newRiskToggle" role="group">
+            <button class="seg-opt active" data-risk="overdue">Overdue</button>
+            <button class="seg-opt" data-risk="due">Due in 15 days</button>
+            <button class="seg-opt" data-risk="all">Both</button>
+          </div>
+        </span>
+      </div>
       <div class="card">
         <div id="newOverdueWrap"></div>
       </div>
@@ -109,7 +118,7 @@
       App.UI.drillModal({ title: `Won New · Product: ${productType}`, subtitle: 'Won New Sell deals with this product type', deals: matched });
     };
     productOpts.onHover = (e, els) => { e.native && (e.native.target.style.cursor = els.length ? 'pointer' : 'default'); };
-    new Chart(document.getElementById('newProductChart').getContext('2d'), {
+    charts.product = new Chart(document.getElementById('newProductChart').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: prodLabels,
@@ -118,23 +127,29 @@
       options: productOpts,
     });
 
-    // Stage funnel — with bar visualization
-    const stages = {};
+    // Status funnel — Open / Commit / Upside (the 3 in-flight statuses)
+    const STATUS_ORDER = ['Open', 'Commit', 'Upside'];
+    const STATUS_COLOR_MAP = (App.StatusMapping && App.StatusMapping.COLORS) || {};
+    const statusBuckets = {};
     open.forEach(d => {
-      const s = d.stage || '(none)';
-      if (!stages[s]) stages[s] = { count: 0, value: 0 };
-      stages[s].count++;
-      stages[s].value += d.income;
+      const s = d.status || '(none)';
+      if (!statusBuckets[s]) statusBuckets[s] = { count: 0, value: 0 };
+      statusBuckets[s].count++;
+      statusBuckets[s].value += d.income;
     });
-    const stageRows = Object.entries(stages).sort((a, b) => b[1].value - a[1].value);
-    const maxStageValue = stageRows.reduce((m, [, v]) => Math.max(m, v.value), 0);
-    document.querySelector('#newFunnel tbody').innerHTML = stageRows.map(([s, v]) => {
-      const pct = maxStageValue > 0 ? (v.value / maxStageValue * 100) : 0;
+    const statusRows = STATUS_ORDER
+      .filter(s => statusBuckets[s])
+      .map(s => [s, statusBuckets[s]])
+      .concat(Object.entries(statusBuckets).filter(([s]) => !STATUS_ORDER.includes(s)));
+    const maxStatusValue = statusRows.reduce((m, [, v]) => Math.max(m, v.value), 0);
+    document.querySelector('#newFunnel tbody').innerHTML = statusRows.map(([s, v]) => {
+      const pct = maxStatusValue > 0 ? (v.value / maxStatusValue * 100) : 0;
+      const barColor = App.UI.safeColor((STATUS_COLOR_MAP[s] || {}).fill, 'var(--commit)');
       return `<tr>
         <td>${escapeHtml(s)}</td>
         <td class="num">${fmt.int(v.count)}</td>
         <td class="num" title="${fmt.THBExact(v.value)}">${fmt.THBFull(v.value)}</td>
-        <td><div style="height:10px; background: var(--surface-3); border-radius:4px; overflow:hidden; min-width:100px;"><div style="width:${pct}%; height:100%; background: var(--commit);"></div></div></td>
+        <td><div style="height:10px; background: var(--surface-3); border-radius:4px; overflow:hidden; min-width:100px;"><div style="width:${pct}%; height:100%; background:${barColor};"></div></div></td>
       </tr>`;
     }).join('') || '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-muted);">No open deals</td></tr>';
 
@@ -147,7 +162,7 @@
     const monthAgg = App.Filters.aggregateByMonthMulti(newDeals, preds, d => d.income, f.from, f.to);
 
     const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    new Chart(document.getElementById('newMonthChart').getContext('2d'), {
+    charts.month = new Chart(document.getElementById('newMonthChart').getContext('2d'), {
       type: 'bar',
       data: {
         labels: monthAgg.labels,
@@ -180,8 +195,17 @@
       },
     });
 
-    // Overdue New deals (open + expectedClose < today)
-    renderOverdue(newDeals);
+    // New deals at risk — overdue + due-soon, with toggle
+    let _newRiskMode = 'overdue';
+    renderOverdue(newDeals, _newRiskMode);
+    document.querySelectorAll('#newRiskToggle .seg-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#newRiskToggle .seg-opt').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _newRiskMode = btn.dataset.risk;
+        renderOverdue(newDeals, _newRiskMode);
+      });
+    });
 
     // Win rate by Responsible (top 10)
     const userStats = {};
@@ -223,26 +247,64 @@
     `).join('') || '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No new customers in scope</td></tr>';
   }
 
-  function renderOverdue(newDeals) {
+  function renderOverdue(newDeals, mode) {
+    // mode: 'overdue' | 'due' | 'all'
     const fmt = App.UI.fmt;
     const today = new Date(); today.setHours(0, 0, 0, 0);
+    const in15 = new Date(today.getTime() + 15 * 86400 * 1000);
+    const isOpen = d => d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside';
+
+    function statusInfo(d) {
+      const closeDay = new Date(d.expectedClose.getFullYear(), d.expectedClose.getMonth(), d.expectedClose.getDate());
+      const days = Math.floor((today - closeDay) / 86400000);
+      if (days > 0) {
+        return {
+          html: `<strong style="color: var(--danger);">Overdue<br>${days} day${days > 1 ? 's' : ''}</strong>`,
+          isOverdue: true, sortKey: -days,
+        };
+      } else if (days === 0) {
+        return { html: `<strong style="color: var(--danger);">Overdue<br>today</strong>`, isOverdue: true, sortKey: 0 };
+      } else {
+        return {
+          html: `<span style="color: var(--upside); font-weight:600;">Due in<br>${-days} day${-days > 1 ? 's' : ''}</span>`,
+          isOverdue: false, sortKey: -days,
+        };
+      }
+    }
+
     const overdue = newDeals
-      .filter(d => (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
-                && d.expectedClose && d.expectedClose < today);
+      .filter(d => isOpen(d) && d.expectedClose && d.expectedClose < today)
+      .map(d => ({ d, info: statusInfo(d) }));
+    const dueSoon = newDeals
+      .filter(d => isOpen(d) && d.expectedClose && d.expectedClose >= today && d.expectedClose <= in15)
+      .map(d => ({ d, info: statusInfo(d) }));
 
-    overdue.sort((a, b) => a.expectedClose - b.expectedClose);   // most overdue first
+    let rows;
+    if (mode === 'overdue') rows = overdue;
+    else if (mode === 'due') rows = dueSoon;
+    else rows = overdue.concat(dueSoon);
+    rows.sort((a, b) => a.info.sortKey - b.info.sortKey);
 
-    if (overdue.length === 0) {
-      document.getElementById('newOverdueWrap').innerHTML = `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No overdue New deals 🎉</div>`;
+    const overdueValue = overdue.reduce((s, x) => s + (x.d.income || 0), 0);
+    const dueValue = dueSoon.reduce((s, x) => s + (x.d.income || 0), 0);
+
+    const summaryHtml = `
+      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
+        <div style="padding:6px 12px; background: var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
+          <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} overdue · ${fmt.THBFull(overdueValue)}
+        </div>
+        <div style="padding:6px 12px; background: var(--tint-warning); border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
+          <span class="status-dot" style="background: var(--upside);"></span>${dueSoon.length} due in 15 days · ${fmt.THBFull(dueValue)}
+        </div>
+      </div>`;
+
+    if (rows.length === 0) {
+      document.getElementById('newOverdueWrap').innerHTML = summaryHtml +
+        `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No deals in this view 🎉</div>`;
       return;
     }
 
-    const totalValue = overdue.reduce((s, d) => s + d.income, 0);
-
-    document.getElementById('newOverdueWrap').innerHTML = `
-      <div style="margin-bottom:12px; font-size:12px; padding:6px 12px; background:var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); display:inline-block; font-weight:600;">
-        <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} deals overdue · Total ${fmt.THBFull(totalValue)}
-      </div>
+    document.getElementById('newOverdueWrap').innerHTML = summaryHtml + `
       <div style="max-height:480px; overflow:auto;">
         <table class="tbl">
           <thead><tr>
@@ -250,21 +312,17 @@
             <th class="num">Income</th><th>Expected close</th><th>Status</th>
           </tr></thead>
           <tbody>
-            ${overdue.map(d => {
-              const closeDay = new Date(d.expectedClose.getFullYear(), d.expectedClose.getMonth(), d.expectedClose.getDate());
-              const days = Math.floor((today - closeDay) / 86400000);
-              return `
-                <tr style="background: var(--tint-danger);">
-                  <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
-                  <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
-                  <td>${escapeHtml(d.responsible || '—')}</td>
-                  <td>${escapeHtml(d.stage || '—')}</td>
-                  <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
-                  <td>${fmt.date(d.expectedClose)}</td>
-                  <td><strong style="color: var(--danger);">Overdue<br>${days} day${days > 1 ? 's' : ''}</strong></td>
-                </tr>
-              `;
-            }).join('')}
+            ${rows.map(({ d, info }) => `
+              <tr style="${info.isOverdue ? 'background: var(--tint-danger);' : ''}">
+                <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
+                <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
+                <td>${escapeHtml(d.responsible || '—')}</td>
+                <td>${escapeHtml(d.stage || '—')}</td>
+                <td class="num" title="${fmt.THBExact(d.income || 0)}">${fmt.THBFull(d.income || 0)}</td>
+                <td>${fmt.date(d.expectedClose)}</td>
+                <td>${info.html}</td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
       </div>

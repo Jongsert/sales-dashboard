@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.8.7';
+  const VERSION = '1.9.0';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -573,6 +573,29 @@
   window.App.bootstrap = init;
   window.App.handleFile = handleFile;
   window.App.STATE = APP_STATE;
+
+  // Re-apply user→team mapping from current settings to in-memory deals,
+  // then refresh global filter multi-selects + re-render. Called by Teams
+  // page after every team add/rename/delete or user move so the Global
+  // filter Team dropdown updates without reloading the file.
+  window.App.applyTeamConfigChange = function () {
+    if (!APP_STATE.parsed || !APP_STATE.parsed.deals) {
+      // No data loaded — nothing to re-apply, just re-render the current page
+      if (App.Filters && App.Filters.STATE) App.Filters.STATE.deals = [];
+      return;
+    }
+    const settings = App.Settings.load();
+    const userTeam = {};
+    (settings.users || []).forEach(u => { userTeam[u.name] = u.team || 'Unassigned'; });
+    APP_STATE.parsed.deals.forEach(d => {
+      if (d.responsible && userTeam[d.responsible]) {
+        d.team = userTeam[d.responsible];
+      }
+    });
+    App.Filters.STATE.deals = APP_STATE.parsed.deals;
+    App.Filters.refreshMultiSelects(APP_STATE.parsed.deals, renderRoute);
+    renderRoute();
+  };
   window.App.VERSION = VERSION;
   window.App.VERSION_DATE = VERSION_DATE;
   window.App.MODE = MODE;

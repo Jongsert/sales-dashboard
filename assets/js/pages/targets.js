@@ -408,22 +408,27 @@
     }
 
     function bulkFill() {
+      const scopeItems = [
+        { value: 'all', label: `All users (${users.length})` },
+        ...orderedTeams.map(t => ({ value: 'team:' + t, label: 'Team: ' + t })),
+        ...users.map(u => ({ value: 'user:' + u.name, label: 'User: ' + u.name })),
+      ];
+      const scopeEl = App.UI.buildSearchableSelect({
+        items: scopeItems, defaultValue: 'all', placeholder: 'Search team or user...',
+      });
+
       const body = document.createElement('div');
       body.innerHTML = `
         <div style="display:grid; gap:12px;">
-          <label>
+          <div>
             <div style="font-size:11px; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Apply to</div>
-            <select id="bfScope" class="select-input" style="width:100%; padding:8px;">
-              <option value="all">All users (${users.length})</option>
-              ${orderedTeams.map(t => `<option value="team:${t}">Team: ${t}</option>`).join('')}
-              ${users.map(u => `<option value="user:${escapeAttr(u.name)}">User: ${escapeHtml(u.name)}</option>`).join('')}
-            </select>
-          </label>
+            <div id="bfScopeMount"></div>
+          </div>
           <label>
             <div style="font-size:11px; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Months</div>
             <select id="bfMonths" class="select-input" style="width:100%; padding:8px;">
               <option value="all">All 12 months</option>
-              ${MONTHS.map((m, i) => `<option value="${i+1}">${m}</option>`).join('')}
+              ${MONTHS.map((mo, i) => `<option value="${i+1}">${mo}</option>`).join('')}
             </select>
           </label>
           <label>
@@ -433,6 +438,8 @@
           <div style="font-size:11px; color: var(--text-muted);">⚠️ This will overwrite existing values for the selected scope and months.</div>
         </div>
       `;
+      body.querySelector('#bfScopeMount').appendChild(scopeEl);
+
       const m = App.UI.modal({ title: 'Bulk fill targets', body, footer: ' ' });
       const f = m.el.querySelector('.modal-footer');
       f.innerHTML = '';
@@ -441,7 +448,8 @@
       const ok = document.createElement('button'); ok.className = 'btn btn-primary'; ok.textContent = 'Apply';
       ok.addEventListener('click', () => {
         const year = STATE.year;
-        const scope = m.el.querySelector('#bfScope').value;
+        const scope = scopeEl.getValue();
+        if (!scope) { App.UI.toast('Please pick a scope', 'error'); return; }
         const monthSel = m.el.querySelector('#bfMonths').value;
         const value = parseFloat(m.el.querySelector('#bfValue').value.replace(/,/g, '')) || 0;
         const months = monthSel === 'all' ? [1,2,3,4,5,6,7,8,9,10,11,12] : [parseInt(monthSel)];
@@ -459,16 +467,23 @@
     }
 
     function smartDistribute() {
+      const sdScopeItems = [
+        ...orderedTeams.map(t => ({ value: 'team:' + t, label: 'Team: ' + t })),
+        ...users.map(u => ({ value: 'user:' + u.name, label: 'User: ' + u.name })),
+      ];
+      const scopeEl = App.UI.buildSearchableSelect({
+        items: sdScopeItems,
+        defaultValue: sdScopeItems[0] && sdScopeItems[0].value,
+        placeholder: 'Search team or user...',
+      });
+
       const body = document.createElement('div');
       body.innerHTML = `
         <div style="display:grid; gap:12px;">
-          <label>
+          <div>
             <div style="font-size:11px; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Apply to</div>
-            <select id="sdScope" class="select-input" style="width:100%; padding:8px;">
-              ${orderedTeams.map(t => `<option value="team:${t}">Team: ${t}</option>`).join('')}
-              ${users.map(u => `<option value="user:${escapeAttr(u.name)}">User: ${escapeHtml(u.name)}</option>`).join('')}
-            </select>
-          </label>
+            <div id="sdScopeMount"></div>
+          </div>
           <label>
             <div style="font-size:11px; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Year total (THB)</div>
             <input id="sdTotal" type="text" class="select-input" style="width:100%; padding:8px;" value="" placeholder="0" inputmode="decimal">
@@ -483,6 +498,8 @@
           </label>
         </div>
       `;
+      body.querySelector('#sdScopeMount').appendChild(scopeEl);
+
       const m = App.UI.modal({ title: 'Smart distribute', body, footer: ' ' });
       const f = m.el.querySelector('.modal-footer');
       f.innerHTML = '';
@@ -491,7 +508,8 @@
       const ok = document.createElement('button'); ok.className = 'btn btn-primary'; ok.textContent = 'Apply';
       ok.addEventListener('click', () => {
         const year = STATE.year;
-        const scope = m.el.querySelector('#sdScope').value;
+        const scope = scopeEl.getValue();
+        if (!scope) { App.UI.toast('Please pick a scope', 'error'); return; }
         const total = parseFloat(m.el.querySelector('#sdTotal').value.replace(/,/g, '')) || 0;
         const mode = m.el.querySelector('#sdMode').value;
 

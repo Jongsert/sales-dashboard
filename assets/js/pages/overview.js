@@ -261,13 +261,11 @@
 
     // Secondary metrics (smaller cards below)
     const openNewSum = deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).reduce((s,d) => s + d.income, 0);
-    const lostSum = deals.filter(M.lost).reduce((s,d) => s + d.income, 0);
     const secondary = [
       { cls: 'pct', icon: '⚡', label: 'Win Rate', value: fmt().pct(winRate), tip: `${wonCount} won out of ${closedCount} closed`, sub: `${wonCount} won / ${closedCount} closed` },
       { cls: 'coverage', icon: '🛡️', label: 'Renew Coverage', value: fmt().pct(renewCoverage), tip: `Open Renew ${fmt().THBExact(openRenewSum)} ÷ Renew Target ${fmt().THBExact(renewTargetSum)}`, sub: `Open ${fmt().THB(openRenewSum)} ÷ Renew Target` },
       { cls: 'commit', icon: '🔄', label: 'Open Renew Pipeline', value: fmt().THBFull(openRenewSum), tip: fmt().THBExact(openRenewSum), sub: `${deals.filter(d => M.isRenew(d) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
       { cls: 'upside', icon: '✨', label: 'Open New Pipeline', value: fmt().THBFull(openNewSum), tip: fmt().THBExact(openNewSum), sub: `${deals.filter(d => F().NEW_TYPES.has(d.dealType) && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')).length.toLocaleString()} deals` },
-      { cls: 'lost', icon: '📉', label: 'Lost Total', value: fmt().THBFull(lostSum), tip: fmt().THBExact(lostSum), sub: `${deals.filter(M.lost).length.toLocaleString()} deals` },
     ];
     document.getElementById('kpiGrid').innerHTML = secondary.map(k => `
       <div class="kpi-card ${k.cls}">

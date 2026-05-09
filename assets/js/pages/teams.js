@@ -157,7 +157,8 @@
             `ยืนยันย้าย <strong>${escapeHtml(userName)}</strong> จาก team "<strong>${escapeHtml(fromTeam)}</strong>" → "<strong>${escapeHtml(target)}</strong>" ?`,
             () => {
               App.Settings.moveUserToTeam(userName, target);
-              render(container, parsed);
+              if (App.applyTeamConfigChange) App.applyTeamConfigChange();
+              else render(container, parsed);
               App.UI.toast(`Moved ${userName} → ${target}`, 'success');
             }
           );
@@ -178,7 +179,8 @@
           const newName = prompt(`Rename team "${oldName}" to:`, oldName);
           if (!newName || newName === oldName) return;
           App.Settings.updateTeam(oldName, { name: newName.trim() });
-          render(container, parsed);
+          if (App.applyTeamConfigChange) App.applyTeamConfigChange();
+          else render(container, parsed);
           App.UI.toast(`Renamed to "${newName}"`, 'success');
         });
       });
@@ -187,7 +189,8 @@
         btn.addEventListener('click', () => {
           App.UI.confirm(`Delete team "<strong>${btn.dataset.deleteTeam}</strong>"? Users will be moved to Unassigned.`, () => {
             App.Settings.deleteTeam(btn.dataset.deleteTeam);
-            render(container, parsed);
+            if (App.applyTeamConfigChange) App.applyTeamConfigChange();
+            else render(container, parsed);
             App.UI.toast('Team deleted', 'success');
           });
         });
@@ -254,7 +257,8 @@
       if (!name || !name.trim()) return;
       const ok = App.Settings.addTeam(name.trim(), null);
       if (!ok) { App.UI.toast('Team already exists', 'error'); return; }
-      render(container, parsed);
+      if (App.applyTeamConfigChange) App.applyTeamConfigChange();
+      else render(container, parsed);
       App.UI.toast(`Added "${name.trim()}"`, 'success');
     });
     document.getElementById('resetTeamsBtn').addEventListener('click', () => {
@@ -262,7 +266,8 @@
         'Reset user→team mapping back to original (from uploaded data)? Custom team names will be preserved.',
         () => {
           App.Settings.resetUserTeams(parsed.deals);
-          render(container, parsed);
+          if (App.applyTeamConfigChange) App.applyTeamConfigChange();
+          else render(container, parsed);
           App.UI.toast('User-team mapping reset to data defaults', 'success');
         }
       );

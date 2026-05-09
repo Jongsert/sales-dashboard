@@ -63,11 +63,6 @@
           <div class="kpi-value" title="${fmt.THBExact(lostRenew)}">${fmt.pct(churnRate)}</div>
           <div class="kpi-meta"><span>Lost ${fmt.THB(lostRenew)} from ${lostCount} deals</span></div>
         </div>
-        <div class="kpi-card coverage">
-          <div class="kpi-label"><span>🛡️</span>Renew Coverage</div>
-          <div class="kpi-value" title="${fmt.THBExact(openRenew)}">${fmt.pct(coverage)}</div>
-          <div class="kpi-meta"><span>Open ${fmt.THB(openRenew)} ÷ Target</span></div>
-        </div>
       </div>
 
       <div class="section-title">Renew Pipeline by Status &amp; Monthly trend</div>
@@ -82,7 +77,16 @@
         </div>
       </div>
 
-      <div class="section-title">⚠️ Customers at Risk — Open Renew within 30 days (overdue + upcoming)</div>
+      <div class="section-title">
+        ⚠️ Customers at Risk
+        <span class="actions">
+          <div class="seg-toggle" id="atRiskToggle" role="group">
+            <button class="seg-opt active" data-risk="overdue">Overdue</button>
+            <button class="seg-opt" data-risk="due">Due in 15 days</button>
+            <button class="seg-opt" data-risk="all">Both</button>
+          </div>
+        </span>
+      </div>
       <div class="card">
         <div id="atRiskWrap"></div>
       </div>
@@ -172,7 +176,16 @@
     });
 
     // ===== Customers at Risk =====
-    renderAtRisk(renewDeals);
+    let _riskMode = 'overdue';
+    renderAtRisk(renewDeals, _riskMode);
+    document.querySelectorAll('#atRiskToggle .seg-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#atRiskToggle .seg-opt').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _riskMode = btn.dataset.risk;
+        renderAtRisk(renewDeals, _riskMode);
+      });
+    });
 
     // ===== Top Renewals to Win =====
     const topRenew = renewDeals
@@ -196,16 +209,13 @@
     renderLostAnalysis(renewDeals);
   }
 
-  function renderAtRisk(renewDeals) {
+  function renderAtRisk(renewDeals, mode) {
+    // mode: 'overdue' | 'due' | 'all'
     const fmt = App.UI.fmt;
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const in30 = new Date(today.getTime() + 30 * 86400 * 1000);
+    const in15 = new Date(today.getTime() + 15 * 86400 * 1000);
 
-    // Open/Commit/Upside renew deals where expectedClose ≤ today + 30 days
-    // (includes both overdue and upcoming within 30 days)
-    const atRiskRaw = renewDeals
-      .filter(d => (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
-                && d.expectedClose && d.expectedClose <= in30);
+    const isOpen = d => d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside';
 
     function statusInfo(d) {
       const closeDay = new Date(d.expectedClose.getFullYear(), d.expectedClose.getMonth(), d.expectedClose.getDate());
@@ -225,28 +235,45 @@
       }
     }
 
-    // Sort by overdue-ness: most overdue first, then due dates closest to today, then far future
-    const atRisk = atRiskRaw
-      .map(d => ({ d, info: statusInfo(d) }))
-      .sort((a, b) => a.info.sortKey - b.info.sortKey);   // negative (overdue) sorts first
+    // Always compute overdue + due-in-15 buckets so the toggle can switch
+    // without re-filtering on every click.
+    const overdue = renewDeals
+      .filter(d => isOpen(d) && d.expectedClose && d.expectedClose < today)
+      .map(d => ({ d, info: statusInfo(d) }));
+    const dueSoon = renewDeals
+      .filter(d => isOpen(d) && d.expectedClose && d.expectedClose >= today && d.expectedClose <= in15)
+      .map(d => ({ d, info: statusInfo(d) }));
 
-    if (atRisk.length === 0) {
-      document.getElementById('atRiskWrap').innerHTML = `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No at-risk renewals in 30-day window 🎉</div>`;
+    let rows;
+    if (mode === 'overdue') rows = overdue;
+    else if (mode === 'due') rows = dueSoon;
+    else rows = overdue.concat(dueSoon);
+    rows.sort((a, b) => a.info.sortKey - b.info.sortKey);
+
+    const overdueValue = overdue.reduce((s, x) => s + (x.d.income || 0), 0);
+    const dueValue = dueSoon.reduce((s, x) => s + (x.d.income || 0), 0);
+
+    if (rows.length === 0) {
+      document.getElementById('atRiskWrap').innerHTML = `
+        <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
+          <div style="padding:6px 12px; background: var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
+            <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} overdue · ${fmt.THBFull(overdueValue)}
+          </div>
+          <div style="padding:6px 12px; background: var(--tint-warning); border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
+            <span class="status-dot" style="background: var(--upside);"></span>${dueSoon.length} due in 15 days · ${fmt.THBFull(dueValue)}
+          </div>
+        </div>
+        <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No deals in this view 🎉</div>`;
       return;
     }
-
-    const overdueCount = atRisk.filter(x => x.info.isOverdue).length;
-    const upcomingCount = atRisk.length - overdueCount;
-    const overdueValue = atRisk.filter(x => x.info.isOverdue).reduce((s, x) => s + (x.d.income || 0), 0);
-    const upcomingValue = atRisk.filter(x => !x.info.isOverdue).reduce((s, x) => s + (x.d.income || 0), 0);
 
     document.getElementById('atRiskWrap').innerHTML = `
       <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; font-size:12px;">
         <div style="padding:6px 12px; background: var(--tint-danger); border:1px solid var(--lost); border-radius:var(--radius-sm); color:var(--danger); font-weight:600;">
-          <span class="status-dot" style="background: var(--danger);"></span>${overdueCount} overdue · ${fmt.THBFull(overdueValue)}
+          <span class="status-dot" style="background: var(--danger);"></span>${overdue.length} overdue · ${fmt.THBFull(overdueValue)}
         </div>
         <div style="padding:6px 12px; background: var(--tint-warning); border:1px solid var(--upside); border-radius:var(--radius-sm); color:var(--upside); font-weight:600;">
-          <span class="status-dot" style="background: var(--upside);"></span>${upcomingCount} due in 30 days · ${fmt.THBFull(upcomingValue)}
+          <span class="status-dot" style="background: var(--upside);"></span>${dueSoon.length} due in 15 days · ${fmt.THBFull(dueValue)}
         </div>
       </div>
       <div style="max-height:520px; overflow:auto;">
@@ -256,7 +283,7 @@
             <th class="num">Income</th><th>Expected close</th><th>Status</th>
           </tr></thead>
           <tbody>
-            ${atRisk.map(({ d, info }) => `
+            ${rows.map(({ d, info }) => `
               <tr style="${info.isOverdue ? 'background: var(--tint-danger);' : ''}">
                 <td class="wrap"><strong>${escapeHtml(d.dealName || '—')}</strong></td>
                 <td class="wrap-sm">${escapeHtml(d.company || '—')}</td>
@@ -283,19 +310,6 @@
     }
 
     const totalLost = lost.reduce((s, d) => s + d.income, 0);
-    const avgLost = totalLost / lost.length;
-
-    const byType = {};
-    lost.forEach(d => {
-      const t = d.dealType || '(none)';
-      if (!byType[t]) byType[t] = { count: 0, value: 0 };
-      byType[t].count++;
-      byType[t].value += d.income;
-    });
-    const byTypeRows = Object.entries(byType)
-      .sort((a, b) => b[1].value - a[1].value)
-      .map(([t, v]) => `<tr><td>${escapeHtml(t)}</td><td class="num">${v.count}</td><td class="num" title="${fmt.THBExact(v.value)}">${fmt.THBFull(v.value)}</td></tr>`)
-      .join('');
 
     const byUser = {};
     lost.forEach(d => {
@@ -326,14 +340,9 @@
       <div class="card">
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:14px;">
           <div class="kpi-card lost"><div class="kpi-label"><span>📊</span>Total Lost Value</div><div class="kpi-value" title="${fmt.THBExact(totalLost)}">${fmt.THBFull(totalLost)}</div><div class="kpi-meta"><span>${lost.length.toLocaleString()} deals</span></div></div>
-          <div class="kpi-card lost"><div class="kpi-label"><span>📐</span>Average Lost Deal</div><div class="kpi-value" title="${fmt.THBExact(avgLost)}">${fmt.THBFull(avgLost)}</div><div class="kpi-meta"><span>per lost deal</span></div></div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
-          <div>
-            <div class="deal-section-title">Lost by Deal Type</div>
-            <div style="max-height:240px; overflow:auto"><table class="tbl"><thead><tr><th>Deal Type</th><th class="num">#</th><th class="num">Value</th></tr></thead><tbody>${byTypeRows}</tbody></table></div>
-          </div>
+        <div style="margin-bottom:14px;">
           <div>
             <div class="deal-section-title">Lost by Responsible (top 10)</div>
             <div style="max-height:240px; overflow:auto"><table class="tbl"><thead><tr><th>User</th><th class="num">#</th><th class="num">Value</th></tr></thead><tbody>${byUserRows}</tbody></table></div>

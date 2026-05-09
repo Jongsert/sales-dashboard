@@ -20,9 +20,7 @@
     const all = App.Filters.dashboardScope(App.Filters.apply(parsed.deals));
     const fmt = App.UI.fmt;
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const in7 = new Date(today.getTime() + 7 * 86400000);
     const in15 = new Date(today.getTime() + 15 * 86400000);
-    const ago30 = new Date(today.getTime() - 30 * 86400000);
 
     // Compute action buckets
     const overdueRenew = all.filter(d => M.isRenew(d)
@@ -31,21 +29,16 @@
     const overdueNew = all.filter(d => NEW.has(d.dealType)
       && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
       && d.expectedClose && d.expectedClose < today);
-    const dueRenew7 = all.filter(d => M.isRenew(d)
-      && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
-      && d.expectedClose && d.expectedClose >= today && d.expectedClose <= in7);
-    const dueNew7 = all.filter(d => NEW.has(d.dealType)
-      && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
-      && d.expectedClose && d.expectedClose >= today && d.expectedClose <= in7);
     const dueRenew15 = all.filter(d => M.isRenew(d)
       && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
-      && d.expectedClose && d.expectedClose > in7 && d.expectedClose <= in15);
+      && d.expectedClose && d.expectedClose >= today && d.expectedClose <= in15);
+    const dueNew15 = all.filter(d => NEW.has(d.dealType)
+      && (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
+      && d.expectedClose && d.expectedClose >= today && d.expectedClose <= in15);
     const commitDeals = all.filter(d => d.status === 'Commit');
     const upsideDeals = all.filter(d => d.status === 'Upside');
     const bigOpenDeals = all.filter(d => d.status === 'Open' && d.income >= 500000)
       .sort((a, b) => b.income - a.income).slice(0, 20);
-    const stuckDeals = all.filter(d => (d.status === 'Open' || d.status === 'Commit' || d.status === 'Upside')
-      && d.stageChangeDate && d.stageChangeDate < ago30);
 
     function sumValue(arr) { return arr.reduce((s, d) => s + (d.income || 0), 0); }
 
@@ -69,19 +62,19 @@
       },
       {
         icon: '📅', accent: 'warning',
-        title: `Renewals due in 7 days — ${dueRenew7.length} deals`,
-        sub: `Total ${fmt.THBFull(sumValue(dueRenew7))} · upcoming this week`,
+        title: `Renewals due in 15 days — ${dueRenew15.length} deals`,
+        sub: `Total ${fmt.THBFull(sumValue(dueRenew15))} · plan + follow up`,
         cta: 'Follow up',
-        deals: dueRenew7,
-        drillTitle: 'Renewals due in 7 days',
+        deals: dueRenew15,
+        drillTitle: 'Renewals due in 15 days',
       },
       {
         icon: '📅', accent: 'warning',
-        title: `New deals closing in 7 days — ${dueNew7.length} deals`,
-        sub: `Total ${fmt.THBFull(sumValue(dueNew7))} · push to close`,
+        title: `New deals closing in 15 days — ${dueNew15.length} deals`,
+        sub: `Total ${fmt.THBFull(sumValue(dueNew15))} · push to close`,
         cta: 'Follow up',
-        deals: dueNew7,
-        drillTitle: 'New deals due in 7 days',
+        deals: dueNew15,
+        drillTitle: 'New deals due in 15 days',
       },
       {
         icon: '✅', accent: 'success',
@@ -106,25 +99,6 @@
         cta: 'Review',
         deals: bigOpenDeals,
         drillTitle: 'Big Open deals',
-      },
-      {
-        icon: '🐌', accent: 'warning',
-        title: `Stuck deals (no movement >30d) — ${stuckDeals.length} deals`,
-        sub: stuckDeals.length > 0
-          ? `Total ${fmt.THBFull(sumValue(stuckDeals))} · stage hasn't changed in over 30 days`
-          : 'No stage-change date in data — skip',
-        cta: 'Review',
-        deals: stuckDeals,
-        drillTitle: 'Stuck deals (>30 days no movement)',
-        skip: stuckDeals.length === 0,
-      },
-      {
-        icon: '🔮', accent: '',
-        title: `Renewals due in 8-15 days — ${dueRenew15.length} deals`,
-        sub: `Total ${fmt.THBFull(sumValue(dueRenew15))} · plan ahead`,
-        cta: 'Review',
-        deals: dueRenew15,
-        drillTitle: 'Renewals due in 8-15 days',
       },
     ].filter(it => !it.skip && it.deals.length > 0);
 
