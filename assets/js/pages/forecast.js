@@ -702,11 +702,42 @@
       });
       inp.addEventListener('change', () => {
         const v = parseFloat(inp.value.replace(/,/g, '')) || 0;
+        inp.dataset.raw = v;
         App.Settings.setSalesForecast(STATE.year, inp.dataset.user, parseInt(inp.dataset.month), v);
-        const container = document.getElementById('main');
-        render(container, App.STATE.parsed);
+        deferRerender();   // defer + restore focus so rapid Tab-through edits aren't lost
       });
     });
+  }
+
+  // Defer the full Forecast re-render so rapid Sales-Forecast cell edits don't
+  // destroy the input the user just moved to (which silently drops the next
+  // keystroke). After 250ms idle we re-render and restore focus.
+  let _sfRenderTimer = null;
+  function deferRerender() {
+    if (_sfRenderTimer) clearTimeout(_sfRenderTimer);
+    _sfRenderTimer = setTimeout(() => {
+      _sfRenderTimer = null;
+      const active = document.activeElement;
+      const isCell = active && active.classList && active.classList.contains('sf-cell');
+      const user = isCell ? active.dataset.user : null;
+      const month = isCell ? active.dataset.month : null;
+      const selStart = isCell && typeof active.selectionStart === 'number' ? active.selectionStart : null;
+      const selEnd = isCell && typeof active.selectionEnd === 'number' ? active.selectionEnd : null;
+
+      const container = document.getElementById('main');
+      render(container, App.STATE.parsed);
+
+      if (user && month) {
+        const sel = `.sf-cell[data-user="${user.replace(/"/g, '\\"')}"][data-month="${month}"]`;
+        const next = document.querySelector(sel);
+        if (next) {
+          next.focus();
+          if (selStart !== null) {
+            try { next.setSelectionRange(selStart, selEnd); } catch (_) {}
+          }
+        }
+      }
+    }, 250);
   }
 
   /* ----- What-if scenario ----- */

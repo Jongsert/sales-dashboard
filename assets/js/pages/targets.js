@@ -219,12 +219,44 @@
         });
         inp.addEventListener('change', () => {
           const v = parseFloat(inp.value.replace(/,/g, '')) || 0;
+          inp.dataset.raw = v;
           App.Settings.setNewSellTarget(year, inp.dataset.user, parseInt(inp.dataset.month), v);
-          renderTable();   // re-render to update totals
+          deferRenderTable();   // defer + restore focus so adjacent typing isn't lost
         });
       });
 
       if (parsed && document.getElementById('renewTable')) renderRenewTable(year);
+    }
+
+    // Defer the table re-render so rapid Tab-through-cells edits don't destroy
+    // the input the user just moved to (which causes the next keystroke to land
+    // on <body> and silently drop the value). After 250ms idle we re-render to
+    // refresh totals and restore focus to whichever cell was active.
+    let _renderTimer = null;
+    function deferRenderTable() {
+      if (_renderTimer) clearTimeout(_renderTimer);
+      _renderTimer = setTimeout(() => {
+        _renderTimer = null;
+        const active = document.activeElement;
+        const isCell = active && active.classList && active.classList.contains('target-cell');
+        const user = isCell ? active.dataset.user : null;
+        const month = isCell ? active.dataset.month : null;
+        const selStart = isCell && typeof active.selectionStart === 'number' ? active.selectionStart : null;
+        const selEnd = isCell && typeof active.selectionEnd === 'number' ? active.selectionEnd : null;
+
+        renderTable();
+
+        if (user && month) {
+          const sel = `.target-cell[data-user="${user.replace(/"/g, '\\"')}"][data-month="${month}"]`;
+          const next = document.querySelector(sel);
+          if (next) {
+            next.focus();
+            if (selStart !== null) {
+              try { next.setSelectionRange(selStart, selEnd); } catch (_) {}
+            }
+          }
+        }
+      }, 250);
     }
 
     function renderRenewTable(year) {
