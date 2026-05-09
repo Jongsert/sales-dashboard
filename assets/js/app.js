@@ -2,7 +2,7 @@
    App — Main bootstrap, hash-based router, page registry, file upload
    ======================================================================== */
 (function () {
-  const VERSION = '1.8.4';
+  const VERSION = '1.8.6';
   const VERSION_DATE = '2026-05-08';
 
   // Build mode: 'admin' = full features (export, edit settings)
@@ -502,8 +502,26 @@
         ? '@page { size: A4 landscape; margin: 7mm 5mm 8mm 5mm; }'
         : '@page { size: A4 portrait; margin: 14mm 12mm 16mm 12mm; }';
 
-      // Print mode flag — read by DonutCenterPlugin to force readable colors
+      // Print mode flag — read by DonutCenterPlugin to force readable colors.
+      // Safari and some Chrome variants don't fire 'afterprint' if the user
+      // closes the print dialog without printing — without this safety
+      // timeout, the flag would stay true forever and donut centers would
+      // render in print colors on-screen.
       window._isPrinting = true;
+      if (window._isPrintingTimer) clearTimeout(window._isPrintingTimer);
+      window._isPrintingTimer = setTimeout(() => {
+        if (window._isPrinting) {
+          window._isPrinting = false;
+          if (typeof Chart !== 'undefined' && Chart.getChart) {
+            const muted = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#64748b';
+            Chart.defaults.color = muted;
+            document.querySelectorAll('canvas').forEach(canvas => {
+              const c = Chart.getChart(canvas);
+              if (c) c.update('none');
+            });
+          }
+        }
+      }, 30000);   // 30 seconds is comfortably longer than any real print job
 
       // Force every Chart.js instance to redraw so canvases pick up the
       // print-overridden CSS variables (light theme regardless of on-screen).
@@ -521,6 +539,10 @@
     window.addEventListener('afterprint', () => {
       delete document.body.dataset.printOrient;
       window._isPrinting = false;
+      if (window._isPrintingTimer) {
+        clearTimeout(window._isPrintingTimer);
+        window._isPrintingTimer = null;
+      }
 
       // Remove the dynamically-injected @page rule so on-screen state stays clean
       const s = document.getElementById('print-orient-style');

@@ -704,40 +704,90 @@
         const v = parseFloat(inp.value.replace(/,/g, '')) || 0;
         inp.dataset.raw = v;
         App.Settings.setSalesForecast(STATE.year, inp.dataset.user, parseInt(inp.dataset.month), v);
-        deferRerender();   // defer + restore focus so rapid Tab-through edits aren't lost
+        // Update Sales Forecast totals in place (does NOT destroy any input).
+        recalcSalesForecastTotalsInPlace();
+        // Charts / KPIs depend on Sales Forecast values too. Defer their
+        // refresh by 1.5s after the LAST edit so the user can finish a
+        // batch of cells without page flicker. The active <input>s are
+        // not destroyed by recalcTotalsInPlace, so timing here is forgiving.
+        deferChartRefresh();
       });
     });
   }
 
-  // Defer the full Forecast re-render so rapid Sales-Forecast cell edits don't
-  // destroy the input the user just moved to (which silently drops the next
-  // keystroke). After 250ms idle we re-render and restore focus.
-  let _sfRenderTimer = null;
-  function deferRerender() {
-    if (_sfRenderTimer) clearTimeout(_sfRenderTimer);
-    _sfRenderTimer = setTimeout(() => {
-      _sfRenderTimer = null;
-      const active = document.activeElement;
-      const isCell = active && active.classList && active.classList.contains('sf-cell');
-      const user = isCell ? active.dataset.user : null;
-      const month = isCell ? active.dataset.month : null;
-      const selStart = isCell && typeof active.selectionStart === 'number' ? active.selectionStart : null;
-      const selEnd = isCell && typeof active.selectionEnd === 'number' ? active.selectionEnd : null;
+  // Recompute every team-subtotal / grand-total cell in the Sales Forecast
+  // input table from current input dataset.raw values. Writes only into
+  // total cells — never touches an <input>, so the cell the user is typing
+  // into is never destroyed and their in-progress text is never lost.
+  function recalcSalesForecastTotalsInPlace() {
+    const tbl = document.getElementById('salesForecastTable');
+    if (!tbl) return;
+    const fmt = App.UI.fmt.comma;
 
-      const container = document.getElementById('main');
-      render(container, App.STATE.parsed);
+    const monthGrand = new Array(12).fill(0);
+    let grandTotal = 0;
+    let teamMonthSum = new Array(12).fill(0);
+    let teamSum = 0;
 
-      if (user && month) {
-        const sel = `.sf-cell[data-user="${user.replace(/"/g, '\\"')}"][data-month="${month}"]`;
-        const next = document.querySelector(sel);
-        if (next) {
-          next.focus();
-          if (selStart !== null) {
-            try { next.setSelectionRange(selStart, selEnd); } catch (_) {}
+    const rows = tbl.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      if (row.classList.contains('team-row')) {
+        teamMonthSum = new Array(12).fill(0);
+        teamSum = 0;
+      } else if (row.classList.contains('team-total')) {
+        const cells = row.querySelectorAll('td');
+        for (let m = 0; m < 12; m++) {
+          if (cells[m + 1]) cells[m + 1].textContent = fmt(teamMonthSum[m]);
+        }
+        if (cells[13]) cells[13].textContent = fmt(teamSum);
+      } else {
+        const inputs = row.querySelectorAll('.sf-cell');
+        if (inputs.length === 12) {
+          let userTotal = 0;
+          for (let m = 0; m < 12; m++) {
+            const v = parseFloat(inputs[m].dataset.raw) || 0;
+            userTotal += v;
+            teamMonthSum[m] += v;
+            monthGrand[m] += v;
           }
+          teamSum += userTotal;
+          grandTotal += userTotal;
+          const userTotalCell = row.querySelector('td.user-total');
+          if (userTotalCell) userTotalCell.textContent = fmt(userTotal);
         }
       }
-    }, 250);
+    });
+
+    const foot = tbl.querySelector('tfoot tr');
+    if (foot) {
+      const cells = foot.querySelectorAll('td');
+      for (let m = 0; m < 12; m++) {
+        if (cells[m + 1]) cells[m + 1].textContent = fmt(monthGrand[m]);
+      }
+      if (cells[13]) cells[13].textContent = fmt(grandTotal);
+    }
+  }
+
+  // Charts depend on Sales Forecast — refresh them after the user pauses.
+  // Charts CAN be safely re-rendered because they don't contain <input>
+  // elements; the in-place totals fix above already protects the input grid.
+  let _sfChartTimer = null;
+  function deferChartRefresh() {
+    if (_sfChartTimer) clearTimeout(_sfChartTimer);
+    _sfChartTimer = setTimeout(() => {
+      _sfChartTimer = null;
+      // Only re-render if user is no longer focused inside the SF table —
+      // otherwise even though we don't lose the value, the visual flicker
+      // is jarring while typing.
+      const active = document.activeElement;
+      if (active && active.classList && active.classList.contains('sf-cell')) {
+        // Reschedule another 1.5s of grace
+        deferChartRefresh();
+        return;
+      }
+      const container = document.getElementById('main');
+      if (container) render(container, App.STATE.parsed);
+    }, 1500);
   }
 
   /* ----- What-if scenario ----- */

@@ -221,42 +221,76 @@
           const v = parseFloat(inp.value.replace(/,/g, '')) || 0;
           inp.dataset.raw = v;
           App.Settings.setNewSellTarget(year, inp.dataset.user, parseInt(inp.dataset.month), v);
-          deferRenderTable();   // defer + restore focus so adjacent typing isn't lost
+          recalcTotalsInPlace();   // partial DOM update — no input is destroyed
         });
       });
 
       if (parsed && document.getElementById('renewTable')) renderRenewTable(year);
     }
 
-    // Defer the table re-render so rapid Tab-through-cells edits don't destroy
-    // the input the user just moved to (which causes the next keystroke to land
-    // on <body> and silently drop the value). After 250ms idle we re-render to
-    // refresh totals and restore focus to whichever cell was active.
-    let _renderTimer = null;
-    function deferRenderTable() {
-      if (_renderTimer) clearTimeout(_renderTimer);
-      _renderTimer = setTimeout(() => {
-        _renderTimer = null;
-        const active = document.activeElement;
-        const isCell = active && active.classList && active.classList.contains('target-cell');
-        const user = isCell ? active.dataset.user : null;
-        const month = isCell ? active.dataset.month : null;
-        const selStart = isCell && typeof active.selectionStart === 'number' ? active.selectionStart : null;
-        const selEnd = isCell && typeof active.selectionEnd === 'number' ? active.selectionEnd : null;
+    // Recompute every total / subtotal cell in the targets table from current
+    // input dataset.raw values, and write straight into the existing total
+    // cells. CRITICAL: this MUST NOT touch the <input> elements themselves —
+    // the previous deferRenderTable() approach rebuilt the table and silently
+    // erased the value the user was typing into the next cell when they
+    // edited fast. Inputs stay where they are; only label cells get updated.
+    function recalcTotalsInPlace() {
+      const tbl = document.getElementById('targetsTable');
+      if (!tbl) return;
+      const fmt = App.UI.fmt.comma2;
 
-        renderTable();
+      const monthGrand = new Array(12).fill(0);
+      let grandTotal = 0;
+      let teamMonthSum = new Array(12).fill(0);
+      let teamSum = 0;
 
-        if (user && month) {
-          const sel = `.target-cell[data-user="${user.replace(/"/g, '\\"')}"][data-month="${month}"]`;
-          const next = document.querySelector(sel);
-          if (next) {
-            next.focus();
-            if (selStart !== null) {
-              try { next.setSelectionRange(selStart, selEnd); } catch (_) {}
+      const rows = tbl.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        if (row.classList.contains('team-row')) {
+          // New team banner — reset accumulators for the rows that follow
+          teamMonthSum = new Array(12).fill(0);
+          teamSum = 0;
+        } else if (row.classList.contains('team-total')) {
+          // Subtotal row at end of team block — write team's accumulated values
+          const cells = row.querySelectorAll('td');
+          for (let m = 0; m < 12; m++) {
+            if (cells[m + 1]) cells[m + 1].textContent = fmt(teamMonthSum[m]);
+          }
+          if (cells[13]) cells[13].textContent = fmt(teamSum);
+        } else {
+          // User row — sum its 12 inputs and update its row-total
+          const inputs = row.querySelectorAll('.target-cell');
+          if (inputs.length === 12) {
+            let userTotal = 0;
+            for (let m = 0; m < 12; m++) {
+              const v = parseFloat(inputs[m].dataset.raw) || 0;
+              userTotal += v;
+              teamMonthSum[m] += v;
+              monthGrand[m] += v;
             }
+            teamSum += userTotal;
+            grandTotal += userTotal;
+            const userTotalCell = row.querySelector('td.user-total');
+            if (userTotalCell) userTotalCell.textContent = fmt(userTotal);
           }
         }
-      }, 250);
+      });
+
+      // Footer grand-total row
+      const foot = tbl.querySelector('tfoot tr');
+      if (foot) {
+        const cells = foot.querySelectorAll('td');
+        for (let m = 0; m < 12; m++) {
+          if (cells[m + 1]) cells[m + 1].textContent = fmt(monthGrand[m]);
+        }
+        if (cells[13]) cells[13].textContent = fmt(grandTotal);
+      }
+
+      // Section title (year + grand total summary)
+      const title = document.getElementById('targetTableTitle');
+      if (title) {
+        title.textContent = `Year ${STATE.year} · New Sell only · Total ${App.UI.fmt.THBFull(grandTotal)}`;
+      }
     }
 
     function renderRenewTable(year) {
