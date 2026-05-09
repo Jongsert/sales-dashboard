@@ -866,6 +866,18 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /* ----- safeColor: validate user-supplied color values before they're
+     interpolated into inline style="" attributes. Without this guard a
+     malicious team color like  "red; background: url(javascript:...)"
+     would be written verbatim into the DOM. Allow only proper hex
+     forms; anything else falls back to a neutral slate. ----- */
+  function safeColor(c, fallback) {
+    if (typeof c === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(c.trim())) {
+      return c.trim();
+    }
+    return fallback || '#94a3b8';
+  }
+
   /* ----- Reusable donut chart options (center text + slice labels) ----- */
   function donutOptions(opts = {}) {
     return {
@@ -921,6 +933,7 @@
     drillModal,
     openDealDetail,
     exportToExcel, exportToCSV, screenshotElement,
+    safeColor, escapeHtml,
     fmt: {
       THB: fmtTHB, THBFull: fmtTHBFull, THBExact: fmtTHBExact,
       comma: fmtComma, comma2: fmtComma2, pct: fmtPct, int: fmtInt, date: fmtDate,

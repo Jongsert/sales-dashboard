@@ -521,7 +521,7 @@
     tbody.innerHTML = arr.map((x, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${x.name}</td>
+        <td>${escapeHtml(x.name)}</td>
         <td class="num">${fmt().THBFull(x.wonValue)}</td>
         <td class="num">${fmt().int(x.wonCount)}</td>
         <td class="num">${fmt().THB(x.openValue)}</td>
@@ -545,7 +545,7 @@
     const tbody = document.querySelector('#tblFunnel tbody');
     tbody.innerHTML = arr.map(x => `
       <tr>
-        <td>${x.stage}</td>
+        <td>${escapeHtml(x.stage)}</td>
         <td class="num">${fmt().int(x.count)}</td>
         <td class="num">${fmt().THBFull(x.value)}</td>
       </tr>

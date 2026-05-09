@@ -3,6 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Content Security Policy:
+     - default-src 'self': only this origin
+     - script-src 'self': all JS is vendored locally; no CDN scripts allowed
+     - style-src 'self' 'unsafe-inline' https://fonts.googleapis.com:
+       Chart.js + html2canvas set inline styles at runtime, so 'unsafe-inline'
+       is required for them to function. Google Fonts CSS URL allowed too.
+     - font-src https://fonts.gstatic.com: actual font files
+     - img-src 'self' data: blob:: data: + blob: needed for chart canvases
+       and screenshot downloads
+     - connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com:
+       only allow XHR/fetch to self + Google Fonts (preconnect)
+     - object-src 'none': block <object>/<embed>
+     - frame-ancestors 'none': can't be iframed by other sites (clickjacking) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
 <title>Sales Dashboard</title>
 
 <!-- Fallback web fonts (Apple devices use system Sukhumvit Set) -->

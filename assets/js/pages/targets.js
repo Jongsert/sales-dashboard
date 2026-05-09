@@ -143,7 +143,7 @@
 
         bodyHtml += `<tr class="team-row">
           <td class="team-banner-name" colspan="2">
-            <span class="team-color-dot-bn" style="background:${teamColor};"></span>
+            <span class="team-color-dot-bn" style="background:${App.UI.safeColor(teamColor)};"></span>
             <strong>${escapeHtml(teamName)}</strong>
             <span class="team-user-count">${teamUsers.length} users</span>
           </td>
@@ -174,7 +174,7 @@
         bodyHtml += `<tr class="team-total">
           <td>${escapeHtml(teamName)} subtotal</td>
           ${teamMonthTotals.map(v => `<td class="num">${App.UI.fmt.comma2(v)}</td>`).join('')}
-          <td class="num" style="background:${teamColor}30;">${App.UI.fmt.comma2(teamSum)}</td>
+          <td class="num" style="background:${App.UI.safeColor(teamColor)}30;">${App.UI.fmt.comma2(teamSum)}</td>
         </tr>`;
       });
 
@@ -270,7 +270,7 @@
 
         bodyHtml += `<tr class="team-row">
           <td class="team-banner-name" colspan="2">
-            <span class="team-color-dot-bn" style="background:${teamColor};"></span>
+            <span class="team-color-dot-bn" style="background:${App.UI.safeColor(teamColor)};"></span>
             <strong>${escapeHtml(teamName)}</strong>
           </td>
           <td class="team-banner-spacer" colspan="12"></td>
@@ -291,7 +291,7 @@
         bodyHtml += `<tr class="team-total">
           <td>${escapeHtml(teamName)} subtotal</td>
           ${teamMonthTotals.map(v => `<td class="num">${App.UI.fmt.comma2(v)}</td>`).join('')}
-          <td class="num" style="background:${teamColor}30;">${App.UI.fmt.comma2(teamSum)}</td>
+          <td class="num" style="background:${App.UI.safeColor(teamColor)}30;">${App.UI.fmt.comma2(teamSum)}</td>
         </tr>`;
       });
 

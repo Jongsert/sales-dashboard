@@ -166,8 +166,134 @@
     if (obj.version && obj.version > VERSION) {
       throw new Error(`Settings version ${obj.version} is newer than supported (${VERSION})`);
     }
-    _state = mergeWithDefaults(obj);
+    _state = mergeWithDefaults(sanitizeImported(obj));
     save();
+  }
+
+  /* Sanitize an imported settings object to defend against malicious JSON.
+     - Strips fields that aren't in the known schema.
+     - Validates types (string / number / boolean / array / object).
+     - Ensures color hex strings are well-formed (else they could land in an
+       inline style="" attribute and inject CSS).
+     - Strings stay as-is — every render path uses escapeHtml() at the
+       boundary, so we don't need to mutate text content here.            */
+  function sanitizeImported(obj) {
+    const out = {};
+    const isStr = v => typeof v === 'string';
+    const isNum = v => typeof v === 'number' && isFinite(v);
+    const isBool = v => typeof v === 'boolean';
+    const validHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+    if (isNum(obj.version)) out.version = obj.version;
+    if (isStr(obj.updatedAt)) out.updatedAt = obj.updatedAt;
+    if (isStr(obj.exportedAt) || obj.exportedAt === null) out.exportedAt = obj.exportedAt;
+
+    if (Array.isArray(obj.users)) {
+      out.users = obj.users
+        .filter(u => u && typeof u === 'object' && isStr(u.name))
+        .map(u => ({
+          name: u.name,
+          team: isStr(u.team) ? u.team : 'Unassigned',
+          active: isBool(u.active) ? u.active : true,
+        }));
+    }
+    if (Array.isArray(obj.teams)) {
+      out.teams = obj.teams
+        .filter(t => t && typeof t === 'object' && isStr(t.name))
+        .map(t => ({
+          name: t.name,
+          color: isStr(t.color) && validHex.test(t.color.trim()) ? t.color.trim() : '#94a3b8',
+          order: isNum(t.order) ? t.order : 0,
+        }));
+    }
+
+    // Numeric maps — year → user → number[12]
+    function sanitizeYearUserMap(src) {
+      if (!src || typeof src !== 'object') return {};
+      const result = {};
+      Object.entries(src).forEach(([yearKey, byUser]) => {
+        if (!/^\d{4}$/.test(yearKey) || !byUser || typeof byUser !== 'object') return;
+        const userMap = {};
+        Object.entries(byUser).forEach(([userName, arr]) => {
+          if (!isStr(userName) || !Array.isArray(arr)) return;
+          userMap[userName] = arr.slice(0, 12).map(v => isNum(v) ? v : 0);
+        });
+        result[yearKey] = userMap;
+      });
+      return result;
+    }
+    out.newSellTargets = sanitizeYearUserMap(obj.newSellTargets);
+    out.salesForecast = sanitizeYearUserMap(obj.salesForecast);
+
+    if (obj.renewalEstimate && typeof obj.renewalEstimate === 'object') {
+      const re = {};
+      Object.entries(obj.renewalEstimate).forEach(([yearKey, cfg]) => {
+        if (!/^\d{4}$/.test(yearKey) || !cfg || typeof cfg !== 'object') return;
+        re[yearKey] = {
+          multiplier: isNum(cfg.multiplier) ? cfg.multiplier : 0.8,
+          monthOverrides: (cfg.monthOverrides && typeof cfg.monthOverrides === 'object')
+            ? cfg.monthOverrides : {},
+        };
+      });
+      out.renewalEstimate = re;
+    }
+
+    // Mappings — string → string (Stage → Status, Responsible → Team, etc.)
+    function sanitizeStringMap(src) {
+      if (!src || typeof src !== 'object') return {};
+      const result = {};
+      Object.entries(src).forEach(([k, v]) => {
+        if (isStr(k) && isStr(v)) result[k] = v;
+      });
+      return result;
+    }
+    out.statusMapping = sanitizeStringMap(obj.statusMapping);
+    out.teamMapping = sanitizeStringMap(obj.teamMapping);
+    out.columnRemap = sanitizeStringMap(obj.columnRemap);
+
+    // Column preferences — array of { field, visible, align? }
+    if (obj.columnPreferences && typeof obj.columnPreferences === 'object'
+        && Array.isArray(obj.columnPreferences.detailModal)) {
+      out.columnPreferences = {
+        detailModal: obj.columnPreferences.detailModal
+          .filter(c => c && typeof c === 'object' && isStr(c.field))
+          .map(c => ({
+            field: c.field,
+            visible: isBool(c.visible) ? c.visible : true,
+            align: c.align === 'right' ? 'right' : undefined,
+          })),
+      };
+    }
+
+    // UI prefs — only known keys
+    if (obj.uiPreferences && typeof obj.uiPreferences === 'object') {
+      out.uiPreferences = {
+        lastPage: isStr(obj.uiPreferences.lastPage) ? obj.uiPreferences.lastPage : 'overview',
+        theme: isStr(obj.uiPreferences.theme) ? obj.uiPreferences.theme : 'light',
+        language: isStr(obj.uiPreferences.language) ? obj.uiPreferences.language : 'th',
+      };
+    }
+
+    // Access token: must be a plain string
+    if (isStr(obj.accessToken)) out.accessToken = obj.accessToken;
+
+    // Snapshots: array of objects with known shape; non-objects dropped
+    if (Array.isArray(obj.snapshots)) {
+      out.snapshots = obj.snapshots
+        .filter(s => s && typeof s === 'object')
+        .slice(-52);
+    }
+
+    // Deal comments: dealId → string
+    if (obj.dealComments && typeof obj.dealComments === 'object') {
+      const dc = {};
+      Object.entries(obj.dealComments).forEach(([k, v]) => {
+        if (isStr(v)) dc[String(k)] = v;
+      });
+      out.dealComments = dc;
+    }
+
+    return out;
   }
 
   /* ----- Snapshot ----- */

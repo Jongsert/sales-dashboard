@@ -18,6 +18,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Content Security Policy — see admin index.html for explanation. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
 <title>Sales Dashboard (Viewer)</title>
 
 <!-- Mode flag — must run BEFORE any app script -->
