@@ -463,7 +463,10 @@
     const buckets = {};
     deals.forEach(d => {
       const u = d.responsible || 'Unassigned';
-      if (!buckets[u]) buckets[u] = { Won: 0, Commit: 0, Upside: 0, Open: 0, Lost: 0 };
+      if (!buckets[u]) {
+        buckets[u] = {};
+        STATUSES.forEach(s => buckets[u][s] = 0);
+      }
       buckets[u][d.status] = (buckets[u][d.status] || 0) + d.income;
     });
     // Top 10 by total
